@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Hybrid Trainer — Standalone v4</title>
+<title>Hybrid Trainer — Standalone v7</title>
 <style>
   :root { --bg:#0b0b0c; --card:#141416; --muted:#9aa0a6; --text:#e7e9ea; --accent:#1db954; --warn:#f59e0b; --danger:#ef4444; --line:#24262a; }
   *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Helvetica Neue",Arial}
@@ -18,7 +18,7 @@
   .btn.green{background:#176b3d}.btn.green:hover{background:#1b7d47}
   .pill{display:inline-block;background:#1f2937;color:#d1fae5;border-radius:999px;padding:4px 8px;font-size:12px}
   .pill.ok{background:rgba(16,185,129,.15);color:#34d399}
-  .pill.warn{background:rgba(245,158,11,.15);color:#fbbf24}
+  .pill.warn{background:rgba(245,158,11,.15);color:#f59e0b}
   .grid{display:grid;gap:8px}
   .g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
   input[type=number],input[type=text],select{width:100%;background:#1f2227;border:1px solid #2a2d33;color:#e7e9ea;border-radius:10px;padding:8px}
@@ -28,6 +28,7 @@
   .line{height:1px;background:var(--line);margin:10px 0}
   .chip{background:#1f2937;padding:4px 8px;border-radius:999px;font-size:12px;cursor:pointer}
   .chip:hover{background:#2a3648}
+  label.small{display:flex;flex-direction:column;gap:4px}
 </style>
 </head>
 <body>
@@ -50,11 +51,11 @@
         <div class="muted small" style="margin-bottom:8px">0=Bad, 1=Fine, 2=Good. Worst days route to <b>GPP Bad</b>.</div>
         <div class="grid">
           <div class="g3 grid">
-            <label>Sleep<input type="range" min="0" max="2" step="1" id="sleep"></label>
-            <label>Nutrition<input type="range" min="0" max="2" step="1" id="food"></label>
-            <label>Soreness<input type="range" min="0" max="2" step="1" id="sore"></label>
+            <label class="small">Sleep<input type="range" min="0" max="2" step="1" id="sleep"></label>
+            <label class="small">Nutrition<input type="range" min="0" max="2" step="1" id="food"></label>
+            <label class="small">Soreness<input type="range" min="0" max="2" step="1" id="sore"></label>
           </div>
-          <div><label>Mood (0-2)<input type="range" min="0" max="2" step="1" id="mood"></label></div>
+          <div><label class="small">Mood<input type="range" min="0" max="2" step="1" id="mood"></label></div>
         </div>
       </div>
 
@@ -178,14 +179,18 @@
             <select id="newAccTarget">
               <option>Back</option><option>Chest</option><option>Delts</option><option>Arms</option>
               <option>Quads</option><option>Posterior</option><option>Calves</option><option>Tib</option>
+              <option>Core</option>
             </select>
-            <input id="newAccName" type="text" placeholder="Accessory name">
-            <input id="newAccLoad" type="number" min="0" step="1" placeholder="Weight">
+            <input id="newAccName" type="text" placeholder="Accessory name" list="accNames">
+            <datalist id="accNames"></datalist>
+            <input id="newAccLoad" type="number" min="0" step="1" placeholder="Weight or plate">
             <button class="btn" id="addManualAcc">+ Add</button>
             <button class="btn" id="recommendAcc">+ Recommend</button>
           </div>
         </div>
-        <div class="muted small" id="accHelp" style="margin-top:6px">Defaults: big groups <b>3×8–12</b>, arms <b>3×10–15</b>, calves/tib <b>3×12–20</b>. 1–3 RIR.</div>
+        <div class="muted small" id="accHelp" style="margin-top:6px">
+          Defaults: big groups <b>3×8–12</b>, arms <b>3×10–15</b>, calves/tib/core <b>3×12–20</b>. 1–3 RIR.
+        </div>
         <div id="accList" class="grid" style="margin-top:8px"></div>
       </div>
 
@@ -209,12 +214,13 @@
           </div>
         </div>
         <div class="card">
-          <div>Upper Body Sets</div>
+          <div>Upper/Other Sets</div>
           <div class="g2 grid" style="margin-top:6px">
             <div>Chest <b id="cSets">0</b></div><div>Back <b id="bSets">0</b></div>
             <div>Delts <b id="dSets">0</b></div><div>Arms <b id="aSets">0</b></div>
           </div>
-          <div class="muted small" style="margin-top:6px">Targets — Chest 10 · Back 12 · Delts 10 · Arms 8</div>
+          <div style="margin-top:6px">Core <b id="coreSets">0</b> <span id="coreStatus" class="pill"></span></div>
+          <div class="muted small" style="margin-top:6px">Targets — Chest 10 · Back 12 · Delts 10 · Arms 8 · Core 8</div>
         </div>
       </div>
       <div class="row" style="margin-top:12px">
@@ -267,27 +273,42 @@ function recommend(sleep,food,sore,mood){
 // ---------- Data ----------
 const SESS_KEY = "sessions:"+weekKey;
 let sessions = load(SESS_KEY, []);
-const TARGETS = { Quads:10, Posterior:10, Chest:10, Back:12, Delts:10, Arms:8, Calves:4, Tib:4 };
-const TOP3 = {
-  Hinge:["Conventional Deadlift","Trap Bar Deadlift","Romanian Deadlift"],
-  Squat:["Back Squat","Front Squat","Pause Back Squat"],
-  Oly:["Clean & Jerk","Clean","Snatch"]
-};
+const TARGETS = { Quads:10, Posterior:10, Chest:10, Back:12, Delts:10, Arms:8, Calves:4, Tib:4, Core:8 };
 const POOLS = {
   Quads:["Front-Foot Elevated Split Squat","Front Squat (light)","Leg Press","Hack/Belt Squat","Step-Up (heavy)","Goblet Squat (tempo)","Sissy Squat (controlled)"],
   Posterior:["Romanian Deadlift","Hip Thrust / Glute Bridge","Nordic Curl / Assisted","Seated Leg Curl","Back Extension (45°)","Good Morning (light)","Cable Pull-Through"],
   Chest:["DB Bench Press","Incline DB Press","Machine Chest Press","Cable Fly (mid)","Push-Up (weighted)","Deficit Push-Up"],
-  Back:["Chest-Supported Row","One-Arm DB Row","Lat Pulldown","Seated Cable Row","Meadows Row","T-Bar Row"],
-  Delts:["DB Lateral Raise","Cable Lateral Raise","Rear Delt Fly (machine)","Face Pull","Y-Raise (incline)","Leaning Lateral Raise"],
+  Back:["Chest-Supported Row","One-Arm DB Row","Lat Pulldown","Seated Cable Row","Meadows Row","T-Bar Row","Pull-Up (strict)","Dead Hang (for time)"],
+  Delts:["DB Lateral Raise","Cable Lateral Raise","Rear Delt Fly (machine)","Face Pull","Y-Raise (incline)","Leaning Lateral Raise","DB Overhead Press (light)"],
   Arms:["EZ-Bar Curl","Incline DB Curl","Hammer Curl","Rope Pressdown","Overhead Cable Extension","Close-Grip Push-Up"],
-  Calves:["Standing Calf Raise","Seated Calf Raise","Donkey Calf Raise","Single-Leg Calf Raise"],
+  Calves:["Standing Calf Raise","Seated Calf Raise","Donkey Calf Raise","Single-Leg Calf Raise","Jump Rope"],
   Tib:["Tibialis Raise","Seated Dorsiflexion (band)","Tib Bar Raise"],
+  Core:["Hanging Knee Raise","Toe-to-Bar (strict)","Cable Crunch","Ab Wheel Rollout","Reverse Crunch","Pallof Press","Side Plank (sec)","Copenhagen Plank (sec)","Dead Bug (slow)","Hollow Hold (sec)"]
 };
+// Flat exercise->target map for autocomplete
+const EXERCISE_MAP = (()=>{
+  const m = {};
+  Object.entries(POOLS).forEach(([t,arr])=> arr.forEach(n=> m[n.toLowerCase()] = t));
+  // WOD common movements
+  [
+    ["KB Swing","Posterior"],["Kettlebell Swing","Posterior"],["Box Jump","Quads"],
+    ["Burpee","Chest"],["Wall Ball","Quads"],["Sit-Up","Core"],["Walking Lunge","Quads"],
+    ["Thruster","Quads"],["Double-Under","Calves"],["Row (cal)","Back"],["Cal Row","Back"],
+    ["Bike (cal)","Quads"],["Run","Quads"],["Ruck","Posterior"],["Dead Hang","Back"],
+    ["Pull-Up","Back"],["Push-Up","Chest"],["Air Squat","Quads"],["DB Snatch (alt)","Posterior"]
+  ].forEach(([n,t])=> m[n.toLowerCase()] = t);
+  return m;
+})();
+
 const poolIdx = JSON.parse(localStorage.getItem("poolIdx") || "{}");
 function nextPool(target,len){ const i = poolIdx[target]??0; poolIdx[target]=(i+1)%len; localStorage.setItem("poolIdx",JSON.stringify(poolIdx)); return i; }
-function defaultsFor(target){ if(target==="Calves"||target==="Tib") return {sets:3,reps:15}; if(target==="Arms") return {sets:3,reps:12}; return {sets:3,reps:10}; }
+function defaultsFor(target){
+  if(target==="Calves"||target==="Tib"||target==="Core") return {sets:3,reps:15};
+  if(target==="Arms") return {sets:3,reps:12};
+  return {sets:3,reps:10};
+}
 function totalsCalc(sessions){
-  const t = {quads:0,post:0,chest:0,back:0,delts:0,arms:0,calves:0,tib:0, z2:0,vig:0, strength:0};
+  const t = {quads:0,post:0,chest:0,back:0,delts:0,arms:0,calves:0,tib:0,core:0, z2:0,vig:0, strength:0};
   sessions.forEach(s=>{
     if(s.main && s.main.pattern && s.main.sets){
       const add = s.main.sets;
@@ -305,6 +326,7 @@ function totalsCalc(sessions){
       if(a.target==="Arms") t.arms += a.sets;
       if(a.target==="Calves") t.calves += a.sets;
       if(a.target==="Tib") t.tib += a.sets;
+      if(a.target==="Core") t.core += a.sets;
     });
     if(s.kind==="Strength") t.strength++;
   });
@@ -312,11 +334,11 @@ function totalsCalc(sessions){
 }
 function chooseLaggingTargetDayAware(tot, dayKind){
   const weights = {
-    Strength:{Quads:.8,Posterior:.8,Chest:1,Back:1,Delts:1,Arms:1.1,Calves:1,Tib:1},
-    "GPP Good":{Quads:.9,Posterior:.9,Chest:1,Back:1,Delts:1,Arms:1,Calves:1,Tib:1},
-    "GPP Bad":{Quads:1.1,Posterior:1.1,Chest:1,Back:1,Delts:1,Arms:1,Calves:.9,Tib:.9},
-    Endurance:{Quads:1.1,Posterior:1.1,Chest:.9,Back:.9,Delts:.9,Arms:.9,Calves:1,Tib:1},
-    Recovery:{Quads:1.2,Posterior:1.2,Chest:1.2,Back:1.2,Delts:1.2,Arms:1.2,Calves:1.2,Tib:1.2},
+    Strength:{Quads:.8,Posterior:.8,Chest:1,Back:1,Delts:1,Arms:1.1,Calves:1,Tib:1,Core:1},
+    "GPP Good":{Quads:.9,Posterior:.9,Chest:1,Back:1,Delts:1,Arms:1,Calves:1,Tib:1,Core:1},
+    "GPP Bad":{Quads:1.1,Posterior:1.1,Chest:1,Back:1,Delts:1,Arms:1,Calves:.9,Tib:.9,Core:1},
+    Endurance:{Quads:1.1,Posterior:1.1,Chest:.9,Back:.9,Delts:.9,Arms:.9,Calves:1,Tib:1,Core:1},
+    Recovery:{Quads:1.2,Posterior:1.2,Chest:1.2,Back:1.2,Delts:1.2,Arms:1.2,Calves:1.2,Tib:1.2,Core:1.2},
   }[dayKind]||{};
   const arr = [
     ["Quads",tot.quads,TARGETS.Quads],
@@ -327,6 +349,7 @@ function chooseLaggingTargetDayAware(tot, dayKind){
     ["Arms",tot.arms,TARGETS.Arms],
     ["Calves",tot.calves,TARGETS.Calves],
     ["Tib",tot.tib,TARGETS.Tib],
+    ["Core",tot.core,TARGETS.Core],
   ];
   let best=null, score=1e9;
   arr.forEach(([name,got,need])=>{
@@ -354,8 +377,10 @@ const accList=$("#accList"), recommendAcc=$("#recommendAcc");
 const newAccTarget=$("#newAccTarget"), newAccName=$("#newAccName"), newAccLoad=$("#newAccLoad"), addManualAcc=$("#addManualAcc");
 const saveBtn=$("#saveBtn"), resetWeek=$("#resetWeek");
 const qSets=$("#qSets"), pSets=$("#pSets"), cSets=$("#cSets"), bSets=$("#bSets"), dSets=$("#dSets"), aSets=$("#aSets");
+const coreSets=$("#coreSets"), coreStatus=$("#coreStatus");
 const z2Min=$("#z2Min"), vigMin=$("#vigMin"), endStatus=$("#endStatus"), interf=$("#interf"), hist=$("#hist");
 const qStatus=$("#qStatus"), pStatus=$("#pStatus");
+const accNamesDL=$("#accNames");
 
 let workSets = [];
 let accessories = [];
@@ -368,10 +393,12 @@ function addWorkSetRow(reps="", load=""){
   const row = document.createElement("div");
   row.className = "grid g4"; row.style.gridTemplateColumns = "1fr 1fr 1fr auto"; row.dataset.id = id;
   row.innerHTML = `<div class="small muted" style="align-self:center">Set ${workSets.length+1} — ${movement.value||pattern.value}</div>
-    <input type="number" min="1" step="1" placeholder="Reps" value="${reps}">
-    <input type="number" min="0" step="1" placeholder="Weight" value="${load}">
+    <label class="small">Reps<input type="number" min="1" step="1" placeholder="Reps" value="${reps}"></label>
+    <label class="small">Weight<input type="number" min="0" step="1" placeholder="Weight" value="${load}"></label>
     <button class="btn bad">X</button>`;
-  const [_, repsIn, loadIn, delBtn] = row.children;
+  const [_, repsLab, loadLab, delBtn] = row.children;
+  const repsIn = repsLab.querySelector("input");
+  const loadIn = loadLab.querySelector("input");
   delBtn.addEventListener("click", ()=>{ row.remove(); workSets = workSets.filter(s=>s.id!==id); recountSets(); });
   setsWrap.appendChild(row);
   workSets.push({id, reps:repsIn, load:loadIn});
@@ -380,6 +407,7 @@ function addWorkSetRow(reps="", load=""){
 }
 function recountSets(){ let count = 0; workSets.forEach(s=>{ const r=Number(s.reps.value||0), l=Number(s.load.value||0); if(r>0&&l>0) count++; }); hardCount.textContent = count; }
 
+// ----- WOD Builder -----
 function buildWodUI(container, preset){
   container.innerHTML = `<div class="g4 grid">
       <label class="small">Style
@@ -401,16 +429,36 @@ function buildWodUI(container, preset){
     <div class="w-list grid" style="margin-top:6px"></div>
     <div class="muted small" style="margin-top:6px">WOD time counts as vigorous minutes.</div>`;
   const style=container.querySelector(".w-style"), name=container.querySelector(".w-name"), cap=container.querySelector(".w-cap"), add=container.querySelector(".w-add"), list=container.querySelector(".w-list");
-  function addMove(nameV="", repsV="", loadV=""){
+
+  function addMove(nameV="", repsV="", loadV="", targetV=""){
     const row=document.createElement("div");
-    row.className="grid g4"; row.style.gridTemplateColumns="2fr 1fr 1fr auto";
-    row.innerHTML=`<input type="text" placeholder="Movement" value="${nameV}">
-      <input type="text" placeholder="Reps" value="${repsV}">
-      <input type="text" placeholder="Load" value="${loadV}">
+    row.className="grid g4"; row.style.gridTemplateColumns="2.2fr 1fr 1fr auto";
+    row.innerHTML=`
+      <label class="small">Movement
+        <input type="text" placeholder="e.g., KB Swing" list="moveNames">
+        <small class="muted target-pill" style="display:block;margin-top:4px"></small>
+      </label>
+      <label class="small">Reps / Time<input type="text" placeholder="e.g., 15 or 30s"></label>
+      <label class="small">Load<input type="text" placeholder="e.g., light / 24kg"></label>
       <button class="btn bad">X</button>`;
-    const [n,r,l,del]=row.children; del.addEventListener("click",()=>row.remove()); list.appendChild(row);
+    const [nameLab,repsLab,loadLab,del]=row.children;
+    const nameIn = nameLab.querySelector("input");
+    const repsIn = repsLab.querySelector("input");
+    const loadIn = loadLab.querySelector("input");
+    const pill = nameLab.querySelector(".target-pill");
+    nameIn.value = nameV; repsIn.value=repsV; loadIn.value=loadV; pill.textContent = targetV?("Target: "+targetV):"";
+    function resolveTarget(){
+      const t = EXERCISE_MAP[(nameIn.value||"").toLowerCase()] || "";
+      pill.textContent = t ? ("Target: "+t) : "";
+      row.dataset.target = t;
+    }
+    nameIn.addEventListener("input", resolveTarget);
+    resolveTarget();
+    del.addEventListener("click",()=>row.remove());
+    list.appendChild(row);
   }
-  add.addEventListener("click",()=>addMove("","",""));
+  add.addEventListener("click",()=>addMove("","","",""));
+
   function applyTemplate(key){
     const T = {
       amrap12:{style:"AMRAP",name:"AMRAP 12",cap:12,moves:[["KB Swing","15","moderate"],["Box Jump","12","bodyweight"],["Burpee","9","bodyweight"]]},
@@ -424,9 +472,20 @@ function buildWodUI(container, preset){
   container.querySelector(".t-4rft").onclick=()=>applyTemplate("r4");
   container.querySelector(".t-emom12").onclick=()=>applyTemplate("emom12");
   container.querySelector(".t-chipper20").onclick=()=>applyTemplate("chip20");
-  if(preset==="bad"){ style.value="AMRAP"; name.value="12′ Easy Mover"; cap.value=12; [["Air Squat","15","bodyweight"],["Push-Up","10","bodyweight"],["Dead Hang (sec)","20","bodyweight"]].forEach(m=>addMove(...m)); }
-  else if(preset==="good"){ applyTemplate("amrap12"); }
-  return { read(){ const moves=[...list.children].map(row=>{ const [n,r,l]=row.querySelectorAll("input"); return {name:n.value.trim(),reps:r.value.trim(),load:l.value.trim()}; }).filter(m=>m.name); return {style:style.value,name:name.value.trim(),cap:Number(cap.value)||0,moves,rounds:0,emom: style.value==="EMOM"?(cap.value||12):0}; } };
+
+  if(preset==="bad"){
+    style.value="AMRAP"; name.value="12′ Easy Mover"; cap.value=12;
+    [["Air Squat","15","bodyweight"],["Push-Up","10","bodyweight"],["Dead Hang (sec)","20","bodyweight"]].forEach(m=>addMove(...m));
+  } else if(preset==="good"){ applyTemplate("amrap12"); }
+
+  return { read(){
+    const moves=[...list.children].map(row=>{
+      const [nameLab,repsLab,loadLab] = row.querySelectorAll("label");
+      const target = row.dataset.target || "";
+      return {name:nameLab.querySelector("input").value.trim(),reps:repsLab.querySelector("input").value.trim(),load:loadLab.querySelector("input").value.trim(), target};
+    }).filter(m=>m.name);
+    return {style:style.value,name:name.value.trim(),cap:Number(cap.value)||0,moves};
+  }};
 }
 
 // ---------- Accessories ----------
@@ -436,31 +495,59 @@ function addAccessory(target,name,sets,reps,load=""){
   row.className = "grid g4"; row.style.gridTemplateColumns="2fr 1fr 1fr 1fr auto";
   row.dataset.id = id;
   row.innerHTML = `<div><b>${name}</b><div class="muted small">${target}</div></div>
-    <input type="number" min="2" max="5" value="${sets}">
-    <input type="number" min="6" max="25" value="${reps}">
-    <input type="number" min="0" step="1" placeholder="Weight" value="${load}">
+    <label class="small">Sets<input type="number" min="2" max="5" value="${sets}"></label>
+    <label class="small">Reps<input type="number" min="6" max="25" value="${reps}"></label>
+    <label class="small">Weight<input type="number" min="0" step="1" placeholder="Weight" value="${load}"></label>
     <button class="btn bad">X</button>`;
   accList.appendChild(row);
-  const delBtn = row.children[4];
+  const delBtn = row.querySelector("button");
+  const setsEl = row.querySelectorAll("input")[0];
+  const repsEl = row.querySelectorAll("input")[1];
+  const loadEl = row.querySelectorAll("input")[2];
   delBtn.addEventListener("click", ()=>{ row.remove(); accessories = accessories.filter(a=>a.id!==id); });
-  accessories.push({id,target,name,setsEl:row.children[1],repsEl:row.children[2],loadEl:row.children[3]});
+  accessories.push({id,target,name,setsEl,repsEl,loadEl});
 }
-function defaultsFor(target){ if(target==="Calves"||target==="Tib") return {sets:3,reps:15}; if(target==="Arms") return {sets:3,reps:12}; return {sets:3,reps:10}; }
+function defaultsFor(target){
+  if(target==="Calves"||target==="Tib"||target==="Core") return {sets:3,reps:15};
+  if(target==="Arms") return {sets:3,reps:12};
+  return {sets:3,reps:10};
+}
 function autoAccessory(){
   const t = totalsCalc(sessions.concat([draftSession({calcOnly:true})]));
-  const pick = chooseLaggingTargetDayAware({ quads:t.quads, post:t.post, chest:t.chest, back:t.back, delts:t.delts, arms:t.arms, calves:t.calves, tib:t.tib }, dayKind.value);
+  const pick = chooseLaggingTargetDayAware(
+    { quads:t.quads, post:t.post, chest:t.chest, back:t.back, delts:t.delts, arms:t.arms, calves:t.calves, tib:t.tib, core:t.core },
+    dayKind.value
+  );
   const pool = POOLS[pick]; const idx = nextPool(pick, pool.length);
   const name = pool[idx]; const d = defaultsFor(pick);
   addAccessory(pick, name, d.sets, d.reps);
 }
 function manualAccessory(){
-  const t = newAccTarget.value || "Back";
-  const name = (newAccName.value || "").trim() || (POOLS[t]?POOLS[t][0]:"Accessory");
+  let t = newAccTarget.value || "Back";
+  const raw = (newAccName.value || "").trim();
+  if(raw){
+    const hit = EXERCISE_MAP[raw.toLowerCase()];
+    if(hit){ t = hit; newAccTarget.value = hit; }
+  }
+  const name = raw || (POOLS[t]?POOLS[t][0]:"Accessory");
   const load = newAccLoad.value || "";
   const d = defaultsFor(t);
   addAccessory(t, name, d.sets, d.reps, load);
   newAccName.value = ""; newAccLoad.value = "";
 }
+function seedAccDatalist(){
+  const names = new Set();
+  Object.values(POOLS).forEach(arr=> arr.forEach(n=>names.add(n)));
+  ["KB Swing","Box Jump","Burpee","Wall Ball","Sit-Up","Walking Lunge","Thruster","Double-Under","Row (cal)","Cal Row","Bike (cal)","Run","Ruck","Dead Hang","Pull-Up","Push-Up","Air Squat","DB Snatch (alt)"].forEach(n=>names.add(n));
+  accNamesDL.innerHTML = [...names].sort().map(n=>`<option value="${n}">`).join("");
+}
+seedAccDatalist();
+// auto-target when typing known name
+newAccName.addEventListener("input", ()=>{
+  const raw = (newAccName.value||"").toLowerCase();
+  const hit = EXERCISE_MAP[raw];
+  if(hit){ newAccTarget.value = hit; }
+});
 
 // ---------- Draft & Save ----------
 function draftSession({calcOnly=false}={}){
@@ -489,9 +576,18 @@ function draftSession({calcOnly=false}={}){
   return obj;
 }
 function saveSession(){
+  // capture WOD if visible
+  const viewK = dayKind.value;
+  if(viewK==="Strength" && wodWrap.style.display!=="none" && wodWrap.innerHTML.trim()!==""){ wod = wodUI.read(); }
+  else if(viewK==="Endurance" && wodWrap2.style.display!=="none" && wodWrap2.innerHTML.trim()!==""){ wod = wodUI2.read(); }
+  else if(viewK==="GPP Good"){ wod = wodUI3 ? wodUI3.read() : (wodWrap3.innerHTML ? buildWodUI(wodWrap3,"good").read() : null); }
+  else if(viewK==="GPP Bad"){ wod = wodUI4 ? wodUI4.read() : (wodWrap4.innerHTML ? buildWodUI(wodWrap4,"bad").read() : null); }
+  else { wod = null; }
+
   const s = draftSession();
   sessions.push(s);
   save(SESS_KEY, sessions);
+  // clear draft
   workSets=[]; setsWrap.innerHTML=""; hardCount.textContent="0"; if(dayKind.value==="Strength") addWorkSetRow();
   accessories=[]; accList.innerHTML="";
   wod=null; ["wodWrap","wodWrap2","wodWrap3","wodWrap4"].forEach(id=>{ const el=$("#"+id); if(el) el.innerHTML=""; });
@@ -503,8 +599,10 @@ function saveSession(){
 function renderDashboard(){
   const t = totalsCalc(sessions);
   qSets.textContent = t.quads; pSets.textContent = t.post; cSets.textContent = t.chest; bSets.textContent = t.back; dSets.textContent = t.delts; aSets.textContent = t.arms;
+  coreSets.textContent = t.core;
   z2Min.textContent = t.z2+"′"; vigMin.textContent = t.vig+"′";
   badge(qStatus, t.quads>=TARGETS.Quads); badge(pStatus, t.post>=TARGETS.Posterior);
+  badge(coreStatus, t.core>=TARGETS.Core);
   const endOK = (t.z2>=150) || (t.vig>=75) || ((t.z2*0.5 + t.vig)>=75);
   badge(endStatus, endOK, "On track", "Low this week");
   const runAdj = sessions.some(s=> s.endurance && s.endurance.modality==="Run" && (s.endurance.z2+s.endurance.vig)>0 && s.kind==="Strength");
@@ -542,8 +640,8 @@ function adaptBuilder(){
   gppBadView.style.display = (k==="GPP Bad")?"":"none";
   recoveryView.style.display = (k==="Recovery")?"":"none";
   if(k==="Strength"){ if(!movement.options.length) renderTop3(); if(workSets.length===0) addWorkSetRow(); }
-  if(k==="GPP Good"){ buildWodUI(wodWrap3, "good"); }
-  if(k==="GPP Bad"){ buildWodUI(wodWrap4, "bad"); }
+  if(k==="GPP Good"){ wodUI3 = buildWodUI(wodWrap3, "good"); }
+  if(k==="GPP Bad"){ wodUI4 = buildWodUI(wodWrap4, "bad"); }
 }
 dayKind.addEventListener("change", adaptBuilder);
 pattern.addEventListener("change", ()=>{ renderTop3(); });
@@ -560,16 +658,15 @@ toggleWod2.addEventListener("click", ()=>{
 });
 recommendAcc.addEventListener("click", autoAccessory);
 addManualAcc.addEventListener("click", manualAccessory);
-saveBtn.addEventListener("click", ()=>{
-  const viewK = dayKind.value;
-  if(viewK==="Strength" && wodWrap.style.display!=="none" && wodWrap.innerHTML.trim()!==""){ wod = wodUI.read(); }
-  else if(viewK==="Endurance" && wodWrap2.style.display!=="none" && wodWrap2.innerHTML.trim()!==""){ wod = wodUI2.read(); }
-  else if(viewK==="GPP Good"){ wod = wodUI3 ? wodUI3.read() : (wodWrap3.innerHTML ? buildWodUI(wodWrap3,"good").read() : null); }
-  else if(viewK==="GPP Bad"){ wod = wodUI4 ? wodUI4.read() : (wodWrap4.innerHTML ? buildWodUI(wodWrap4,"bad").read() : null); }
-  else { wod = null; }
-  saveSession();
-});
+saveBtn.addEventListener("click", saveSession);
 resetWeek.addEventListener("click", ()=>{ if(confirm("Reset this week's data?")){ sessions=[]; save(SESS_KEY, sessions); renderDashboard(); } });
+
+// Suggestions list for movement inputs (WOD)
+const moveDL = document.createElement("datalist"); moveDL.id = "moveNames";
+const moveNames = Object.keys(EXERCISE_MAP);
+moveDL.innerHTML = moveNames.sort().map(n=>`<option value="${n.replace(/^./, c=>c.toUpperCase())}">`).join("");
+document.body.appendChild(moveDL);
+
 $("#exportBtn").addEventListener("click", ()=>{
   const dataStr = "data:application/json;charset=utf-8," + encodeURIComponent(JSON.stringify({weekKey, sessions}));
   const a = document.createElement("a"); a.href = dataStr; a.download = "hybrid_trainer_"+weekKey+".json"; a.click();
