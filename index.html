@@ -1,15 +1,19 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Hybrid Trainer — Standalone v8</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Hybrid Trainer — MEGA v9</title>
+<meta name="theme-color" content="#0b0b0c" />
 <style>
   :root { --bg:#0b0b0c; --card:#141416; --muted:#9aa0a6; --text:#e7e9ea; --accent:#1db954; --warn:#f59e0b; --danger:#ef4444; --line:#24262a; }
-  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Helvetica Neue",Arial}
-  .wrap{max-width:1080px;margin:24px auto;padding:0 16px}
-  h1{font-size:24px;margin:0 0 6px} h2{font-size:18px;margin:0 0 8px}
-  .row{display:grid;grid-template-columns:1fr 1fr;gap:16px} @media (max-width:900px){.row{grid-template-columns:1fr}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Helvetica Neue",Arial}
+  .wrap{max-width:1120px;margin:24px auto;padding:0 16px}
+  h1{font-size:24px;margin:0 0 6px}
+  h2{font-size:18px;margin:0 0 8px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:900px){.row{grid-template-columns:1fr}}
   .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
   .muted{color:var(--muted)} .small{font-size:12px}
   .btn{background:#1f2937;color:#fff;border:none;border-radius:12px;padding:8px 12px;cursor:pointer}
@@ -23,41 +27,48 @@
   .g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
   input[type=number],input[type=text],select{width:100%;background:#1f2227;border:1px solid #2a2d33;color:#e7e9ea;border-radius:10px;padding:8px}
   input[type=range]{width:100%}
-  .flex{display:flex;gap:8px;align-items:center}.space{justify-content:space-between}
-  .list{max-height:160px;overflow:auto;border-top:1px solid var(--line);margin-top:8px;padding-top:8px}
+  .flex{display:flex;gap:8px;align-items:center}
+  .space{justify-content:space-between}
+  .list{max-height:180px;overflow:auto;border-top:1px solid var(--line);margin-top:8px;padding-top:8px}
   .line{height:1px;background:var(--line);margin:10px 0}
   .chip{background:#1f2937;padding:4px 8px;border-radius:999px;font-size:12px;cursor:pointer}
   .chip:hover{background:#2a3648}
   label.small{display:flex;flex-direction:column;gap:4px}
-  .toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);background:#1f2937;color:#e7e9ea;border:1px solid #2a2d33;border-radius:12px;padding:8px 12px;opacity:0;pointer-events:none;transition:opacity .2s}
+  .toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);background:#1f2937;color:#e7e9ea;border:1px solid #2a2d33;border-radius:12px;padding:8px 12px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:9999}
   .toast.show{opacity:1}
+  .ghost{font-size:12px;color:#a7f3d0;margin-top:2px}
 </style>
 </head>
 <body>
   <div class="wrap">
     <div class="space flex">
       <div>
-        <h1>Hybrid Trainer — Standalone</h1>
-        <div class="muted">Single HTML. Bookmark this page. Data saves in your browser.</div>
+        <h1>Hybrid Trainer — MEGA v9</h1>
+        <div class="muted">Single HTML file. Saves locally, can sync via Google Sheets. Installable PWA.</div>
       </div>
       <div class="flex">
-        <button id="resetWeek" class="btn">Reset Week</button>
+        <button id="pwaBtn" class="btn">Install</button>
         <button id="exportBtn" class="btn">Export</button>
         <label class="btn"><input id="importFile" type="file" accept="application/json" style="display:none">Import</label>
+        <button id="resetWeek" class="btn">Reset Week</button>
       </div>
     </div>
 
     <div class="row" style="margin-top:12px">
       <div class="card">
         <h2>Readiness</h2>
-        <div class="muted small" style="margin-bottom:8px">0=Bad, 1=Fine, 2=Good. Worst days route to <b>GPP Bad</b>.</div>
+        <div class="muted small" style="margin-bottom:8px">0=Bad, 1=Fine, 2=Good. Worst days → <b>GPP Bad</b>.</div>
         <div class="grid">
           <div class="g3 grid">
             <label class="small">Sleep<input type="range" min="0" max="2" step="1" id="sleep"></label>
             <label class="small">Nutrition<input type="range" min="0" max="2" step="1" id="food"></label>
             <label class="small">Soreness<input type="range" min="0" max="2" step="1" id="sore"></label>
           </div>
-          <div><label class="small">Mood<input type="range" min="0" max="2" step="1" id="mood"></label></div>
+          <div class="g2 grid">
+            <label class="small">Mood<input type="range" min="0" max="2" step="1" id="mood"></label>
+            <label class="small">Morning BW<input type="number" inputmode="numeric" pattern="[0-9]*" id="bw" placeholder="lbs/kg"></label>
+          </div>
+          <div><label class="small">Sleep (hrs)<input type="number" inputmode="numeric" pattern="[0-9]*" id="sleepHrs" min="0" step="0.5"></label></div>
         </div>
       </div>
 
@@ -83,13 +94,20 @@
             </select>
           </label>
         </div>
+        <div class="line"></div>
+        <div class="g2 grid">
+          <label class="small">Sheets URL (optional)<input id="sheetsUrl" type="text" placeholder="https://script.google.com/.../exec"></label>
+          <label class="small">Sheets Token (optional)<input id="sheetsKey" type="text" placeholder="match API_KEY in Apps Script"></label>
+        </div>
+        <div class="flex" style="margin-top:6px"><button id="saveSheetsCfg" class="btn">Save Sync Settings</button><span id="syncState" class="small muted"></span></div>
       </div>
     </div>
 
     <div class="card" style="margin-top:14px">
       <h2 id="buildTitle">Build Today’s Session</h2>
-      <div class="muted small">The form adapts to your day type.</div>
+      <div class="muted small">Per-set <b>Fail</b> = only mark it if technique blows up or you truly failed. Otherwise it counts.</div>
 
+      <!-- Strength -->
       <div id="strengthView" style="display:none">
         <div class="line"></div>
         <div class="g4 grid">
@@ -104,10 +122,11 @@
           <label class="small">Rest (min)<input type="number" inputmode="numeric" pattern="[0-9]*" id="restMin" min="2" max="5" step="0.5" value="3"></label>
           <label class="small">Target RPE<input type="number" inputmode="numeric" pattern="[0-9]*" id="rpe" min="5" max="10" step="0.5" value="8"></label>
         </div>
+        <div class="small ghost" id="progGhost"></div>
 
         <div class="card" style="margin-top:10px">
           <div class="space flex">
-            <div><b>Work Sets</b> <span class="muted small">1–3 RIR. Only sets with good technique count.</span></div>
+            <div><b>Work Sets</b> <span class="muted small">1–3 RIR target.</span></div>
             <div class="small">Hard sets: <b id="hardCount">0</b></div>
           </div>
           <div id="setsWrap" class="grid"></div>
@@ -125,11 +144,12 @@
         </div>
       </div>
 
+      <!-- Endurance -->
       <div id="enduranceView" style="display:none">
         <div class="line"></div>
         <div class="g3 grid">
           <label class="small">Duration (min)<input id="z2" type="number" inputmode="numeric" pattern="[0-9]*" min="0" step="5" value="30"></label>
-          <label class="small">Distance<input id="dist" type="number" inputmode="numeric" pattern="[0-9]*" min="0" step="0.1" placeholder="e.g., 5"></label>
+          <label class="small">Distance<input id="dist" type="number" inputmode="numeric" pattern="[0-9]*" min="0" step="0.1" placeholder="5"></label>
           <label class="small">Unit<select id="distUnit"><option>mi</option><option>km</option></select></label>
         </div>
         <div class="g3 grid" style="margin-top:6px">
@@ -146,22 +166,25 @@
         <div style="margin-top:8px"><label class="small">Notes<input id="notes" type="text" placeholder="HR, pace, terrain…"></label></div>
       </div>
 
+      <!-- GPP Good -->
       <div id="gppGoodView" style="display:none">
         <div class="line"></div>
         <div class="card">
-          <div><b>Primary: Build a WOD</b></div>
+          <div><b>Build a WOD</b></div>
           <div id="wodWrap3" style="margin-top:8px"></div>
         </div>
       </div>
 
+      <!-- GPP Bad -->
       <div id="gppBadView" style="display:none">
         <div class="line"></div>
         <div class="card">
-          <div><b>Minimum-viable session</b> <span class="muted small">Preloaded 12′ AMRAP: Air Squat / Push-Up / Dead Hang.</span></div>
+          <div><b>Minimum viable session</b> <span class="muted small">12′ AMRAP: Air Squat / Push-Up / Dead Hang</span></div>
           <div id="wodWrap4" style="margin-top:8px"></div>
         </div>
       </div>
 
+      <!-- Recovery -->
       <div id="recoveryView" style="display:none">
         <div class="line"></div>
         <div class="g3 grid">
@@ -174,6 +197,7 @@
 
       <div class="line"></div>
 
+      <!-- Accessories -->
       <div id="accWrap">
         <div class="space flex">
           <h3 style="margin:0">Accessories</h3>
@@ -199,7 +223,7 @@
 
       <div class="space flex" style="margin-top:12px">
         <button class="btn green" id="saveBtn">Save Session</button>
-        <div class="muted small">Compounds rest ≥2–3′ · Accessories 60–90s · WOD minutes count as vigorous</div>
+        <div class="muted small">Compounds rest ≥2–3′ · Accessories 60–90s · WOD time counts as vigorous</div>
       </div>
     </div>
 
@@ -235,9 +259,9 @@
           <div id="endStatus" class="pill" style="margin-top:6px"></div>
         </div>
         <div class="card">
-          <div>Interference Check</div>
-          <div id="interf" class="small muted" style="margin-top:6px">No data yet.</div>
-          <div class="muted small" style="margin-top:6px">Tip: Heavy squats/deads pair best with row/bike or space runs by ≥6 h.</div>
+          <div>Benchmarks</div>
+          <div class="small" id="bmNext">Next due: —</div>
+          <div id="bmList" class="list"></div>
         </div>
       </div>
       <div class="card" style="margin-top:12px">
@@ -245,40 +269,68 @@
         <div id="hist" class="list"></div>
       </div>
       <div class="muted small" style="margin-top:8px;text-align:center">
-        Built around dose–response for hypertrophy (≈10–14 hard sets/group/wk), rest ≥2–3′ on compounds, and minimal concurrent interference.
+        PWA cache v9 · Use Sheets Sync to keep devices aligned.
       </div>
     </div>
   </div>
 
-<div id="toast" class="toast"></div>
+  <div id="toast" class="toast"></div>
 
 <script>
-// ---------- Utilities ----------
-const $ = sel => document.querySelector(sel);
-const $$ = sel => Array.from(document.querySelectorAll(sel));
+/* ================= Versions & Storage ================= */
+const APP_VERSION = 9;
+const STORE_VERSION = 2;
+
+/* ================= Utilities ================= */
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
 const uid = () => Math.random().toString(36).slice(2,9);
 const todayISO = () => { const d=new Date(); d.setHours(0,0,0,0); return d.toISOString(); };
-const weekKey = (()=>{
-  const d = new Date();
-  const onejan = new Date(d.getFullYear(),0,1);
-  const week = Math.ceil((((d - onejan)/86400000) + onejan.getDay() + 1)/7);
-  return d.getFullYear()+"-W"+String(week).padStart(2,"0");
-})();
-function load(key, fallback){ try{ const s=localStorage.getItem(key); return s?JSON.parse(s):fallback }catch{ return fallback } }
-function save(key, value){ localStorage.setItem(key, JSON.stringify(value)) }
+const weekKey = (()=>{ const d=new Date(), onejan=new Date(d.getFullYear(),0,1); const w=Math.ceil((((d-onejan)/86400000)+onejan.getDay()+1)/7); return `${d.getFullYear()}-W${String(w).padStart(2,"0")}`; })();
+function load(k,f){ try{ const s=localStorage.getItem(k); return s?JSON.parse(s):f }catch{ return f } }
+function save(k,v){ localStorage.setItem(k, JSON.stringify(v)) }
 function badge(el, ok, onTxt="On track", offTxt="Low"){ el.className = "pill " + (ok ? "ok" : "warn"); el.textContent = ok ? onTxt : offTxt; }
-function recommend(sleep,food,sore,mood){
-  const n=(sleep+food+sore+mood)/8; // 0..1
-  if(n>=0.82) return "Strength";
-  if(n>=0.65) return "GPP Good";
-  if(n>=0.48) return "Endurance";
-  return "GPP Bad";
-}
 function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"), 2200); }
 
-// ---------- Data ----------
-const SESS_KEY = "sessions:"+weekKey;
-let sessions = load(SESS_KEY, []);
+/* ================= Sheets Sync Config ================= */
+const SHEETS_URL = localStorage.getItem('SHEETS_URL') || '';
+const SHEETS_KEY = localStorage.getItem('SHEETS_KEY') || '';
+
+/* ================= Data & Migration ================= */
+const STORE_KEY = "store";
+let store = load(STORE_KEY, { version: 1, weeks: {} });
+
+function migrateIfNeeded(){
+  if(!store.version || store.version < STORE_VERSION){
+    Object.keys(store.weeks || {}).forEach(wk=>{
+      const v = store.weeks[wk];
+      if(Array.isArray(v)) store.weeks[wk] = { sessions: v, recovery: [], liftHistory: {} };
+      else {
+        v.sessions = v.sessions || [];
+        v.recovery = v.recovery || [];
+        v.liftHistory = v.liftHistory || {};
+      }
+      store.weeks[wk].sessions.forEach(s=>{
+        if(s.main && Array.isArray(s.main.setsDetail)){
+          s.main.setsDetail.forEach(sd=>{
+            if(sd.fail === undefined && sd.techOK !== undefined){ sd.fail = !sd.techOK; delete sd.techOK; }
+            if(sd.fail === undefined) sd.fail = false;
+            if(sd.rpe === undefined) sd.rpe = null;
+          });
+        }
+        s.version = APP_VERSION;
+      });
+    });
+    store.version = STORE_VERSION;
+    save(STORE_KEY, store);
+  }
+}
+migrateIfNeeded();
+
+function week(){ if(!store.weeks[weekKey]) store.weeks[weekKey] = { sessions: [], recovery: [], liftHistory: {} }; return store.weeks[weekKey]; }
+function saveStore(){ save(STORE_KEY, store); }
+
+/* ================= Targets, Pools, Map ================= */
 const TARGETS = { Quads:10, Posterior:10, Chest:10, Back:12, Delts:10, Arms:8, Calves:4, Tib:4, Core:8 };
 const TOP3 = {
   Hinge:["Conventional Deadlift","Trap Bar Deadlift","Romanian Deadlift"],
@@ -286,39 +338,39 @@ const TOP3 = {
   Oly:["Clean & Jerk","Clean","Snatch"]
 };
 const POOLS = {
-  Quads:["Front-Foot Elevated Split Squat","Front Squat (light)","Leg Press","Hack/Belt Squat","Step-Up (heavy)","Goblet Squat (tempo)","Sissy Squat (controlled)"],
-  Posterior:["Romanian Deadlift","Hip Thrust / Glute Bridge","Nordic Curl / Assisted","Seated Leg Curl","Back Extension (45°)","Good Morning (light)","Cable Pull-Through"],
-  Chest:["DB Bench Press","Incline DB Press","Machine Chest Press","Cable Fly (mid)","Push-Up (weighted)","Deficit Push-Up"],
-  Back:["Chest-Supported Row","One-Arm DB Row","Lat Pulldown","Seated Cable Row","Meadows Row","T-Bar Row","Pull-Up (strict)","Dead Hang (for time)"],
+  Quads:["Front-Foot Elevated Split Squat","Front Squat (light)","Leg Press","Hack/Belt Squat","Step-Up (heavy)","Goblet Squat (tempo)","Sissy Squat (controlled)","Wall Ball","Thruster","Walking Lunge"],
+  Posterior:["Romanian Deadlift","Hip Thrust / Glute Bridge","Nordic Curl / Assisted","Seated Leg Curl","Back Extension (45°)","Good Morning (light)","Cable Pull-Through","KB Swing","DB Snatch (alt)"],
+  Chest:["DB Bench Press","Incline DB Press","Machine Chest Press","Cable Fly (mid)","Push-Up (weighted)","Deficit Push-Up","Dips (assisted)"],
+  Back:["Chest-Supported Row","One-Arm DB Row","Lat Pulldown","Seated Cable Row","Meadows Row","T-Bar Row","Pull-Up (strict)","Dead Hang (for time)","Row (cal)"],
   Delts:["DB Lateral Raise","Cable Lateral Raise","Rear Delt Fly (machine)","Face Pull","Y-Raise (incline)","Leaning Lateral Raise","DB Overhead Press (light)"],
   Arms:["EZ-Bar Curl","Incline DB Curl","Hammer Curl","Rope Pressdown","Overhead Cable Extension","Close-Grip Push-Up"],
-  Calves:["Standing Calf Raise","Seated Calf Raise","Donkey Calf Raise","Single-Leg Calf Raise","Jump Rope"],
+  Calves:["Standing Calf Raise","Seated Calf Raise","Donkey Calf Raise","Single-Leg Calf Raise","Jump Rope","Double-Under"],
   Tib:["Tibialis Raise","Seated Dorsiflexion (band)","Tib Bar Raise"],
   Core:["Hanging Knee Raise","Toe-to-Bar (strict)","Cable Crunch","Ab Wheel Rollout","Reverse Crunch","Pallof Press","Side Plank (sec)","Copenhagen Plank (sec)","Dead Bug (slow)","Hollow Hold (sec)"]
 };
-// Flat exercise->target map for autocomplete
-const EXERCISE_MAP = (()=>{
-  const m = {};
+const EXERCISE_MAP = (()=>{ const m = {};
   Object.entries(POOLS).forEach(([t,arr])=> arr.forEach(n=> m[n.toLowerCase()] = t));
   [
-    ["KB Swing","Posterior"],["Kettlebell Swing","Posterior"],["Box Jump","Quads"],
-    ["Burpee","Chest"],["Wall Ball","Quads"],["Sit-Up","Core"],["Walking Lunge","Quads"],
-    ["Thruster","Quads"],["Double-Under","Calves"],["Row (cal)","Back"],["Cal Row","Back"],
-    ["Bike (cal)","Quads"],["Run","Quads"],["Ruck","Posterior"],["Dead Hang","Back"],
-    ["Pull-Up","Back"],["Push-Up","Chest"],["Air Squat","Quads"],["DB Snatch (alt)","Posterior"]
+    ["Kettlebell Swing","Posterior"],["Box Jump","Quads"],["Burpee","Chest"],["Sit-Up","Core"],
+    ["Thruster","Quads"],["Walking Lunge","Quads"],["Double-Under","Calves"],["Wall Ball","Quads"],
+    ["Cal Row","Back"],["Row (cal)","Back"],["Bike (cal)","Quads"],["Run","Quads"],["Ruck","Posterior"],
+    ["Dead Hang","Back"],["Pull-Up","Back"],["Push-Up","Chest"],["Air Squat","Quads"],["DB Snatch (alt)","Posterior"]
   ].forEach(([n,t])=> m[n.toLowerCase()] = t);
   return m;
 })();
 const poolIdx = JSON.parse(localStorage.getItem("poolIdx") || "{}");
 function nextPool(target,len){ const i = poolIdx[target]??0; poolIdx[target]=(i+1)%len; localStorage.setItem("poolIdx",JSON.stringify(poolIdx)); return i; }
+
 function defaultsFor(target){
   if(target==="Calves"||target==="Tib"||target==="Core") return {sets:3,reps:15};
   if(target==="Arms") return {sets:3,reps:12};
   return {sets:3,reps:10};
 }
-function totalsCalc(sessions){
+
+/* ================= Totals & Choice ================= */
+function totalsCalc(sess){
   const t = {quads:0,post:0,chest:0,back:0,delts:0,arms:0,calves:0,tib:0,core:0, z2:0,vig:0, strength:0};
-  sessions.forEach(s=>{
+  sess.forEach(s=>{
     if(s.main && s.main.pattern && s.main.sets){
       const add = s.main.sets;
       if(s.main.pattern==="Squat") t.quads += add;
@@ -361,22 +413,29 @@ function chooseLaggingTargetDayAware(tot, dayKind){
     ["Core",tot.core,TARGETS.Core],
   ];
   let best=null, score=1e9;
-  arr.forEach(([name,got,need])=>{
-    const base = need>0 ? (got/need) : 1;
-    const w = (weights[name]??1);
-    const s = base*w;
-    if(s<score){score=s;best=name;}
-  });
+  arr.forEach(([name,got,need])=>{ const base = need>0 ? (got/need) : 1; const w = (weights[name]??1); const s = base*w; if(s<score){score=s;best=name;} });
   return best||"Delts";
 }
 
-// ---------- UI State ----------
+/* ================= Progression (basic e1RM hint) ================= */
+function e1RM(load, reps){ return load * (1 + reps/30); }
+function suggestNext(movement, sets){
+  const good = sets.filter(s=> !s.fail && s.rpe!=null && s.rpe<=9.5 && s.reps>0 && s.load>0);
+  if(good.length===0) return "";
+  const best = Math.max(...good.map(s=> e1RM(s.load, s.reps)));
+  const upper = ["Bench","Press","Row","Pulldown","Pull-Up","DB"].some(k=> (movement||"").includes(k));
+  return upper ? "Next: push reps toward 10–12 before adding load" : "Next: +2.5–5 lb if ≤8 RPE at target reps";
+}
+
+/* ================= UI State Grabs ================= */
 const sleep = $("#sleep"), food=$("#food"), sore=$("#sore"), mood=$("#mood"); [sleep,food,sore,mood].forEach(el=> el.value = 1);
+const bw=$("#bw"), sleepHrs=$("#sleepHrs");
 const recoPill = $("#recoPill"), recoHint=$("#recoHint");
 const dayKind = $("#dayKind"), modWrap=$("#modWrap"), modality=$("#modality");
 const buildTitle=$("#buildTitle");
 const strengthView=$("#strengthView"), enduranceView=$("#enduranceView"), gppGoodView=$("#gppGoodView"), gppBadView=$("#gppBadView"), recoveryView=$("#recoveryView");
 const pattern=$("#pattern"), movement=$("#movement"), restMin=$("#restMin"), rpe=$("#rpe");
+const progGhost=$("#progGhost");
 const setsWrap=$("#setsWrap"), addSet=$("#addSet"), hardCount=$("#hardCount");
 const z2=$("#z2"), notes=$("#notes");
 const toggleWod=$("#toggleWod"), wodWrap=$("#wodWrap");
@@ -387,47 +446,60 @@ const newAccTarget=$("#newAccTarget"), newAccName=$("#newAccName"), newAccLoad=$
 const saveBtn=$("#saveBtn"), resetWeek=$("#resetWeek");
 const qSets=$("#qSets"), pSets=$("#pSets"), cSets=$("#cSets"), bSets=$("#bSets"), dSets=$("#dSets"), aSets=$("#aSets");
 const coreSets=$("#coreSets"), coreStatus=$("#coreStatus");
-const z2Min=$("#z2Min"), vigMin=$("#vigMin"), endStatus=$("#endStatus"), interf=$("#interf"), hist=$("#hist");
+const z2Min=$("#z2Min"), vigMin=$("#vigMin"), endStatus=$("#endStatus"), hist=$("#hist");
 const qStatus=$("#qStatus"), pStatus=$("#pStatus");
 const accNamesDL=$("#accNames");
+const sheetsUrl=$("#sheetsUrl"), sheetsKey=$("#sheetsKey"), saveSheetsCfg=$("#saveSheetsCfg"), syncState=$("#syncState");
+const pwaBtn=$("#pwaBtn");
 
+/* ================= Working State ================= */
 let workSets = [];
 let accessories = [];
-let wod = null; // object
+let wod = null;
 
-// ---------- Components ----------
-function renderTop3(){ const list = ({"Hinge":["Conventional Deadlift","Trap Bar Deadlift","Romanian Deadlift"],"Squat":["Back Squat","Front Squat","Pause Back Squat"],"Oly":["Clean & Jerk","Clean","Snatch"]}[pattern.value]) || [""]; movement.innerHTML = list.map(x=>`<option>${x}</option>`).join(""); }
-function addWorkSetRow(reps="", load="", rpeVal="", techOK=false){
+/* ================= Components ================= */
+function renderTop3(){
+  const list = ({"Hinge":TOP3.Hinge,"Squat":TOP3.Squat,"Oly":TOP3.Oly}[pattern.value]) || [""];
+  movement.innerHTML = list.map(x=>`<option>${x}</option>`).join("");
+  progGhost.textContent="";
+}
+function addWorkSetRow(reps="", load="", rpeVal="", fail=false){
   const id = uid();
   const row = document.createElement("div");
   row.className = "grid g4"; row.style.gridTemplateColumns = "1.1fr .8fr .8fr .8fr .6fr auto"; row.dataset.id = id;
-  row.innerHTML = `<div class="small muted" style="align-self:center">Set ${workSets.length+1} — ${movement.value||pattern.value}</div>
+  row.innerHTML = `
+    <div class="small muted" style="align-self:center">Set ${workSets.length+1} — ${movement.value||pattern.value}</div>
     <label class="small">Reps<input type="number" inputmode="numeric" pattern="[0-9]*" min="1" step="1" placeholder="Reps" value="${reps}"></label>
     <label class="small">Weight<input type="number" inputmode="numeric" pattern="[0-9]*" min="0" step="1" placeholder="Weight" value="${load}"></label>
     <label class="small">RPE<input type="number" inputmode="numeric" pattern="[0-9]*" min="5" max="10" step="0.5" placeholder="e.g., 8" value="${rpeVal}"></label>
-    <label class="small" style="align-items:center;gap:6px;flex-direction:row"><input type="checkbox" ${techOK?'checked':''}> <span>Good</span></label>
+    <label class="small" style="align-items:center;gap:6px;flex-direction:row"><input type="checkbox" ${fail?'checked':''}> <span>Fail</span></label>
     <button class="btn bad">X</button>`;
-  const [_, repsLab, loadLab, rpeLab, techLab, delBtn] = row.children;
+  const [_, repsLab, loadLab, rpeLab, failLab, delBtn] = row.children;
   const repsIn = repsLab.querySelector("input");
   const loadIn = loadLab.querySelector("input");
   const rpeIn = rpeLab.querySelector("input");
-  const techIn = techLab.querySelector("input");
-  delBtn.addEventListener("click", ()=>{ row.remove(); workSets = workSets.filter(s=>s.id!==id); recountSets(); });
+  const failIn = failLab.querySelector("input");
+  delBtn.addEventListener("click", ()=>{ row.remove(); workSets = workSets.filter(s=>s.id!==id); recountSets(); showProgGhost(); });
   setsWrap.appendChild(row);
-  workSets.push({id, reps:repsIn, load:loadIn, rpe:rpeIn, tech:techIn});
-  [repsIn, loadIn, rpeIn, techIn].forEach(inp=> inp.addEventListener("input", recountSets));
-  recountSets();
+  workSets.push({id, reps:repsIn, load:loadIn, rpe:rpeIn, fail:failIn});
+  [repsIn, loadIn, rpeIn, failIn].forEach(inp=> inp.addEventListener("input", ()=>{ recountSets(); showProgGhost(); }));
+  recountSets(); showProgGhost();
 }
 function recountSets(){
   let count = 0;
   workSets.forEach(s=>{
-    const r=Number(s.reps.value||0), l=Number(s.load.value||0); const ok = s.tech.checked;
+    const r=Number(s.reps.value||0), l=Number(s.load.value||0); const ok = !s.fail.checked;
     if(r>0 && l>0 && ok) count++;
   });
   hardCount.textContent = count;
 }
+function showProgGhost(){
+  const sets = workSets.map(s=>({reps:Number(s.reps.value||0), load:Number(s.load.value||0), rpe:(s.rpe.value?Number(s.rpe.value):null), fail:!!s.fail.checked}));
+  const tip = suggestNext(movement.value||pattern.value, sets);
+  progGhost.textContent = tip || "";
+}
 
-// ----- WOD Builder -----
+/* ================= WOD Builder ================= */
 function buildWodUI(container, preset){
   container.innerHTML = `<div class="g4 grid">
       <label class="small">Style
@@ -435,20 +507,13 @@ function buildWodUI(container, preset){
       </label>
       <label class="small">Name (optional)<input class="w-name" type="text" placeholder="e.g., 4RFT Row/Wall Ball/Sit-Up"></label>
       <label class="small">Time cap/duration (min)<input class="w-cap" type="number" inputmode="numeric" pattern="[0-9]*" min="0" step="1" value="20"></label>
-      <div class="small">Templates
-        <div class="flex" style="flex-wrap:wrap;margin-top:4px">
-          <span class="chip t-amrap12">AMRAP 12</span>
-          <span class="chip t-4rft">4RFT</span>
-          <span class="chip t-emom12">EMOM 12</span>
-          <span class="chip t-chipper20">Chipper 20′</span>
-        </div>
-      </div>
+      <label class="small">Rounds Counter<input class="w-rounds" type="number" inputmode="numeric" pattern="[0-9]*" min="1" step="1" value="${preset==='bad'?1:3}"></label>
     </div>
     <div class="line"></div>
     <div class="space flex"><div><b>Movements</b></div><button class="btn w-add">+ Add Movement</button></div>
     <div class="w-list grid" style="margin-top:6px"></div>
     <div class="muted small" style="margin-top:6px">WOD time counts as vigorous minutes.</div>`;
-  const style=container.querySelector(".w-style"), name=container.querySelector(".w-name"), cap=container.querySelector(".w-cap"), add=container.querySelector(".w-add"), list=container.querySelector(".w-list");
+  const style=container.querySelector(".w-style"), name=container.querySelector(".w-name"), cap=container.querySelector(".w-cap"), rounds=container.querySelector(".w-rounds"), add=container.querySelector(".w-add"), list=container.querySelector(".w-list");
 
   function addMove(nameV="", repsV="", loadV="", targetV=""){
     const row=document.createElement("div");
@@ -467,36 +532,14 @@ function buildWodUI(container, preset){
     const loadIn = loadLab.querySelector("input");
     const pill = nameLab.querySelector(".target-pill");
     nameIn.value = nameV; repsIn.value=repsV; loadIn.value=loadV; pill.textContent = targetV?("Target: "+targetV):"";
-    function resolveTarget(){
-      const t = EXERCISE_MAP[(nameIn.value||"").toLowerCase()] || "";
-      pill.textContent = t ? ("Target: "+t) : "";
-      row.dataset.target = t;
-    }
+    function resolveTarget(){ const t = EXERCISE_MAP[(nameIn.value||"").toLowerCase()] || ""; pill.textContent = t ? ("Target: "+t) : ""; row.dataset.target = t; }
     nameIn.addEventListener("input", resolveTarget);
     resolveTarget();
     del.addEventListener("click",()=>row.remove());
     list.appendChild(row);
   }
   add.addEventListener("click",()=>addMove("","","",""));
-
-  function applyTemplate(key){
-    const T = {
-      amrap12:{style:"AMRAP",name:"AMRAP 12",cap:12,moves:[["KB Swing","15","moderate"],["Box Jump","12","bodyweight"],["Burpee","9","bodyweight"]]},
-      r4:{style:"For Time",name:"4 Rounds For Time",cap:25,moves:[["400m Run","1","—"],["Wall Ball","20","light"],["Sit-Up","25","bodyweight"]]},
-      emom12:{style:"EMOM",name:"EMOM 12 (Alt)",cap:0,moves:[["Cal Row","12","—"],["Burpees","10","bodyweight"]]},
-      chip20:{style:"Chipper",name:"20′ Chipper",cap:20,moves:[["1000m Row","1","—"],["DB Snatch (alt)","50","light"],["Walking Lunge","100","bodyweight"]]},
-    }[key];
-    if(!T) return; style.value=T.style; name.value=T.name; cap.value=T.cap; list.innerHTML=""; T.moves.forEach(m=>addMove(...m));
-  }
-  container.querySelector(".t-amrap12").onclick=()=>applyTemplate("amrap12");
-  container.querySelector(".t-4rft").onclick=()=>applyTemplate("r4");
-  container.querySelector(".t-emom12").onclick=()=>applyTemplate("emom12");
-  container.querySelector(".t-chipper20").onclick=()=>applyTemplate("chip20");
-
-  if(preset==="bad"){
-    style.value="AMRAP"; name.value="12′ Easy Mover"; cap.value=12;
-    [["Air Squat","15","bodyweight"],["Push-Up","10","bodyweight"],["Dead Hang (sec)","20","bodyweight"]].forEach(m=>addMove(...m));
-  } else if(preset==="good"){ applyTemplate("amrap12"); }
+  if(preset==="bad"){ [["Air Squat","15","bodyweight"],["Push-Up","10","bodyweight"],["Dead Hang (sec)","20","bodyweight"]].forEach(m=>addMove(...m)); }
 
   return { read(){
     const moves=[...list.children].map(row=>{
@@ -504,11 +547,11 @@ function buildWodUI(container, preset){
       const target = row.dataset.target || "";
       return {name:nameLab.querySelector("input").value.trim(),reps:repsLab.querySelector("input").value.trim(),load:loadLab.querySelector("input").value.trim(), target};
     }).filter(m=>m.name);
-    return {style:style.value,name:name.value.trim(),cap:Number(cap.value)||0,moves};
+    return {style:style.value,name:name.value.trim(),cap:Number(cap.value)||0,rounds:Number(rounds.value)||1,moves};
   }};
 }
 
-// ---------- Accessories ----------
+/* ================= Accessories ================= */
 function addAccessory(target,name,sets,reps,load=""){
   const id = uid();
   const row = document.createElement("div");
@@ -527,13 +570,9 @@ function addAccessory(target,name,sets,reps,load=""){
   delBtn.addEventListener("click", ()=>{ row.remove(); accessories = accessories.filter(a=>a.id!==id); });
   accessories.push({id,target,name,setsEl,repsEl,loadEl});
 }
-function defaultsFor(target){
-  if(target==="Calves"||target==="Tib"||target==="Core") return {sets:3,reps:15};
-  if(target==="Arms") return {sets:3,reps:12};
-  return {sets:3,reps:10};
-}
 function autoAccessory(){
-  const t = totalsCalc(sessions.concat([draftSession({calcOnly:true})]));
+  const draft = draftSession({calcOnly:true});
+  const t = totalsCalc(week().sessions.concat([draft]));
   const pick = chooseLaggingTargetDayAware(
     { quads:t.quads, post:t.post, chest:t.chest, back:t.back, delts:t.delts, arms:t.arms, calves:t.calves, tib:t.tib, core:t.core },
     dayKind.value
@@ -556,55 +595,42 @@ function manualAccessory(){
   newAccName.value = ""; newAccLoad.value = "";
 }
 function recommendBundle(){
-  // Build three suggestions: complement -> core -> upper push/pull not stressed
   const k = dayKind.value;
-  const mainPat = (k==="Strength") ? pattern.value : (wod?.moves?.some(m=>["Walking Lunge","Air Squat","Wall Ball"].includes(m.name)) ? "Squat" : (wod?.moves?.some(m=>["KB Swing","DB Snatch (alt)"].includes(m.name)) ? "Hinge" : "None"));
-  const t = totalsCalc(sessions.concat([draftSession({calcOnly:true})]));
-  const picks = [];
-  function pushTarget(tgt){
-    if(!tgt) return;
-    if(picks.includes(tgt)) return;
-    picks.push(tgt);
+  const draft = draftSession({calcOnly:true});
+  const t = totalsCalc(week().sessions.concat([draft]));
+  let mainPat = "None";
+  if(k==="Strength"){ mainPat = pattern.value; }
+  else if(draft.wod && draft.wod.moves){
+    if(draft.wod.moves.some(m=>["Walking Lunge","Air Squat","Wall Ball","Thruster"].includes(m.name))) mainPat = "Squat";
+    else if(draft.wod.moves.some(m=>["KB Swing","DB Snatch (alt)"].includes(m.name))) mainPat = "Hinge";
   }
-  // 1) Complement based on main
-  if(mainPat==="Squat") pushTarget("Posterior");
-  else if(mainPat==="Hinge") pushTarget("Quads");
-  else if(mainPat==="Oly") { pushTarget("Back"); pushTarget("Delts"); }
-  else if(k==="Endurance") { pushTarget("Core"); pushTarget("Calves"); }
-  else if(k==="GPP Bad") { pushTarget("Core"); pushTarget("Tib"); }
-  // 2) Always include Core
-  pushTarget("Core");
-  // 3) Upper push/pull gap — choose lower coverage between Chest and Back
-  const upper = (t.back/targetOr1("Back")) <= (t.chest/targetOr1("Chest")) ? "Back" : "Chest";
-  pushTarget(upper);
-  // Fill to 3 if needed using lagging algorithm
-  const desired = 3;
-  while(picks.length<desired){
-    const nxt = chooseLaggingTargetDayAware(
-      { quads:t.quads, post:t.post, chest:t.chest, back:t.back, delts:t.delts, arms:t.arms, calves:t.calves, tib:t.tib, core:t.core },
-      k
-    );
-    pushTarget(nxt);
-  }
-  // Create one exercise per target based on rotation
+  const picks=[]; const push=(x)=>{ if(x && !picks.includes(x)) picks.push(x); };
+  if(mainPat==="Squat") push("Posterior");
+  else if(mainPat==="Hinge") push("Quads");
+  else if(mainPat==="Oly"){ push("Back"); push("Delts"); }
+  else if(k==="Endurance"){ push("Core"); push("Calves"); }
+  else if(k==="GPP Bad"){ push("Core"); push("Tib"); }
+  push("Core");
+  const upper = (t.back/TARGETS.Back) <= (t.chest/TARGETS.Chest) ? "Back" : "Chest";
+  push(upper);
+  while(picks.length<3){ push( chooseLaggingTargetDayAware({ quads:t.quads, post:t.post, chest:t.chest, back:t.back, delts:t.delts, arms:t.arms, calves:t.calves, tib:t.tib, core:t.core }, k) ); }
   picks.slice(0,3).forEach(tgt=>{
     const pool = POOLS[tgt]; const idx = nextPool(tgt, pool.length);
     const name = pool[idx]; const d = defaultsFor(tgt);
     addAccessory(tgt, name, d.sets, d.reps);
   });
-  function targetOr1(name){ const map={Back:TARGETS.Back,Chest:TARGETS.Chest}; return map[name]||1; }
 }
 
-// ---------- Draft & Save ----------
+/* ================= Draft & Save ================= */
 function draftSession({calcOnly=false}={}){
   const kind = dayKind.value;
   const main = (kind==="Strength") ? {
-    pattern: pattern.value==="Squat"?"Squat":(pattern.value==="Hinge"?"Hinge":(pattern.value==="Oly"?"Oly":"None")),
+    pattern: pattern.value,
     movement: movement.value||pattern.value,
     rpe: Number(rpe.value)||8,
     rest: Number(restMin.value)||3,
-    sets: workSets.filter(s=> Number(s.reps.value||0)>0 && Number(s.load.value||0)>0 && s.tech.checked ).length,
-    setsDetail: workSets.map(s=>({reps:Number(s.reps.value||0), load:Number(s.load.value||0), rpe:Number(s.rpe.value||0), techOK: !!s.tech.checked}))
+    sets: workSets.filter(s=> Number(s.reps.value||0)>0 && Number(s.load.value||0)>0 && !s.fail.checked ).length,
+    setsDetail: workSets.map(s=>({reps:Number(s.reps.value||0), load:Number(s.load.value||0), rpe:(s.rpe.value?Number(s.rpe.value):null), fail: !!s.fail.checked}))
   } : null;
 
   let end = undefined;
@@ -617,22 +643,44 @@ function draftSession({calcOnly=false}={}){
     end = { z2:z, vig:vig, modality: modality.value, dist, distUnit, ruckWeight };
   }
 
+  const recovery = { date: todayISO(), bw: (bw.value?Number(bw.value):null), sleepHrs: (sleepHrs.value?Number(sleepHrs.value):null) };
   const acc = accessories.map(a=>({target:a.target, name:a.name, sets:Number(a.setsEl.value||0), reps:Number(a.repsEl.value||0), load:a.loadEl.value}));
-  const obj = { id: uid(), date: todayISO(), kind, main, endurance: end, wod, acc };
+  const obj = { id: uid(), date: todayISO(), kind, main, endurance: end, wod, acc, version: APP_VERSION };
+  if(!calcOnly){ week().recovery.push(recovery); }
   return obj;
 }
-function saveSession(){
-  // capture WOD if visible
+
+async function saveSession(){
   const viewK = dayKind.value;
-  if(viewK==="Strength" && wodWrap.style.display!=="none" && wodWrap.innerHTML.trim()!==""){ wod = wodUI.read(); }
-  else if(viewK==="Endurance" && wodWrap2.style.display!=="none" && wodWrap2.innerHTML.trim()!==""){ wod = wodUI2.read(); }
-  else if(viewK==="GPP Good"){ wod = wodUI3 ? wodUI3.read() : (wodWrap3.innerHTML ? buildWodUI(wodWrap3,"good").read() : null); }
-  else if(viewK==="GPP Bad"){ wod = wodUI4 ? wodUI4.read() : (wodWrap4.innerHTML ? buildWodUI(wodWrap4,"bad").read() : null); }
-  else { wod = null; }
+  if(viewK==="Strength"){
+    if(wodWrap.style.display!=="none" && wodWrap.innerHTML.trim()!==""){ wod = (wodUI || buildWodUI(wodWrap)).read(); } else { wod=null; }
+  } else if(viewK==="Endurance"){
+    if(wodWrap2.style.display!=="none" && wodWrap2.innerHTML.trim()!==""){ wod = (wodUI2 || buildWodUI(wodWrap2)).read(); } else { wod=null; }
+  } else if(viewK==="GPP Good"){
+    wodUI3 = wodUI3 || buildWodUI(wodWrap3, "good"); wod = wodUI3.read();
+  } else if(viewK==="GPP Bad"){
+    wodUI4 = wodUI4 || buildWodUI(wodWrap4, "bad"); wod = wodUI4.read();
+  } else { wod=null; }
 
   const s = draftSession();
-  sessions.push(s);
-  save(SESS_KEY, sessions);
+
+  // Recovery guardrail: BW drop >1% WoW + high RPE -> cap lower-body accessories
+  try{
+    const bwEntries = week().recovery.filter(r=> r.bw!=null);
+    if(bwEntries.length>=2){
+      const last = bwEntries[bwEntries.length-1].bw, prev = bwEntries[0].bw;
+      if(prev>0 && (prev-last)/prev > 0.01){
+        const rpeAvg = (s.main && s.main.setsDetail.length) ? (s.main.setsDetail.map(x=>x.rpe||0).filter(x=>x>0).reduce((a,b)=>a+b,0) / Math.max(1, s.main.setsDetail.filter(x=>x.rpe>0).length)) : 0;
+        if(rpeAvg>=8.5){
+          s.acc = (s.acc||[]).map(a=> (a.target==="Quads"||a.target==="Posterior") ? {...a, sets: Math.min(a.sets, 2) } : a );
+        }
+      }
+    }
+  }catch(e){}
+
+  week().sessions.push(s);
+  saveStore();
+  sheetsPost(s).catch(()=>{}); // background, don't block
   // clear draft
   workSets=[]; setsWrap.innerHTML=""; hardCount.textContent="0"; if(dayKind.value==="Strength") addWorkSetRow();
   accessories=[]; accList.innerHTML="";
@@ -642,35 +690,43 @@ function saveSession(){
   toast("Session saved.");
 }
 
-// ---------- Dashboard ----------
+/* ================= Dashboard ================= */
 function renderDashboard(){
-  const t = totalsCalc(sessions);
+  const t = totalsCalc(week().sessions);
+  z2Min.textContent = t.z2+"′"; vigMin.textContent = t.vig+"′";
   qSets.textContent = t.quads; pSets.textContent = t.post; cSets.textContent = t.chest; bSets.textContent = t.back; dSets.textContent = t.delts; aSets.textContent = t.arms;
   coreSets.textContent = t.core;
-  z2Min.textContent = t.z2+"′"; vigMin.textContent = t.vig+"′";
   badge(qStatus, t.quads>=TARGETS.Quads); badge(pStatus, t.post>=TARGETS.Posterior);
   badge(coreStatus, t.core>=TARGETS.Core);
   const endOK = (t.z2>=150) || (t.vig>=75) || ((t.z2*0.5 + t.vig)>=75);
   badge(endStatus, endOK, "On track", "Low this week");
-  const runAdj = sessions.some(s=> s.endurance && s.endurance.modality==="Run" && (s.endurance.z2+s.endurance.vig)>0 && s.kind==="Strength");
-  interf.textContent = runAdj ? "Running near Strength detected — prefer Row/Bike or separate by ≥6 h." : "No obvious red flags.";
-  hist.innerHTML = sessions.map(s=>{
+  hist.innerHTML = week().sessions.map(s=>{
     const d=new Date(s.date).toLocaleDateString();
-    const tag = s.kind==="Strength" ? (s.main?.movement || s.main?.pattern) : (s.endurance?.modality || s.wod?.name || "");
+    const tag = s.kind==="Strength" ? (s.main?.movement || s.main?.pattern) : (s.wod?.name || s.endurance?.modality || (s.wod?.moves?.[0]?.name || ""));
     return `<div class="space flex"><span>${d} · ${s.kind}</span><span class="muted small">${tag||""}</span></div>`;
   }).join("") || '<div class="muted">No sessions yet.</div>';
+  // Benchmarks simple cadence
+  const wkNum = Number(weekKey.split("W")[1]||"0");
+  const due = (wkNum % 13) === 0;
+  $("#bmNext").textContent = "Next due: " + (due ? "This week" : "In " + (13 - (wkNum%13)) + " weeks");
+  $("#bmList").innerHTML = ["3RM Squat/Hinge", "8RM RDL/Front Squat", "10-min Row", "5k Run", "Pull-Ups AMRAP", "Hollow 60s"].map(x=> `<div>• ${x}</div>`).join("");
 }
 
-// ---------- Event wiring ----------
+/* ================= Recommendation & Adaptation ================= */
+function recommend(sleep,food,sore,mood){
+  const n=(sleep+food+sore+mood)/8;
+  if(n>=0.82) return "Strength";
+  if(n>=0.65) return "GPP Good";
+  if(n>=0.48) return "Endurance";
+  return "GPP Bad";
+}
 function updateReco(){
   const r = recommend(Number(sleep.value),Number(food.value),Number(sore.value),Number(mood.value));
   dayKind.value = r;
   recoPill.textContent = r;
-  recoHint.textContent = (r==="Strength")?"Long rests · 3–6 reps · RPE 7–9":(r==="Endurance")?"30–40′ Zone 2 preferred":"";
+  recoHint.textContent = (r==="Strength")?"Long rests · 3–6 reps · RPE 7–9":(r==="Endurance")?"30–40′ Z2 preferred":"";
   adaptBuilder();
 }
-[sleep,food,sore,mood].forEach(el=> el.addEventListener("input", updateReco));
-
 function adaptBuilder(){
   const k = dayKind.value;
   $("#modWrap").style.display = (k==="Endurance") ? "" : "none";
@@ -689,33 +745,22 @@ function adaptBuilder(){
   if(k==="Strength"){ if(!movement.options.length) renderTop3(); if(workSets.length===0) addWorkSetRow(); }
   if(k==="GPP Good"){ wodUI3 = buildWodUI(wodWrap3, "good"); }
   if(k==="GPP Bad"){ wodUI4 = buildWodUI(wodWrap4, "bad"); }
+  if(k==="Endurance"){ $("#ruckWrap").style.display = (modality.value==="Ruck") ? "" : "none"; }
 }
+[sleep,food,sore,mood].forEach(el=> el.addEventListener("input", updateReco));
 dayKind.addEventListener("change", adaptBuilder);
-pattern.addEventListener("change", ()=>{ renderTop3(); });
-renderTop3();
+pattern.addEventListener("change", ()=>{ renderTop3(); progGhost.textContent=""; });
 addSet.addEventListener("click", ()=> addWorkSetRow());
 let wodUI=null, wodUI2=null, wodUI3=null, wodUI4=null;
-toggleWod.addEventListener("click", ()=>{
-  if(wodWrap.style.display==="none" || !wodWrap.style.display){ wodWrap.style.display=""; wodUI=buildWodUI(wodWrap); toggleWod.textContent="Remove WOD"; }
-  else { wodWrap.style.display="none"; wodWrap.innerHTML=""; toggleWod.textContent="+ Add WOD"; wod=null; }
-});
-toggleWod2.addEventListener("click", ()=>{
-  if(wodWrap2.style.display==="none" || !wodWrap2.style.display){ wodWrap2.style.display=""; wodUI2=buildWodUI(wodWrap2); toggleWod2.textContent="Remove WOD"; }
-  else { wodWrap2.style.display="none"; wodWrap2.innerHTML=""; toggleWod2.textContent="+ Add WOD"; wod=null; }
-});
-recommendAcc.addEventListener("click", autoAccessory);
-recommend3.addEventListener("click", recommendBundle);
-addManualAcc.addEventListener("click", manualAccessory);
-saveBtn.addEventListener("click", saveSession);
-resetWeek.addEventListener("click", ()=>{ if(confirm("Reset this week's data?")){ sessions=[]; save(SESS_KEY, sessions); renderDashboard(); } });
+toggleWod.addEventListener("click", ()=>{ if(wodWrap.style.display==="none" || !wodWrap.style.display){ wodWrap.style.display=""; wodUI=buildWodUI(wodWrap); toggleWod.textContent="Remove WOD"; } else { wodWrap.style.display="none"; wodWrap.innerHTML=""; toggleWod.textContent="+ Add WOD"; wod=null; }});
+toggleWod2.addEventListener("click", ()=>{ if(wodWrap2.style.display==="none" || !wodWrap2.style.display){ wodWrap2.style.display=""; wodUI2=buildWodUI(wodWrap2); toggleWod2.textContent="Remove WOD"; } else { wodWrap2.style.display="none"; wodWrap2.innerHTML=""; toggleWod2.textContent="+ Add WOD"; wod=null; }});
+modality.addEventListener("change", ()=>{ $("#ruckWrap").style.display = (modality.value==="Ruck") ? "" : "none"; });
 
-// Suggestions list for movement inputs (WOD & accessories)
+/* ================= Datalists ================= */
 const moveDL = document.createElement("datalist"); moveDL.id = "moveNames";
 const moveNames = Object.keys(EXERCISE_MAP);
 moveDL.innerHTML = moveNames.sort().map(n=>`<option value="${n.replace(/^./, c=>c.toUpperCase())}">`).join("");
 document.body.appendChild(moveDL);
-
-// Seed accessory datalist
 function seedAccDatalist(){
   const names = new Set();
   Object.values(POOLS).forEach(arr=> arr.forEach(n=>names.add(n)));
@@ -723,14 +768,121 @@ function seedAccDatalist(){
   accNamesDL.innerHTML = [...names].sort().map(n=>`<option value="${n}">`).join("");
 }
 seedAccDatalist();
-newAccName.addEventListener("input", ()=>{
-  const raw = (newAccName.value||"").toLowerCase();
-  const hit = EXERCISE_MAP[raw];
-  if(hit){ newAccTarget.value = hit; }
+newAccName.addEventListener("input", ()=>{ const raw = (newAccName.value||"").toLowerCase(); const hit = EXERCISE_MAP[raw]; if(hit){ newAccTarget.value = hit; } });
+
+/* ================= Sheets Sync ================= */
+function setSheetsConfig(url, key=''){
+  localStorage.setItem('SHEETS_URL', url||'');
+  localStorage.setItem('SHEETS_KEY', key||'');
+  syncState.textContent = url ? "Configured" : "Not configured";
+}
+sheetsUrl.value = localStorage.getItem('SHEETS_URL')||'';
+sheetsKey.value = localStorage.getItem('SHEETS_KEY')||'';
+syncState.textContent = sheetsUrl.value ? "Configured" : "Not configured";
+saveSheetsCfg.addEventListener("click", ()=>{ setSheetsConfig(sheetsUrl.value, sheetsKey.value); toast("Sync settings saved."); });
+
+async function sheetsPost(session){
+  const url = localStorage.getItem('SHEETS_URL')||'';
+  if(!url) return;
+  const key = localStorage.getItem('SHEETS_KEY')||'';
+  try{
+    await fetch(url + (key?("?key="+encodeURIComponent(key)):""), {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({...session, weekKey})
+    });
+  }catch(e){ console.warn("Sheets POST failed", e); }
+}
+async function sheetsGet(){
+  const url = localStorage.getItem('SHEETS_URL')||'';
+  if(!url) return [];
+  const key = localStorage.getItem('SHEETS_KEY')||'';
+  try{
+    const res = await fetch(url + (key?("?key="+encodeURIComponent(key)):""), { method:'GET' });
+    if(!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data.sessions) ? data.sessions : [];
+  }catch(e){ console.warn("Sheets GET failed", e); return []; }
+}
+function mergeSessions(existing, incoming){
+  const map = new Map();
+  existing.forEach(s=> map.set(s.id, s));
+  incoming.forEach(s=>{
+    const cur = map.get(s.id);
+    if(!cur){ map.set(s.id, s); return; }
+    const curHard = (cur.main?.sets||0) + (cur.acc||[]).reduce((a,b)=>a+(b.sets||0),0);
+    const incHard = (s.main?.sets||0) + (s.acc||[]).reduce((a,b)=>a+(b.sets||0),0);
+    if(incHard>curHard || (incHard===curHard && new Date(s.date)>new Date(cur.date))){ map.set(s.id, s); }
+  });
+  return [...map.values()];
+}
+
+/* ================= Export / Import ================= */
+$("#exportBtn").addEventListener("click", ()=>{
+  const blob = new Blob([JSON.stringify(store,null,2)], {type:'application/json'});
+  const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`hybrid_store_${weekKey}.json`; a.click();
+});
+$("#importFile").addEventListener("change", (e)=>{
+  const f = e.target.files && e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = ()=>{ try{ const data = JSON.parse(r.result); if(data && data.weeks){ store = data; saveStore(); renderDashboard(); toast("Import success."); } else toast("Invalid file."); }catch{ toast("Failed to parse JSON."); } };
+  r.readAsText(f);
 });
 
-// initial render
-updateReco(); adaptBuilder(); renderDashboard();
+/* ================= PWA (manifest + SW) ================= */
+let deferredPrompt=null;
+window.addEventListener('beforeinstallprompt', (e)=>{ e.preventDefault(); deferredPrompt=e; pwaBtn.style.display=''; });
+pwaBtn.addEventListener('click', async ()=>{ if(!deferredPrompt){ toast("Already installed or unsupported."); return; } deferredPrompt.prompt(); deferredPrompt=null; });
+(function(){ // manifest runtime
+  const manifest = {"name":"Hybrid Trainer","short_name":"HybridTrainer","start_url":"./","display":"standalone","background_color":"#0b0b0c","theme_color":"#0b0b0c","icons":[]};
+  const blob = new Blob([JSON.stringify(manifest)], {type:'application/json'}); const url = URL.createObjectURL(blob);
+  const link = document.createElement('link'); link.rel='manifest'; link.href=url; document.head.appendChild(link);
+})();
+(function(){ // service worker
+  const swCode = `const CACHE='hybrid-v9';self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./'])));self.skipWaiting()});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim()});self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=> r || fetch(e.request)))})`;
+  const blob = new Blob([swCode], {type:'text/javascript'}); const url = URL.createObjectURL(blob);
+  if('serviceWorker' in navigator){ navigator.serviceWorker.register(url).catch(()=>{}); }
+})();
+
+/* ================= Weekly Auto-Export Prompt ================= */
+function maybeWeeklyExport(){
+  const last = localStorage.getItem('EXPORT_LAST_WEEK')||'';
+  if(last !== weekKey){
+    setTimeout(()=>{
+      if(confirm("Export last week’s JSON for backup?")){
+        const keys = Object.keys(store.weeks).sort();
+        const idx = keys.indexOf(weekKey);
+        const wkKey = idx>0 ? keys[idx-1] : weekKey;
+        const data = store.weeks[wkKey] || {sessions:[],recovery:[],liftHistory:{}};
+        const blob = new Blob([JSON.stringify({[wkKey]:data},null,2)], {type:'application/json'});
+        const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`hybrid_${wkKey}.json`; a.click();
+        localStorage.setItem('EXPORT_LAST_WEEK', weekKey);
+      }
+    }, 800);
+  }
+}
+
+/* ================= Init & Wiring ================= */
+function renderDashboardAndUI(){ renderDashboard(); }
+function initialSync(){
+  sheetsGet().then(remote=>{
+    if(remote.length){
+      const merged = mergeSessions(week().sessions, remote);
+      week().sessions = merged;
+      saveStore();
+      renderDashboard();
+      toast("Synced from Sheets.");
+    }
+  });
+}
+
+$("#resetWeek").addEventListener("click", ()=>{ if(confirm("Reset this week's data?")){ store.weeks[weekKey]={sessions:[],recovery:[],liftHistory:{}}; saveStore(); renderDashboard(); } });
+$("#saveBtn").addEventListener("click", saveSession);
+$("#recommendAcc").addEventListener("click", autoAccessory);
+$("#recommend3").addEventListener("click", recommendBundle);
+$("#addManualAcc").addEventListener("click", manualAccessory);
+
+let wodUI=null, wodUI2=null, wodUI3=null, wodUI4=null;
+updateReco(); adaptBuilder(); renderDashboardAndUI(); maybeWeeklyExport(); initialSync();
+syncState.textContent = (localStorage.getItem('SHEETS_URL')||'') ? "Configured" : "Not configured";
 </script>
 </body>
 </html>
