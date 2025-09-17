@@ -59,19 +59,33 @@
         <h2>Readiness</h2>
         <div class="muted small" style="margin-bottom:8px">0=Bad, 1=Fine, 2=Good. Worst days → <b>GPP Bad</b>.</div>
         <div class="grid">
-          <div class="g3 grid">
-            <label class="small">Sleep<input type="range" min="0" max="2" step="1" id="sleep"></label>
-            <label class="small">Nutrition<input type="range" min="0" max="2" step="1" id="food"></label>
-            <label class="small">Soreness<input type="range" min="0" max="2" step="1" id="sore"></label>
-          </div>
-          <div class="g2 grid">
-            <label class="small">Mood<input type="range" min="0" max="2" step="1" id="mood"></label>
-            <label class="small">Morning BW<input type="number" inputmode="numeric" pattern="[0-9]*" id="bw" placeholder="lbs/kg"></label>
-          </div>
-          <div><label class="small">Sleep (hrs)<input type="number" inputmode="numeric" pattern="[0-9]*" id="sleepHrs" min="0" step="0.5"></label></div>
-        </div>
-      </div>
+  <div class="g3 grid">
+    <label class="small">Sleep
+      <input type="range" min="0" max="2" step="1" id="sleep" value="1">
+    </label>
+    <label class="small">Nutrition
+      <input type="range" min="0" max="2" step="1" id="food" value="1">
+    </label>
+    <label class="small">Soreness
+      <input type="range" min="0" max="2" step="1" id="sore" value="1">
+    </label>
+  </div>
 
+  <div class="g2 grid">
+    <label class="small">Mood
+      <input type="range" min="0" max="2" step="1" id="mood" value="1">
+    </label>
+    <label class="small">Morning BW
+      <input type="number" inputmode="numeric" pattern="[0-9]*" id="bw" placeholder="lbs/kg">
+    </label>
+  </div>
+
+  <div>
+    <label class="small">Sleep (hrs)
+      <input type="number" inputmode="numeric" pattern="[0-9]*" id="sleepHrs" min="0" step="0.5">
+    </label>
+  </div>
+</div>
       <div class="card">
         <h2>Recommendation</h2>
         <div class="flex" style="flex-wrap:wrap;gap:6px 8px;margin-bottom:8px">
@@ -428,29 +442,78 @@ function suggestNext(movement, sets){
 }
 
 /* ================= UI State Grabs ================= */
-const sleep = $("#sleep"), food=$("#food"), sore=$("#sore"), mood=$("#mood"); [sleep,food,sore,mood].forEach(el=> el.value = 1);
+const sleep = $("#sleep"), food=$("#food"), sore=$("#sore"), mood=$("#mood"); // HTML has value="1" defaults
 const bw=$("#bw"), sleepHrs=$("#sleepHrs");
 const recoPill = $("#recoPill"), recoHint=$("#recoHint");
 const dayKind = $("#dayKind"), modWrap=$("#modWrap"), modality=$("#modality");
-const buildTitle=$("#buildTitle");
-const strengthView=$("#strengthView"), enduranceView=$("#enduranceView"), gppGoodView=$("#gppGoodView"), gppBadView=$("#gppBadView"), recoveryView=$("#recoveryView");
-const pattern=$("#pattern"), movement=$("#movement"), restMin=$("#restMin"), rpe=$("#rpe");
-const progGhost=$("#progGhost");
-const setsWrap=$("#setsWrap"), addSet=$("#addSet"), hardCount=$("#hardCount");
-const z2=$("#z2"), notes=$("#notes");
-const toggleWod=$("#toggleWod"), wodWrap=$("#wodWrap");
-const toggleWod2=$("#toggleWod2"), wodWrap2=$("#wodWrap2");
-const wodWrap3=$("#wodWrap3"), wodWrap4=$("#wodWrap4");
-const accList=$("#accList"), recommendAcc=$("#recommendAcc"), recommend3=$("#recommend3");
-const newAccTarget=$("#newAccTarget"), newAccName=$("#newAccName"), newAccLoad=$("#newAccLoad"), addManualAcc=$("#addManualAcc");
-const saveBtn=$("#saveBtn"), resetWeek=$("#resetWeek");
-const qSets=$("#qSets"), pSets=$("#pSets"), cSets=$("#cSets"), bSets=$("#bSets"), dSets=$("#dSets"), aSets=$("#aSets");
-const coreSets=$("#coreSets"), coreStatus=$("#coreStatus");
-const z2Min=$("#z2Min"), vigMin=$("#vigMin"), endStatus=$("#endStatus"), hist=$("#hist");
-const qStatus=$("#qStatus"), pStatus=$("#pStatus");
-const accNamesDL=$("#accNames");
-const sheetsUrl=$("#sheetsUrl"), sheetsKey=$("#sheetsKey"), saveSheetsCfg=$("#saveSheetsCfg"), syncState=$("#syncState");
-const pwaBtn=$("#pwaBtn");
+// === more UI refs you actually use later ===
+const buildTitle = $("#buildTitle");
+
+const strengthView = $("#strengthView"),
+      enduranceView = $("#enduranceView"),
+      gppGoodView  = $("#gppGoodView"),
+      gppBadView   = $("#gppBadView"),
+      recoveryView = $("#recoveryView");
+
+const pattern  = $("#pattern"),
+      movement = $("#movement"),
+      restMin  = $("#restMin"),
+      rpe      = $("#rpe");
+
+const progGhost = $("#progGhost");
+
+const setsWrap  = $("#setsWrap"),
+      addSet    = $("#addSet"),
+      hardCount = $("#hardCount");
+
+const z2    = $("#z2"),
+      notes = $("#notes");
+
+const toggleWod  = $("#toggleWod"),
+      wodWrap    = $("#wodWrap"),
+      toggleWod2 = $("#toggleWod2"),
+      wodWrap2   = $("#wodWrap2"),
+      wodWrap3   = $("#wodWrap3"),
+      wodWrap4   = $("#wodWrap4");
+
+const accList       = $("#accList"),
+      recommendAcc  = $("#recommendAcc"),
+      recommend3    = $("#recommend3"),
+      newAccTarget  = $("#newAccTarget"),
+      newAccName    = $("#newAccName"),
+      newAccLoad    = $("#newAccLoad"),
+      addManualAcc  = $("#addManualAcc");
+
+const saveBtn   = $("#saveBtn"),
+      resetWeek = $("#resetWeek");
+// === extra UI refs (previously missing) ===
+const pwaBtn = $("#pwaBtn");
+
+// Datalist for accessories
+const accNamesDL = $("#accNames");
+
+// Dashboard refs
+const qSets = $("#qSets"), pSets = $("#pSets"),
+      cSets = $("#cSets"), bSets = $("#bSets"),
+      dSets = $("#dSets"), aSets = $("#aSets"),
+      coreSets = $("#coreSets"),
+      qStatus = $("#qStatus"), pStatus = $("#pStatus"), coreStatus = $("#coreStatus"),
+      endStatus = $("#endStatus"),
+      z2Min = $("#z2Min"), vigMin = $("#vigMin"),
+      hist = $("#hist"), bmNext = $("#bmNext"), bmList = $("#bmList");
+
+// Sheets config refs (you already use them later)
+const saveSheetsCfg = $("#saveSheetsCfg"),
+      sheetsUrl = $("#sheetsUrl"),
+      sheetsKey = $("#sheetsKey"),
+      syncState = $("#syncState");
+
+// safe coercion for sliders (fallback to 1="Fine")
+const v = el => {
+  const n = Number(el && el.value);
+  return Number.isFinite(n) ? n : 1;
+};
+
 
 /* ================= Working State ================= */
 let workSets = [];
@@ -713,20 +776,28 @@ function renderDashboard(){
 }
 
 /* ================= Recommendation & Adaptation ================= */
-function recommend(sleep,food,sore,mood){
-  const n=(sleep+food+sore+mood)/8;
+function recommend(s,f,so,m){
+  const n = (s+f+so+m)/8;  // 0..1
   if(n>=0.82) return "Strength";
   if(n>=0.65) return "GPP Good";
   if(n>=0.48) return "Endurance";
   return "GPP Bad";
 }
+
 function updateReco(){
-  const r = recommend(Number(sleep.value),Number(food.value),Number(sore.value),Number(mood.value));
+  const r = recommend(v(sleep), v(food), v(sore), v(mood));
   dayKind.value = r;
   recoPill.textContent = r;
-  recoHint.textContent = (r==="Strength")?"Long rests · 3–6 reps · RPE 7–9":(r==="Endurance")?"30–40′ Z2 preferred":"";
+  recoHint.textContent =
+    (r==="Strength") ? "Long rests · 3–6 reps · RPE 7–9" :
+    (r==="Endurance") ? "30–40′ Z2 preferred" : "";
   adaptBuilder();
 }
+
+// wire events + force initial compute
+[sleep,food,sore,mood].forEach(el=> el.addEventListener("input", updateReco));
+updateReco();
+
 function adaptBuilder(){
   const k = dayKind.value;
   $("#modWrap").style.display = (k==="Endurance") ? "" : "none";
@@ -747,7 +818,6 @@ function adaptBuilder(){
   if(k==="GPP Bad"){ wodUI4 = buildWodUI(wodWrap4, "bad"); }
   if(k==="Endurance"){ $("#ruckWrap").style.display = (modality.value==="Ruck") ? "" : "none"; }
 }
-[sleep,food,sore,mood].forEach(el=> el.addEventListener("input", updateReco));
 dayKind.addEventListener("change", adaptBuilder);
 pattern.addEventListener("change", ()=>{ renderTop3(); progGhost.textContent=""; });
 addSet.addEventListener("click", ()=> addWorkSetRow());
@@ -880,7 +950,6 @@ $("#recommendAcc").addEventListener("click", autoAccessory);
 $("#recommend3").addEventListener("click", recommendBundle);
 $("#addManualAcc").addEventListener("click", manualAccessory);
 
-let wodUI=null, wodUI2=null, wodUI3=null, wodUI4=null;
 updateReco(); adaptBuilder(); renderDashboardAndUI(); maybeWeeklyExport(); initialSync();
 syncState.textContent = (localStorage.getItem('SHEETS_URL')||'') ? "Configured" : "Not configured";
 </script>
