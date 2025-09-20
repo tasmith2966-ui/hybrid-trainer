@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Hybrid Trainer — MEGA v9</title>
+<title>Hybrid Trainer — v10 (DRAFT • do not publish)</title>
 <meta name="theme-color" content="#0b0b0c" />
 <style>
   :root { --bg:#0b0b0c; --card:#141416; --muted:#9aa0a6; --text:#e7e9ea; --accent:#1db954; --warn:#f59e0b; --danger:#ef4444; --line:#24262a; }
@@ -31,20 +31,20 @@
   .space{justify-content:space-between}
   .list{max-height:180px;overflow:auto;border-top:1px solid var(--line);margin-top:8px;padding-top:8px}
   .line{height:1px;background:var(--line);margin:10px 0}
-  .chip{background:#1f2937;padding:4px 8px;border-radius:999px;font-size:12px;cursor:pointer}
-  .chip:hover{background:#2a3648}
   label.small{display:flex;flex-direction:column;gap:4px}
   .toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);background:#1f2937;color:#e7e9ea;border:1px solid #2a2d33;border-radius:12px;padding:8px 12px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:9999}
   .toast.show{opacity:1}
   .ghost{font-size:12px;color:#a7f3d0;margin-top:2px}
+  .row-mini{display:grid;grid-template-columns:1.6fr 1fr 1fr auto auto;gap:8px}
+  .bw-pill{display:inline-flex;gap:6px;align-items:center;font-size:12px;background:#1f2937;border-radius:999px;padding:4px 8px}
 </style>
 </head>
 <body>
   <div class="wrap">
     <div class="space flex">
       <div>
-        <h1>Hybrid Trainer — MEGA v9</h1>
-        <div class="muted">Single HTML file. Saves locally, can sync via Google Sheets. Installable PWA.</div>
+        <h1>Hybrid Trainer — v10 (DRAFT)</h1>
+        <div class="muted small">Single HTML. Local save + optional Sheets sync. Installable PWA. <b>Do not publish</b>.</div>
       </div>
       <div class="flex">
         <button id="pwaBtn" class="btn">Install</button>
@@ -59,33 +59,19 @@
         <h2>Readiness</h2>
         <div class="muted small" style="margin-bottom:8px">0=Bad, 1=Fine, 2=Good. Worst days → <b>GPP Bad</b>.</div>
         <div class="grid">
-  <div class="g3 grid">
-    <label class="small">Sleep
-      <input type="range" min="0" max="2" step="1" id="sleep" value="1">
-    </label>
-    <label class="small">Nutrition
-      <input type="range" min="0" max="2" step="1" id="food" value="1">
-    </label>
-    <label class="small">Soreness
-      <input type="range" min="0" max="2" step="1" id="sore" value="1">
-    </label>
-  </div>
+          <div class="g3 grid">
+            <label class="small">Sleep <input type="range" min="0" max="2" step="1" id="sleep" value="1"></label>
+            <label class="small">Nutrition <input type="range" min="0" max="2" step="1" id="food" value="1"></label>
+            <label class="small">Soreness <input type="range" min="0" max="2" step="1" id="sore" value="1"></label>
+          </div>
+          <div class="g2 grid">
+            <label class="small">Mood <input type="range" min="0" max="2" step="1" id="mood" value="1"></label>
+            <label class="small">Morning BW <input type="number" inputmode="numeric" pattern="[0-9]*" id="bw" placeholder="lbs/kg"></label>
+          </div>
+          <div><label class="small">Sleep (hrs) <input type="number" inputmode="numeric" pattern="[0-9]*" id="sleepHrs" min="0" step="0.5"></label></div>
+        </div>
+      </div>
 
-  <div class="g2 grid">
-    <label class="small">Mood
-      <input type="range" min="0" max="2" step="1" id="mood" value="1">
-    </label>
-    <label class="small">Morning BW
-      <input type="number" inputmode="numeric" pattern="[0-9]*" id="bw" placeholder="lbs/kg">
-    </label>
-  </div>
-
-  <div>
-    <label class="small">Sleep (hrs)
-      <input type="number" inputmode="numeric" pattern="[0-9]*" id="sleepHrs" min="0" step="0.5">
-    </label>
-  </div>
-</div>
       <div class="card">
         <h2>Recommendation</h2>
         <div class="flex" style="flex-wrap:wrap;gap:6px 8px;margin-bottom:8px">
@@ -119,7 +105,7 @@
 
     <div class="card" style="margin-top:14px">
       <h2 id="buildTitle">Build Today’s Session</h2>
-      <div class="muted small">Per-set <b>Fail</b> = only mark it if technique blows up or you truly failed. Otherwise it counts.</div>
+      <div class="muted small">Per-set <b>Fail</b> = only mark if technique blows up or you truly failed. Otherwise it counts.</div>
 
       <!-- Strength -->
       <div id="strengthView" style="display:none">
@@ -245,9 +231,7 @@
       <h2>Weekly Dashboard</h2>
       <div class="row">
         <div class="card">
-          <div class="space flex">
-            <div>Lower Body Sets</div>
-          </div>
+          <div class="space flex"><div>Lower Body Sets</div></div>
           <div class="grid">
             <div>Quads: <b id="qSets">0</b> <span id="qStatus" class="pill"></span></div>
             <div>Posterior: <b id="pSets">0</b> <span id="pStatus" class="pill"></span></div>
@@ -283,7 +267,7 @@
         <div id="hist" class="list"></div>
       </div>
       <div class="muted small" style="margin-top:8px;text-align:center">
-        PWA cache v9 · Use Sheets Sync to keep devices aligned.
+        PWA cache v10 · Use Sheets Sync to keep devices aligned.
       </div>
     </div>
   </div>
@@ -292,8 +276,8 @@
 
 <script>
 /* ================= Versions & Storage ================= */
-const APP_VERSION = 9;
-const STORE_VERSION = 2;
+const APP_VERSION = 10;           // v10 draft
+const STORE_VERSION = 3;
 
 /* ================= Utilities ================= */
 const $ = s => document.querySelector(s);
@@ -312,19 +296,25 @@ const SHEETS_KEY = localStorage.getItem('SHEETS_KEY') || '';
 
 /* ================= Data & Migration ================= */
 const STORE_KEY = "store";
-let store = load(STORE_KEY, { version: 1, weeks: {} });
+let store = load(STORE_KEY, { version: 2, weeks: {} });
 
 function migrateIfNeeded(){
   if(!store.version || store.version < STORE_VERSION){
     Object.keys(store.weeks || {}).forEach(wk=>{
       const v = store.weeks[wk];
-      if(Array.isArray(v)) store.weeks[wk] = { sessions: v, recovery: [], liftHistory: {} };
+      if(Array.isArray(v)) store.weeks[wk] = { sessions: v, recovery: [], liftHistory: {}, version: APP_VERSION };
       else {
         v.sessions = v.sessions || [];
         v.recovery = v.recovery || [];
         v.liftHistory = v.liftHistory || {};
+        v.version = APP_VERSION;
       }
-      store.weeks[wk].sessions.forEach(s=>{
+      // Normalize sessions to carry wodEff + bwOnlyEff containers
+      v.sessions.forEach(s=>{
+        s.version = APP_VERSION;
+        s.wodEff = s.wodEff || { Quads:0, Posterior:0, Chest:0, Back:0, Delts:0, Arms:0, Calves:0, Tib:0, Core:0 };
+        s.wodEffBW = s.wodEffBW || { Quads:0, Posterior:0, Chest:0, Back:0, Delts:0, Arms:0, Calves:0, Tib:0, Core:0 };
+        // v9->v10: rename per-set techOK->fail handled previously; keep rpe nullable
         if(s.main && Array.isArray(s.main.setsDetail)){
           s.main.setsDetail.forEach(sd=>{
             if(sd.fail === undefined && sd.techOK !== undefined){ sd.fail = !sd.techOK; delete sd.techOK; }
@@ -332,7 +322,6 @@ function migrateIfNeeded(){
             if(sd.rpe === undefined) sd.rpe = null;
           });
         }
-        s.version = APP_VERSION;
       });
     });
     store.version = STORE_VERSION;
@@ -341,7 +330,7 @@ function migrateIfNeeded(){
 }
 migrateIfNeeded();
 
-function week(){ if(!store.weeks[weekKey]) store.weeks[weekKey] = { sessions: [], recovery: [], liftHistory: {} }; return store.weeks[weekKey]; }
+function week(){ if(!store.weeks[weekKey]) store.weeks[weekKey] = { sessions: [], recovery: [], liftHistory: {}, version: APP_VERSION }; return store.weeks[weekKey]; }
 function saveStore(){ save(STORE_KEY, store); }
 
 /* ================= Targets, Pools, Map ================= */
@@ -374,64 +363,110 @@ const EXERCISE_MAP = (()=>{ const m = {};
 })();
 const poolIdx = JSON.parse(localStorage.getItem("poolIdx") || "{}");
 function nextPool(target,len){ const i = poolIdx[target]??0; poolIdx[target]=(i+1)%len; localStorage.setItem("poolIdx",JSON.stringify(poolIdx)); return i; }
-
 function defaultsFor(target){
   if(target==="Calves"||target==="Tib"||target==="Core") return {sets:3,reps:15};
   if(target==="Arms") return {sets:3,reps:12};
   return {sets:3,reps:10};
 }
 
-/* ================= Totals & Choice ================= */
-function totalsCalc(sess){
-  const t = {quads:0,post:0,chest:0,back:0,delts:0,arms:0,calves:0,tib:0,core:0, z2:0,vig:0, strength:0};
-  sess.forEach(s=>{
-    if(s.main && s.main.pattern && s.main.sets){
-      const add = s.main.sets;
-      if(s.main.pattern==="Squat") t.quads += add;
-      if(s.main.pattern==="Hinge") t.post += add;
-      if(s.main.pattern==="Oly"){ t.quads += Math.ceil(add/2); t.post += Math.floor(add/2); }
-    }
-    if(s.endurance){ t.z2 += s.endurance.z2||0; t.vig += s.endurance.vig||0; }
-    (s.acc||[]).forEach(a=>{
-      if(a.target==="Quads") t.quads += a.sets;
-      if(a.target==="Posterior") t.post += a.sets;
-      if(a.target==="Chest") t.chest += a.sets;
-      if(a.target==="Back") t.back += a.sets;
-      if(a.target==="Delts") t.delts += a.sets;
-      if(a.target==="Arms") t.arms += a.sets;
-      if(a.target==="Calves") t.calves += a.sets;
-      if(a.target==="Tib") t.tib += a.sets;
-      if(a.target==="Core") t.core += a.sets;
-    });
-    if(s.kind==="Strength") t.strength++;
-  });
-  return t;
+/* =================== v10 CREDIT SYSTEM =================== */
+const CREDIT_TABLE = [
+  { key:"push-up", target:"Chest", variants:["Push-Up","Push Up","Deficit Push-Up","Ring Push-Up","Deficit Push Up","Ring Push Up"], bwBands:[[8,20,1],[21,35,1.5],[36,60,2]], loaded:{repMin:5, repMax:15, perSet:1} },
+  { key:"dips", target:"Chest", variants:["Dips","Ring Dips","Bar Dips","Assisted Dips"], bwBands:[[6,12,1],[13,20,1.5],[21,30,2]], loaded:{repMin:5, repMax:12, perSet:1} },
+  { key:"pull-up", target:"Back", variants:["Pull-Up","Pull Up","Strict Pull-Up","Kipping Pull-Up","Banded Pull-Up"], bwBands:[[4,8,1],[9,14,1.5],[15,22,2]], loaded:{repMin:3, repMax:10, perSet:1} },
+  { key:"ring-row", target:"Back", variants:["Ring Row","Body Row","TRX Row"], bwBands:[[8,15,1],[16,25,1.5],[26,40,2]], loaded:{repMin:8, repMax:15, perSet:1} },
+  { key:"row-cal", target:"Back", variants:["Row (cal)","Cal Row","Erg Row"], bwBands=[[20,40,1],[41,70,1.5],[71,100,2]], loaded:{repMin:0, repMax:0, perSet:0} },
+  { key:"air-squat", target:"Quads", variants:["Air Squat","Squat (air)","Prisoner Squat"], bwBands:[[12,25,1],[26,45,1.5],[46,70,2]], loaded:{repMin:6, repMax:15, perSet:1} },
+  { key:"wall-ball", target:"Quads", variants:["Wall Ball","WB"], bwBands:[[20,40,1],[41,70,1.5],[71,100,2]], loaded:{repMin:8, repMax:20, perSet:1} },
+  { key:"thruster", target:"Quads", variants:["Thruster","DB Thruster","Barbell Thruster"], bwBands:[[8,15,1],[16,25,1.5],[26,35,2]], loaded:{repMin:5, repMax:15, perSet:1} },
+  { key:"walking-lunge", target:"Quads", variants:["Walking Lunge","Lunge (walking)","Forward Lunge"], bwBands:[[16,30,1],[31,50,1.5],[51,70,2]], loaded:{repMin:8, repMax:20, perSet:1} },
+  { key:"box-jump", target:"Quads", variants:["Box Jump"], bwBands:[[10,20,1],[21,35,1.5],[36,50,2]], loaded:{repMin:0, repMax:0, perSet:0} },
+  { key:"kb-swing", target:"Posterior", variants:["KB Swing","Kettlebell Swing"], bwBands:[[10,20,1],[21,35,1.5],[36,50,2]], loaded:{repMin:10, repMax:20, perSet:1} },
+  { key:"db-snatch-alt", target:"Posterior", variants:["DB Snatch (alt)","Dumbbell Snatch"], bwBands:[[6,10,0.5],[11,16,1],[17,24,1.5]], loaded:{repMin:6, repMax:12, perSet:1} },
+  { key:"back-ext", target:"Posterior", variants:["Back Extension","Hip Extension","GHD Hip Extension"], bwBands:[[8,15,1],[16,25,1.5],[26,35,2]], loaded:{repMin:8, repMax:15, perSet:1} },
+  { key:"toes-to-bar", target:"Core", variants:["Toes-to-Bar","T2B","Hanging Knee Raise","Knee Raise"], bwBands:[[6,12,1],[13,20,1.5],[21,30,2]], loaded:{repMin:0, repMax:0, perSet:0} },
+  { key:"ab-wheel", target:"Core", variants:["Ab Wheel","Ab Rollout","Ab Wheel Rollout"], bwBands:[[8,15,1],[16,25,1.5]], loaded:{repMin:0, repMax:0, perSet:0} },
+  { key:"hollow-hold", target:"Core", variants:["Hollow Hold","Side Plank","Copenhagen Plank","Plank"], bwBands:[[25,40,0.5],[41,70,1],[71,100,1.5]], loaded:{repMin:0, repMax:0, perSet:0} },
+  { key:"sit-up", target:"Core", variants:["Sit-Up","Butterfly Sit-Up"], bwBands:[[15,30,1],[31,50,1.5],[51,80,2]], loaded:{repMin:0, repMax:0, perSet:0} },
+  { key:"calf-raise", target:"Calves", variants:["Calf Raise","Standing Calf Raise","Seated Calf Raise"], bwBands:[[15,25,1],[26,40,1.5]], loaded:{repMin:10, repMax:20, perSet:1} },
+  { key:"tib-raise", target:"Tib", variants:["Tibialis Raise","Tib Raise","Dorsiflexion"], bwBands:[[15,25,1],[26,40,1.5]], loaded:{repMin:12, repMax:25, perSet:1} }
+];
+const CREDIT_LOOKUP = (()=>{ const m=new Map(); CREDIT_TABLE.forEach((e,i)=> e.variants.forEach(v=> m.set(v.toLowerCase(),{idx:i,key:e.key,target:e.target}))); return m; })();
+const WEEKLY_BW_CAP = 6;           // per target
+const PER_MOVE_SESSION_CAP = 3;
+
+function isBWMove(move){ return !!move.bw; }
+function parseRepsOrTime(val){
+  if(!val) return 0;
+  const s = String(val).trim().toLowerCase();
+  const num = parseFloat(s.replace(/[^\d.]/g,''));
+  if(!Number.isFinite(num)) return 0;
+  if(/each|per side|\/arm|\/leg/.test(s)) return num*2;
+  return num;
 }
-function chooseLaggingTargetDayAware(tot, dayKind){
-  const weights = {
-    Strength:{Quads:.8,Posterior:.8,Chest:1,Back:1,Delts:1,Arms:1.1,Calves:1,Tib:1,Core:1},
-    "GPP Good":{Quads:.9,Posterior:.9,Chest:1,Back:1,Delts:1,Arms:1,Calves:1,Tib:1,Core:1},
-    "GPP Bad":{Quads:1.1,Posterior:1.1,Chest:1,Back:1,Delts:1,Arms:1,Calves:.9,Tib:.9,Core:1},
-    Endurance:{Quads:1.1,Posterior:1.1,Chest:.9,Back:.9,Delts:.9,Arms:.9,Calves:1,Tib:1,Core:1},
-    Recovery:{Quads:1.2,Posterior:1.2,Chest:1.2,Back:1.2,Delts:1.2,Arms:1.2,Calves:1.2,Tib:1.2,Core:1.2},
-  }[dayKind]||{};
-  const arr = [
-    ["Quads",tot.quads,TARGETS.Quads],
-    ["Posterior",tot.post,TARGETS.Posterior],
-    ["Chest",tot.chest,TARGETS.Chest],
-    ["Back",tot.back,TARGETS.Back],
-    ["Delts",tot.delts,TARGETS.Delts],
-    ["Arms",tot.arms,TARGETS.Arms],
-    ["Calves",tot.calves,TARGETS.Calves],
-    ["Tib",tot.tib,TARGETS.Tib],
-    ["Core",tot.core,TARGETS.Core],
-  ];
-  let best=null, score=1e9;
-  arr.forEach(([name,got,need])=>{ const base = need>0 ? (got/need) : 1; const w = (weights[name]??1); const s = base*w; if(s<score){score=s;best=name;} });
-  return best||"Delts";
+function creditBW(entry, totalUnits){
+  if(!entry.bwBands) return 0;
+  for(const [min,max,cred] of entry.bwBands){ if(totalUnits>=min && totalUnits<=max) return cred; }
+  const last = entry.bwBands[entry.bwBands.length-1];
+  return (totalUnits>(last?.[1]??1e9)) ? (last?.[2]||0) : 0;
+}
+function creditLoaded(entry, reps, setCount){
+  const {repMin,repMax,perSet}=entry.loaded||{};
+  if(!perSet) return 0;
+  if(!Number.isFinite(reps) || reps<=0) return 0;
+  if(reps<repMin || reps>repMax) return 0.5 * Math.min(setCount, PER_MOVE_SESSION_CAP);
+  return perSet * Math.min(setCount, PER_MOVE_SESSION_CAP);
+}
+function blankEff(){ return { Quads:0, Posterior:0, Chest:0, Back:0, Delts:0, Arms:0, Calves:0, Tib:0, Core:0 }; }
+function addEff(a,b){ const k=Object.keys(a); const r={}; k.forEach(x=> r[x]=(a[x]||0)+(b[x]||0)); return r; }
+
+function computeEffSetsForMove(move, sessionRounds=1){
+  const eff = blankEff();
+  const lookup = CREDIT_LOOKUP.get((move.name||"").toLowerCase());
+  const entry = lookup ? CREDIT_TABLE[lookup.idx] : null;
+  const tgt = entry?.target || move.target || null;
+  if(!tgt) return eff;
+
+  const perRound = parseRepsOrTime(move.reps);
+  const rounds = Math.max(1, Number(sessionRounds||1));
+  const total = perRound * rounds;
+
+  let credit = 0;
+  if(isBWMove(move)){
+    credit = creditBW(entry, total);
+  }else{
+    const setCount = Math.max(1, rounds);
+    credit = creditLoaded(entry, perRound, setCount);
+  }
+  credit = Math.min(credit, PER_MOVE_SESSION_CAP);
+  if(credit>0) eff[tgt]=credit;
+  return eff;
+}
+function applyWeeklyBWCap(currentBW, eff, isBW){
+  if(!isBW) return eff;
+  const out = {...eff};
+  for(const t of Object.keys(out)){
+    const have = currentBW[t]||0;
+    const room = Math.max(0, WEEKLY_BW_CAP - have);
+    if(out[t] > room) out[t] = room;
+  }
+  return out;
+}
+function computeWODEffSets(wod, weeklyBWSofar){
+  let eff = blankEff();
+  let bwEff = blankEff();
+  if(!wod || !Array.isArray(wod.moves)) return {effSets:eff, bwOnlyEffSets:bwEff};
+  const rounds = Math.max(1, Number(wod.rounds||1));
+  for(const m of wod.moves){
+    const perMove = computeEffSetsForMove(m, rounds);
+    const capped = applyWeeklyBWCap(weeklyBWSofar, perMove, !!m.bw);
+    eff = addEff(eff, capped);
+    if(m.bw){ bwEff = addEff(bwEff, capped); for(const t of Object.keys(capped)){ weeklyBWSofar[t]=(weeklyBWSofar[t]||0)+capped[t]; } }
+  }
+  return {effSets:eff, bwOnlyEffSets:bwEff};
 }
 
-/* ================= Progression (basic e1RM hint) ================= */
+/* ================= Progression (e1RM hint) ================= */
 function e1RM(load, reps){ return load * (1 + reps/30); }
 function suggestNext(movement, sets){
   const good = sets.filter(s=> !s.fail && s.rpe!=null && s.rpe<=9.5 && s.reps>0 && s.load>0);
@@ -442,12 +477,11 @@ function suggestNext(movement, sets){
 }
 
 /* ================= UI State Grabs ================= */
-const sleep = $("#sleep"), food=$("#food"), sore=$("#sore"), mood=$("#mood"); // HTML has value="1" defaults
+const sleep = $("#sleep"), food=$("#food"), sore=$("#sore"), mood=$("#mood");
 const bw=$("#bw"), sleepHrs=$("#sleepHrs");
 const recoPill = $("#recoPill"), recoHint=$("#recoHint");
 const dayKind = $("#dayKind"), modWrap=$("#modWrap"), modality=$("#modality");
-// === more UI refs you actually use later ===
-const buildTitle = $("#buildTitle");
+const pwaBtn = $("#pwaBtn");
 
 const strengthView = $("#strengthView"),
       enduranceView = $("#enduranceView"),
@@ -461,13 +495,9 @@ const pattern  = $("#pattern"),
       rpe      = $("#rpe");
 
 const progGhost = $("#progGhost");
-
 const setsWrap  = $("#setsWrap"),
       addSet    = $("#addSet"),
       hardCount = $("#hardCount");
-
-const z2    = $("#z2"),
-      notes = $("#notes");
 
 const toggleWod  = $("#toggleWod"),
       wodWrap    = $("#wodWrap"),
@@ -486,13 +516,7 @@ const accList       = $("#accList"),
 
 const saveBtn   = $("#saveBtn"),
       resetWeek = $("#resetWeek");
-// === extra UI refs (previously missing) ===
-const pwaBtn = $("#pwaBtn");
 
-// Datalist for accessories
-const accNamesDL = $("#accNames");
-
-// Dashboard refs
 const qSets = $("#qSets"), pSets = $("#pSets"),
       cSets = $("#cSets"), bSets = $("#bSets"),
       dSets = $("#dSets"), aSets = $("#aSets"),
@@ -500,20 +524,7 @@ const qSets = $("#qSets"), pSets = $("#pSets"),
       qStatus = $("#qStatus"), pStatus = $("#pStatus"), coreStatus = $("#coreStatus"),
       endStatus = $("#endStatus"),
       z2Min = $("#z2Min"), vigMin = $("#vigMin"),
-      hist = $("#hist"), bmNext = $("#bmNext"), bmList = $("#bmList");
-
-// Sheets config refs (you already use them later)
-const saveSheetsCfg = $("#saveSheetsCfg"),
-      sheetsUrl = $("#sheetsUrl"),
-      sheetsKey = $("#sheetsKey"),
-      syncState = $("#syncState");
-
-// safe coercion for sliders (fallback to 1="Fine")
-const v = el => {
-  const n = Number(el && el.value);
-  return Number.isFinite(n) ? n : 1;
-};
-
+      hist = $("#hist");
 
 /* ================= Working State ================= */
 let workSets = [];
@@ -575,12 +586,12 @@ function buildWodUI(container, preset){
     <div class="line"></div>
     <div class="space flex"><div><b>Movements</b></div><button class="btn w-add">+ Add Movement</button></div>
     <div class="w-list grid" style="margin-top:6px"></div>
-    <div class="muted small" style="margin-top:6px">WOD time counts as vigorous minutes.</div>`;
+    <div class="muted small" style="margin-top:6px">Mark BW if body-weight; otherwise it’s treated as loaded.</div>`;
   const style=container.querySelector(".w-style"), name=container.querySelector(".w-name"), cap=container.querySelector(".w-cap"), rounds=container.querySelector(".w-rounds"), add=container.querySelector(".w-add"), list=container.querySelector(".w-list");
 
-  function addMove(nameV="", repsV="", loadV="", targetV=""){
+  function addMove(nameV="", repsV="", loadV="", targetV="", bw=false){
     const row=document.createElement("div");
-    row.className="grid g4"; row.style.gridTemplateColumns="2.2fr 1fr 1fr auto";
+    row.className="row-mini";
     row.innerHTML=`
       <label class="small">Movement
         <input type="text" placeholder="e.g., KB Swing" list="moveNames">
@@ -588,27 +599,35 @@ function buildWodUI(container, preset){
       </label>
       <label class="small">Reps / Time<input type="text" placeholder="e.g., 15 or 30s"></label>
       <label class="small">Load<input type="text" placeholder="e.g., light / 24kg"></label>
+      <label class="small" style="align-items:center;flex-direction:row;gap:8px"><span class="bw-pill"><input class="w-bw" type="checkbox"> BW</span></label>
       <button class="btn bad">X</button>`;
-    const [nameLab,repsLab,loadLab,del]=row.children;
+    const [nameLab,repsLab,loadLab,bwLab,del]=row.children;
     const nameIn = nameLab.querySelector("input");
     const repsIn = repsLab.querySelector("input");
     const loadIn = loadLab.querySelector("input");
+    const bwIn   = bwLab.querySelector(".w-bw");
     const pill = nameLab.querySelector(".target-pill");
-    nameIn.value = nameV; repsIn.value=repsV; loadIn.value=loadV; pill.textContent = targetV?("Target: "+targetV):"";
+    nameIn.value = nameV; repsIn.value=repsV; loadIn.value=loadV; bwIn.checked = !!bw; pill.textContent = targetV?("Target: "+targetV):"";
     function resolveTarget(){ const t = EXERCISE_MAP[(nameIn.value||"").toLowerCase()] || ""; pill.textContent = t ? ("Target: "+t) : ""; row.dataset.target = t; }
     nameIn.addEventListener("input", resolveTarget);
     resolveTarget();
     del.addEventListener("click",()=>row.remove());
     list.appendChild(row);
   }
-  add.addEventListener("click",()=>addMove("","","",""));
-  if(preset==="bad"){ [["Air Squat","15","bodyweight"],["Push-Up","10","bodyweight"],["Dead Hang (sec)","20","bodyweight"]].forEach(m=>addMove(...m)); }
+  add.addEventListener("click",()=>addMove("","","","",false));
+  if(preset==="bad"){ [["Air Squat","15","bodyweight", "Quads", true],["Push-Up","10","bodyweight","Chest", true],["Dead Hang (sec)","20","bodyweight","Back", true]].forEach(m=>addMove(...m)); }
 
   return { read(){
     const moves=[...list.children].map(row=>{
-      const [nameLab,repsLab,loadLab] = row.querySelectorAll("label");
+      const [nameLab,repsLab,loadLab,bwLab] = row.querySelectorAll("label");
       const target = row.dataset.target || "";
-      return {name:nameLab.querySelector("input").value.trim(),reps:repsLab.querySelector("input").value.trim(),load:loadLab.querySelector("input").value.trim(), target};
+      return {
+        name:nameLab.querySelector("input").value.trim(),
+        reps:repsLab.querySelector("input").value.trim(),
+        load:loadLab.querySelector("input").value.trim(),
+        target,
+        bw: !!bwLab.querySelector(".w-bw").checked
+      };
     }).filter(m=>m.name);
     return {style:style.value,name:name.value.trim(),cap:Number(cap.value)||0,rounds:Number(rounds.value)||1,moves};
   }};
@@ -713,12 +732,24 @@ function draftSession({calcOnly=false}={}){
   return obj;
 }
 
+function sumEff(a,b){ return { Quads:a.Quads+b.Quads, Posterior:a.Posterior+b.Posterior, Chest:a.Chest+b.Chest, Back:a.Back+b.Back, Delts:a.Delts+b.Delts, Arms:a.Arms+b.Arms, Calves:a.Calves+b.Calves, Tib:a.Tib+b.Tib, Core:a.Core+b.Core }; }
+function getWeeklyBWSoFar(){
+  const out = blankEff();
+  (week().sessions||[]).forEach(s=>{
+    const bw = s.wodEffBW||blankEff();
+    for(const k of Object.keys(out)){ out[k]+= (bw[k]||0); }
+  });
+  return out;
+}
+
 async function saveSession(){
+  // Capture WOD from whichever view is visible
   const viewK = dayKind.value;
+  let wodUIref=null;
   if(viewK==="Strength"){
-    if(wodWrap.style.display!=="none" && wodWrap.innerHTML.trim()!==""){ wod = (wodUI || buildWodUI(wodWrap)).read(); } else { wod=null; }
+    if(wodWrap.style.display!=="none" && wodWrap.innerHTML.trim()!==""){ wodUIref = wodUI || buildWodUI(wodWrap); wod = wodUIref.read(); } else { wod=null; }
   } else if(viewK==="Endurance"){
-    if(wodWrap2.style.display!=="none" && wodWrap2.innerHTML.trim()!==""){ wod = (wodUI2 || buildWodUI(wodWrap2)).read(); } else { wod=null; }
+    if(wodWrap2.style.display!=="none" && wodWrap2.innerHTML.trim()!==""){ wodUIref = wodUI2 || buildWodUI(wodWrap2); wod = wodUIref.read(); } else { wod=null; }
   } else if(viewK==="GPP Good"){
     wodUI3 = wodUI3 || buildWodUI(wodWrap3, "good"); wod = wodUI3.read();
   } else if(viewK==="GPP Bad"){
@@ -727,7 +758,15 @@ async function saveSession(){
 
   const s = draftSession();
 
-  // Recovery guardrail: BW drop >1% WoW + high RPE -> cap lower-body accessories
+  // Compute WOD credits with weekly BW cap
+  let wodEff = blankEff(), wodEffBW = blankEff();
+  if(s.wod){
+    const weeklyBWSoFar = getWeeklyBWSoFar();
+    const {effSets, bwOnlyEffSets} = computeWODEffSets(s.wod, weeklyBWSoFar);
+    wodEff = effSets; wodEffBW = bwOnlyEffSets;
+  }
+
+  // Recovery guardrail (unchanged)
   try{
     const bwEntries = week().recovery.filter(r=> r.bw!=null);
     if(bwEntries.length>=2){
@@ -741,16 +780,75 @@ async function saveSession(){
     }
   }catch(e){}
 
+  // Persist WOD eff totals on the session for dashboard math
+  s.wodEff = wodEff;
+  s.wodEffBW = wodEffBW;
+
   week().sessions.push(s);
   saveStore();
-  sheetsPost(s).catch(()=>{}); // background, don't block
-  // clear draft
+  sheetsPost(s).catch(()=>{});
+
+  // Reset UI
   workSets=[]; setsWrap.innerHTML=""; hardCount.textContent="0"; if(dayKind.value==="Strength") addWorkSetRow();
   accessories=[]; accList.innerHTML="";
   wod=null; ["wodWrap","wodWrap2","wodWrap3","wodWrap4"].forEach(id=>{ const el=$("#"+id); if(el) el.innerHTML=""; });
   $("#toggleWod").textContent = "+ Add WOD"; $("#toggleWod2").textContent = "+ Add WOD";
   renderDashboard();
   toast("Session saved.");
+}
+
+/* ================= Totals & Choice ================= */
+function totalsCalc(sess){
+  const t = {quads:0,post:0,chest:0,back:0,delts:0,arms:0,calves:0,tib:0,core:0, z2:0,vig:0, strength:0};
+  (sess||[]).forEach(s=>{
+    if(s.main && s.main.pattern && s.main.sets){
+      const add = s.main.sets;
+      if(s.main.pattern==="Squat") t.quads += add;
+      if(s.main.pattern==="Hinge") t.post += add;
+      if(s.main.pattern==="Oly"){ t.quads += Math.ceil(add/2); t.post += Math.floor(add/2); }
+    }
+    if(s.endurance){ t.z2 += s.endurance.z2||0; t.vig += s.endurance.vig||0; }
+    (s.acc||[]).forEach(a=>{
+      if(a.target==="Quads") t.quads += a.sets;
+      if(a.target==="Posterior") t.post += a.sets;
+      if(a.target==="Chest") t.chest += a.sets;
+      if(a.target==="Back") t.back += a.sets;
+      if(a.target==="Delts") t.delts += a.sets;
+      if(a.target==="Arms") t.arms += a.sets;
+      if(a.target==="Calves") t.calves += a.sets;
+      if(a.target==="Tib") t.tib += a.sets;
+      if(a.target==="Core") t.core += a.sets;
+    });
+    // Add credited WOD sets (v10)
+    const we = s.wodEff || blankEff();
+    t.quads += we.Quads; t.post += we.Posterior; t.chest += we.Chest; t.back += we.Back; t.delts += we.Delts; t.arms += we.Arms; t.calves += we.Calves; t.tib += we.Tib; t.core += we.Core;
+
+    if(s.kind==="Strength") t.strength++;
+  });
+  return t;
+}
+function chooseLaggingTargetDayAware(tot, dayKind){
+  const weights = {
+    Strength:{Quads:.8,Posterior:.8,Chest:1,Back:1,Delts:1,Arms:1.1,Calves:1,Tib:1,Core:1},
+    "GPP Good":{Quads:.9,Posterior:.9,Chest:1,Back:1,Delts:1,Arms:1,Calves:1,Tib:1,Core:1},
+    "GPP Bad":{Quads:1.1,Posterior:1.1,Chest:1,Back:1,Delts:1,Arms:1,Calves:.9,Tib:.9,Core:1},
+    Endurance:{Quads:1.1,Posterior:1.1,Chest:.9,Back:.9,Delts:.9,Arms:.9,Calves:1,Tib:1,Core:1},
+    Recovery:{Quads:1.2,Posterior:1.2,Chest:1.2,Back:1.2,Delts:1.2,Arms:1.2,Calves:1.2,Tib:1.2,Core:1.2},
+  }[dayKind]||{};
+  const arr = [
+    ["Quads",tot.quads,TARGETS.Quads],
+    ["Posterior",tot.post,TARGETS.Posterior],
+    ["Chest",tot.chest,TARGETS.Chest],
+    ["Back",tot.back,TARGETS.Back],
+    ["Delts",tot.delts,TARGETS.Delts],
+    ["Arms",tot.arms,TARGETS.Arms],
+    ["Calves",tot.calves,TARGETS.Calves],
+    ["Tib",tot.tib,TARGETS.Tib],
+    ["Core",tot.core,TARGETS.Core],
+  ];
+  let best=null, score=1e9;
+  arr.forEach(([name,got,need])=>{ const base = need>0 ? (got/need) : 1; const w = (weights[name]??1); const s = base*w; if(s<score){score=s;best=name;} });
+  return best||"Delts";
 }
 
 /* ================= Dashboard ================= */
@@ -768,22 +866,22 @@ function renderDashboard(){
     const tag = s.kind==="Strength" ? (s.main?.movement || s.main?.pattern) : (s.wod?.name || s.endurance?.modality || (s.wod?.moves?.[0]?.name || ""));
     return `<div class="space flex"><span>${d} · ${s.kind}</span><span class="muted small">${tag||""}</span></div>`;
   }).join("") || '<div class="muted">No sessions yet.</div>';
-  // Benchmarks simple cadence
+  // Benchmarks (kept simple)
   const wkNum = Number(weekKey.split("W")[1]||"0");
   const due = (wkNum % 13) === 0;
-  $("#bmNext").textContent = "Next due: " + (due ? "This week" : "In " + (13 - (wkNum%13)) + " weeks");
-  $("#bmList").innerHTML = ["3RM Squat/Hinge", "8RM RDL/Front Squat", "10-min Row", "5k Run", "Pull-Ups AMRAP", "Hollow 60s"].map(x=> `<div>• ${x}</div>`).join("");
+  $("#bmNext")?.textContent = "Next due: " + (due ? "This week" : "In " + (13 - (wkNum%13)) + " weeks");
+  $("#bmList")?.innerHTML = ["3RM Squat/Hinge", "8RM RDL/Front Squat", "10-min Row", "5k Run", "Pull-Ups AMRAP", "Hollow 60s"].map(x=> `<div>• ${x}</div>`).join("");
 }
 
 /* ================= Recommendation & Adaptation ================= */
 function recommend(s,f,so,m){
-  const n = (s+f+so+m)/8;  // 0..1
+  const n = (s+f+so+m)/8;
   if(n>=0.82) return "Strength";
   if(n>=0.65) return "GPP Good";
   if(n>=0.48) return "Endurance";
   return "GPP Bad";
 }
-
+function v(el){ const n = Number(el && el.value); return Number.isFinite(n) ? n : 1; }
 function updateReco(){
   const r = recommend(v(sleep), v(food), v(sore), v(mood));
   dayKind.value = r;
@@ -793,8 +891,6 @@ function updateReco(){
     (r==="Endurance") ? "30–40′ Z2 preferred" : "";
   adaptBuilder();
 }
-
-// wire events + force initial compute
 [sleep,food,sore,mood].forEach(el=> el.addEventListener("input", updateReco));
 updateReco();
 
@@ -828,9 +924,10 @@ modality.addEventListener("change", ()=>{ $("#ruckWrap").style.display = (modali
 
 /* ================= Datalists ================= */
 const moveDL = document.createElement("datalist"); moveDL.id = "moveNames";
-const moveNames = Object.keys(EXERCISE_MAP);
-moveDL.innerHTML = moveNames.sort().map(n=>`<option value="${n.replace(/^./, c=>c.toUpperCase())}">`).join("");
+const moveNames = Object.keys(EXERCISE_MAP).concat(...CREDIT_TABLE.map(e=>e.variants)).map(s=>s.toLowerCase());
+moveDL.innerHTML = [...new Set(moveNames)].sort().map(n=>`<option value="${n.replace(/^./, c=>c.toUpperCase())}">`).join("");
 document.body.appendChild(moveDL);
+const accNamesDL = $("#accNames");
 function seedAccDatalist(){
   const names = new Set();
   Object.values(POOLS).forEach(arr=> arr.forEach(n=>names.add(n)));
@@ -846,6 +943,10 @@ function setSheetsConfig(url, key=''){
   localStorage.setItem('SHEETS_KEY', key||'');
   syncState.textContent = url ? "Configured" : "Not configured";
 }
+const saveSheetsCfg = $("#saveSheetsCfg"),
+      sheetsUrl = $("#sheetsUrl"),
+      sheetsKey = $("#sheetsKey"),
+      syncState = $("#syncState");
 sheetsUrl.value = localStorage.getItem('SHEETS_URL')||'';
 sheetsKey.value = localStorage.getItem('SHEETS_KEY')||'';
 syncState.textContent = sheetsUrl.value ? "Configured" : "Not configured";
@@ -901,16 +1002,8 @@ $("#importFile").addEventListener("change", (e)=>{
 let deferredPrompt=null;
 window.addEventListener('beforeinstallprompt', (e)=>{ e.preventDefault(); deferredPrompt=e; pwaBtn.style.display=''; });
 pwaBtn.addEventListener('click', async ()=>{ if(!deferredPrompt){ toast("Already installed or unsupported."); return; } deferredPrompt.prompt(); deferredPrompt=null; });
-(function(){ // manifest runtime
-  const manifest = {"name":"Hybrid Trainer","short_name":"HybridTrainer","start_url":"./","display":"standalone","background_color":"#0b0b0c","theme_color":"#0b0b0c","icons":[]};
-  const blob = new Blob([JSON.stringify(manifest)], {type:'application/json'}); const url = URL.createObjectURL(blob);
-  const link = document.createElement('link'); link.rel='manifest'; link.href=url; document.head.appendChild(link);
-})();
-(function(){ // service worker
-  const swCode = `const CACHE='hybrid-v9';self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./'])));self.skipWaiting()});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim()});self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=> r || fetch(e.request)))})`;
-  const blob = new Blob([swCode], {type:'text/javascript'}); const url = URL.createObjectURL(blob);
-  if('serviceWorker' in navigator){ navigator.serviceWorker.register(url).catch(()=>{}); }
-})();
+(function(){ const manifest = {"name":"Hybrid Trainer","short_name":"HybridTrainer","start_url":"./","display":"standalone","background_color":"#0b0b0c","theme_color":"#0b0b0c","icons":[]}; const blob = new Blob([JSON.stringify(manifest)], {type:'application/json'}); const url = URL.createObjectURL(blob); const link = document.createElement('link'); link.rel='manifest'; link.href=url; document.head.appendChild(link);})();
+(function(){ const swCode = `const CACHE='hybrid-v10';self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./'])));self.skipWaiting()});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim()});self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=> r || fetch(e.request)))})`; const blob = new Blob([swCode], {type:'text/javascript'}); const url = URL.createObjectURL(blob); if('serviceWorker' in navigator){ navigator.serviceWorker.register(url).catch(()=>{}); }})();
 
 /* ================= Weekly Auto-Export Prompt ================= */
 function maybeWeeklyExport(){
@@ -943,8 +1036,7 @@ function initialSync(){
     }
   });
 }
-
-$("#resetWeek").addEventListener("click", ()=>{ if(confirm("Reset this week's data?")){ store.weeks[weekKey]={sessions:[],recovery:[],liftHistory:{}}; saveStore(); renderDashboard(); } });
+$("#resetWeek").addEventListener("click", ()=>{ if(confirm("Reset this week's data?")){ store.weeks[weekKey]={sessions:[],recovery:[],liftHistory:{},version:APP_VERSION}; saveStore(); renderDashboard(); } });
 $("#saveBtn").addEventListener("click", saveSession);
 $("#recommendAcc").addEventListener("click", autoAccessory);
 $("#recommend3").addEventListener("click", recommendBundle);
