@@ -498,7 +498,7 @@ const progGhost = $("#progGhost");
 const setsWrap  = $("#setsWrap"),
       addSet    = $("#addSet"),
       hardCount = $("#hardCount");
-
+const z2 = $("#z2"), notes = $("#notes");
 const toggleWod  = $("#toggleWod"),
       wodWrap    = $("#wodWrap"),
       toggleWod2 = $("#toggleWod2"),
@@ -530,6 +530,28 @@ const qSets = $("#qSets"), pSets = $("#pSets"),
 let workSets = [];
 let accessories = [];
 let wod = null;
+function adaptBuilder(){
+  const k = dayKind.value;
+  $("#modWrap").style.display = (k==="Endurance") ? "" : "none";
+  $("#buildTitle").textContent = {
+    Strength:"Build Today’s Strength Session",
+    Endurance:"Build Today’s Endurance Session",
+    "GPP Good":"Build Today’s GPP (Good) Session",
+    "GPP Bad":"Build Today’s GPP (Bad) Session",
+    Recovery:"Plan Today’s Recovery"
+  }[k] || "Build Today’s Session";
+
+  strengthView.style.display = (k==="Strength")?"":"none";
+  enduranceView.style.display = (k==="Endurance")?"":"none";
+  gppGoodView.style.display = (k==="GPP Good")?"":"none";
+  gppBadView.style.display = (k==="GPP Bad")?"":"none";
+  recoveryView.style.display = (k==="Recovery")?"":"none";
+
+  if(k==="Strength"){ if(!movement.options.length) renderTop3(); if(workSets.length===0) addWorkSetRow(); }
+  if(k==="GPP Good"){ wodUI3 = buildWodUI(wodWrap3, "good"); }
+  if(k==="GPP Bad"){ wodUI4 = buildWodUI(wodWrap4, "bad"); }
+  if(k==="Endurance"){ $("#ruckWrap").style.display = (modality.value==="Ruck") ? "" : "none"; }
+}
 
 /* ================= Components ================= */
 function renderTop3(){
@@ -632,6 +654,26 @@ function buildWodUI(container, preset){
     return {style:style.value,name:name.value.trim(),cap:Number(cap.value)||0,rounds:Number(rounds.value)||1,moves};
   }};
 }
+let wodUI=null, wodUI2=null, wodUI3=null, wodUI4=null;
+
+pattern.addEventListener("change", ()=>{ renderTop3(); progGhost.textContent=""; });
+addSet.addEventListener("click", ()=> addWorkSetRow());
+
+toggleWod.addEventListener("click", ()=>{
+  if (wodWrap.style.display==="none" || !wodWrap.style.display){
+    wodWrap.style.display=""; wodUI = buildWodUI(wodWrap); toggleWod.textContent="Remove WOD";
+  } else {
+    wodWrap.style.display="none"; wodWrap.innerHTML=""; toggleWod.textContent="+ Add WOD"; wod=null;
+  }
+});
+toggleWod2.addEventListener("click", ()=>{
+  if (wodWrap2.style.display==="none" || !wodWrap2.style.display){
+    wodWrap2.style.display=""; wodUI2 = buildWodUI(wodWrap2); toggleWod2.textContent="Remove WOD";
+  } else {
+    wodWrap2.style.display="none"; wodWrap2.innerHTML=""; toggleWod2.textContent="+ Add WOD"; wod=null;
+  }
+});
+modality.addEventListener("change", ()=>{ $("#ruckWrap").style.display = (modality.value==="Ruck") ? "" : "none"; });
 
 /* ================= Accessories ================= */
 function addAccessory(target,name,sets,reps,load=""){
@@ -873,54 +915,76 @@ function renderDashboard(){
   $("#bmList")?.innerHTML = ["3RM Squat/Hinge", "8RM RDL/Front Squat", "10-min Row", "5k Run", "Pull-Ups AMRAP", "Hollow 60s"].map(x=> `<div>• ${x}</div>`).join("");
 }
 
-/* ================= Recommendation & Adaptation ================= */
-function recommend(s,f,so,m){
-  const n = (s+f+so+m)/8;
-  if(n>=0.82) return "Strength";
-  if(n>=0.65) return "GPP Good";
-  if(n>=0.48) return "Endurance";
+// ===== Recommendation & Adaptation (clean) =====
+function recommend(s, f, so, m) {
+  // sliders: 0..2 each. Normalize to 0..1 by /2, then average
+  const n = (s + f + so + m) / 8; // 0..1 (because 0..2 * 4 / 8)
+  if (n >= 0.82) return "Strength";
+  if (n >= 0.65) return "GPP Good";
+  if (n >= 0.48) return "Endurance";
   return "GPP Bad";
 }
-function v(el){ const n = Number(el && el.value); return Number.isFinite(n) ? n : 1; }
-function updateReco(){
-  const r = recommend(v(sleep), v(food), v(sore), v(mood));
-  dayKind.value = r;
-  recoPill.textContent = r;
-  recoHint.textContent =
-    (r==="Strength") ? "Long rests · 3–6 reps · RPE 7–9" :
-    (r==="Endurance") ? "30–40′ Z2 preferred" : "";
-  adaptBuilder();
-}
-[sleep,food,sore,mood].forEach(el=> el.addEventListener("input", updateReco));
-updateReco();
 
-function adaptBuilder(){
-  const k = dayKind.value;
-  $("#modWrap").style.display = (k==="Endurance") ? "" : "none";
-  $("#buildTitle").textContent = {
-    Strength:"Build Today’s Strength Session",
-    Endurance:"Build Today’s Endurance Session",
-    "GPP Good":"Build Today’s GPP (Good) Session",
-    "GPP Bad":"Build Today’s GPP (Bad) Session",
-    Recovery:"Plan Today’s Recovery"
-  }[k] || "Build Today’s Session";
-  strengthView.style.display = (k==="Strength")?"":"none";
-  enduranceView.style.display = (k==="Endurance")?"":"none";
-  gppGoodView.style.display = (k==="GPP Good")?"":"none";
-  gppBadView.style.display = (k==="GPP Bad")?"":"none";
-  recoveryView.style.display = (k==="Recovery")?"":"none";
-  if(k==="Strength"){ if(!movement.options.length) renderTop3(); if(workSets.length===0) addWorkSetRow(); }
-  if(k==="GPP Good"){ wodUI3 = buildWodUI(wodWrap3, "good"); }
-  if(k==="GPP Bad"){ wodUI4 = buildWodUI(wodWrap4, "bad"); }
-  if(k==="Endurance"){ $("#ruckWrap").style.display = (modality.value==="Ruck") ? "" : "none"; }
+// single source of truth for coercion
+const numVal = el => {
+  const n = Number(el?.value);
+  return Number.isFinite(n) ? n : 1; // default to "Fine"
+};
+
+function updateReco() {
+  // guard: if any slider missing, bail quietly
+  if (!sleep || !food || !sore || !mood) return;
+
+  const r = recommend(
+    numVal(sleep),
+    numVal(food),
+    numVal(sore),
+    numVal(mood)
+  );
+
+  // only overwrite the select if user hasn't manually picked something since last recompute
+  // we track a flag on the element
+  if (!dayKind.__manualPick) dayKind.value = r;
+
+  // UI pills
+  if (recoPill) recoPill.textContent = r;
+  if (recoHint) {
+    recoHint.textContent =
+      r === "Strength" ? "Long rests · 3–6 reps · RPE 7–9" :
+      r === "Endurance" ? "30–40′ Z2 preferred" : "";
+  }
+
+  adaptBuilder(); // re-render appropriate builder view
 }
-dayKind.addEventListener("change", adaptBuilder);
-pattern.addEventListener("change", ()=>{ renderTop3(); progGhost.textContent=""; });
-addSet.addEventListener("click", ()=> addWorkSetRow());
-let wodUI=null, wodUI2=null, wodUI3=null, wodUI4=null;
-toggleWod.addEventListener("click", ()=>{ if(wodWrap.style.display==="none" || !wodWrap.style.display){ wodWrap.style.display=""; wodUI=buildWodUI(wodWrap); toggleWod.textContent="Remove WOD"; } else { wodWrap.style.display="none"; wodWrap.innerHTML=""; toggleWod.textContent="+ Add WOD"; wod=null; }});
-toggleWod2.addEventListener("click", ()=>{ if(wodWrap2.style.display==="none" || !wodWrap2.style.display){ wodWrap2.style.display=""; wodUI2=buildWodUI(wodWrap2); toggleWod2.textContent="Remove WOD"; } else { wodWrap2.style.display="none"; wodWrap2.innerHTML=""; toggleWod2.textContent="+ Add WOD"; wod=null; }});
-modality.addEventListener("change", ()=>{ $("#ruckWrap").style.display = (modality.value==="Ruck") ? "" : "none"; });
+
+// Wire once, cleanly
+["input", "change"].forEach(evt => {
+  sleep.addEventListener(evt, updateReco);
+  food.addEventListener(evt, updateReco);
+  sore.addEventListener(evt, updateReco);
+  mood.addEventListener(evt, updateReco);
+});
+
+// When user changes the day type manually, mark it as manual until a slider moves again.
+dayKind.addEventListener("change", () => {
+  dayKind.__manualPick = true;
+  adaptBuilder();
+});
+
+// Reset the manual flag if any slider moves
+[sleep, food, sore, mood].forEach(el =>
+  el.addEventListener("input", () => { dayKind.__manualPick = false; })
+);
+
+// initial compute after DOM is ready
+document.addEventListener("DOMContentLoaded", () => {
+  // sanity defaults if HTML didn't set them
+  if (!sleep.value) sleep.value = 1;
+  if (!food.value)  food.value  = 1;
+  if (!sore.value)  sore.value  = 1;
+  if (!mood.value)  mood.value  = 1;
+  updateReco();
+});
 
 /* ================= Datalists ================= */
 const moveDL = document.createElement("datalist"); moveDL.id = "moveNames";
