@@ -1068,7 +1068,7 @@ pwaBtn.addEventListener('click', async ()=>{ if(!deferredPrompt){ toast("Already
 (function(){ const manifest = {"name":"Hybrid Trainer","short_name":"HybridTrainer","start_url":"./","display":"standalone","background_color":"#0b0b0c","theme_color":"#0b0b0c","icons":[]}; const blob = new Blob([JSON.stringify(manifest)], {type:'application/json'}); const url = URL.createObjectURL(blob); const link = document.createElement('link'); link.rel='manifest'; link.href=url; document.head.appendChild(link);})();
 (function(){
   const swCode = `
-    const CACHE='hybrid-v10b'; // <— bump this whenever you ship
+    const CACHE='hybrid-v10c'; // bump when you ship
     self.addEventListener('install', e=>{
       e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./'])));
       self.skipWaiting();
@@ -1078,7 +1078,12 @@ pwaBtn.addEventListener('click', async ()=>{ if(!deferredPrompt){ toast("Already
       self.clients.claim();
     });
     self.addEventListener('fetch', e=>{
-      e.respondWith(caches.match(e.request).then(r=> r || fetch(e.request)));
+      const req = e.request;
+      if (req.mode === 'navigate') {
+        e.respondWith(fetch(req).catch(()=>caches.match('./')));
+        return;
+      }
+      e.respondWith(caches.match(req).then(r=> r || fetch(req)));
     });
   `;
   const blob = new Blob([swCode], {type:'text/javascript'});
