@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Hybrid Trainer — v10.3</title>
+<title>Hybrid Trainer — Clean v11</title>
 <meta name="theme-color" content="#0b0b0c" />
 <style>
   :root { --bg:#0b0b0c; --card:#141416; --muted:#9aa0a6; --text:#e7e9ea; --accent:#1db954; --warn:#f59e0b; --danger:#ef4444; --line:#24262a; }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--text);font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Helvetica Neue",Arial}
+  body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Helvetica Neue",Arial}
   .wrap{max-width:1120px;margin:24px auto;padding:0 16px}
   h1{font-size:24px;margin:0 0 6px}
   h2{font-size:18px;margin:0 0 8px}
@@ -34,20 +34,21 @@
   label.small{display:flex;flex-direction:column;gap:4px}
   .toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);background:#1f2937;color:#e7e9ea;border:1px solid #2a2d33;border-radius:12px;padding:8px 12px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:9999}
   .toast.show{opacity:1}
-  .ghost{font-size:12px;color:#a7f3d0;margin-top:2px}
-  .row-mini{display:grid;grid-template-columns:1.6fr 1fr 1fr auto auto;gap:8px}
-  .bw-pill{display:inline-flex;gap:6px;align-items:center;font-size:12px;background:#1f2937;border-radius:999px;padding:4px 8px}
+  table{width:100%;border-collapse:collapse}
+  th,td{border:1px solid #2b2e35;padding:6px 8px;text-align:left}
+  th{background:#1a1d22;font-weight:600}
+  td input{width:100%}
+  .tag{font-size:11px;color:#93c5fd;background:#0b1b30;border:1px solid #173152;border-radius:999px;padding:2px 6px}
 </style>
 </head>
 <body>
   <div class="wrap">
     <div class="space flex">
       <div>
-        <h1>Hybrid Trainer — v10.3 </h1>
-        <div class="muted small">Single HTML. Local save + optional Sheets sync. Installable PWA. <b>Do not publish</b>.</div>
+        <h1>Hybrid Trainer — Clean v11</h1>
+        <div class="muted small">Single HTML. Local save + export/import. No service worker.</div>
       </div>
       <div class="flex">
-        <button id="pwaBtn" class="btn">Install</button>
         <button id="exportBtn" class="btn">Export</button>
         <label class="btn"><input id="importFile" type="file" accept="application/json" style="display:none">Import</label>
         <button id="resetWeek" class="btn">Reset Week</button>
@@ -94,12 +95,6 @@
             </select>
           </label>
         </div>
-        <div class="line"></div>
-        <div class="g2 grid">
-          <label class="small">Sheets URL (optional)<input id="sheetsUrl" type="text" placeholder="https://script.google.com/.../exec"></label>
-          <label class="small">Sheets Token (optional)<input id="sheetsKey" type="text" placeholder="match API_KEY in Apps Script"></label>
-        </div>
-        <div class="flex" style="margin-top:6px"><button id="saveSheetsCfg" class="btn">Save Sync Settings</button><span id="syncState" class="small muted"></span></div>
       </div>
     </div>
 
@@ -122,14 +117,21 @@
           <label class="small">Rest (min)<input type="number" inputmode="numeric" pattern="[0-9]*" id="restMin" min="2" max="5" step="0.5" value="3"></label>
           <label class="small">Target RPE<input type="number" inputmode="numeric" pattern="[0-9]*" id="rpe" min="5" max="10" step="0.5" value="8"></label>
         </div>
-        <div class="small ghost" id="progGhost"></div>
+        <div class="small muted" id="progGhost" style="margin-top:6px"></div>
 
         <div class="card" style="margin-top:10px">
           <div class="space flex">
-            <div><b>Work Sets</b> <span class="muted small">1–3 RIR target.</span></div>
+            <div><b>Main Lifts</b> <span class="muted small">Enter each work set</span></div>
             <div class="small">Hard sets: <b id="hardCount">0</b></div>
           </div>
-          <div id="setsWrap" class="grid"></div>
+          <div style="overflow:auto">
+            <table id="setsTable">
+              <thead>
+                <tr><th>#</th><th>Movement</th><th>Reps</th><th>Weight</th><th>RPE</th><th>Fail</th><th></th></tr>
+              </thead>
+              <tbody id="setsBody"></tbody>
+            </table>
+          </div>
           <div style="margin-top:8px" class="flex">
             <button class="btn" id="addSet">+ Add Set</button>
           </div>
@@ -207,12 +209,9 @@
               <option>Quads</option><option>Posterior</option><option>Calves</option><option>Tib</option>
               <option>Core</option>
             </select>
-            <input id="newAccName" type="text" placeholder="Accessory name" list="accNames">
-            <datalist id="accNames"></datalist>
+            <input id="newAccName" type="text" placeholder="Accessory name">
             <input id="newAccLoad" type="number" inputmode="numeric" pattern="[0-9]*" min="0" step="1" placeholder="Weight or plate">
             <button class="btn" id="addManualAcc">+ Add</button>
-            <button class="btn" id="recommendAcc">+ Recommend 1</button>
-            <button class="btn" id="recommend3">+ Recommend 3</button>
           </div>
         </div>
         <div class="muted small" id="accHelp" style="margin-top:6px">
@@ -257,17 +256,12 @@
           <div id="endStatus" class="pill" style="margin-top:6px"></div>
         </div>
         <div class="card">
-          <div>Benchmarks</div>
-          <div class="small" id="bmNext">Next due: —</div>
-          <div id="bmList" class="list"></div>
+          <div>History (This Week)</div>
+          <div id="hist" class="list"></div>
         </div>
       </div>
-      <div class="card" style="margin-top:12px">
-        <div>History (This Week)</div>
-        <div id="hist" class="list"></div>
-      </div>
       <div class="muted small" style="margin-top:8px;text-align:center">
-        PWA cache v10 · Use Sheets Sync to keep devices aligned.
+        Clean build v11 — no PWA cache.
       </div>
     </div>
   </div>
@@ -275,22 +269,9 @@
   <div id="toast" class="toast"></div>
 
 <script>
-  // DEV: nuke service workers & caching if needed
-if ('serviceWorker' in navigator) {
-  // set this once in console:  localStorage.DEV_NOSW = '1'
-  if (localStorage.DEV_NOSW === '1') {
-    navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister()));
-    // also bypass HTTP cache for this page load
-    if ('reload' in location) location.reload();
-  } else {
-    // always try to update the active SW on load (helps bust stale caches)
-    navigator.serviceWorker.getRegistration().then(r => r && r.update());
-  }
-}
-
 /* ================= Versions & Storage ================= */
-const APP_VERSION = 10;           // v10 draft
-const STORE_VERSION = 3;
+const APP_VERSION = 11;
+const STORE_KEY = "hybrid_v11";
 
 /* ================= Utilities ================= */
 const $ = s => document.querySelector(s);
@@ -300,201 +281,22 @@ const todayISO = () => { const d=new Date(); d.setHours(0,0,0,0); return d.toISO
 const weekKey = (()=>{ const d=new Date(), onejan=new Date(d.getFullYear(),0,1); const w=Math.ceil((((d-onejan)/86400000)+onejan.getDay()+1)/7); return `${d.getFullYear()}-W${String(w).padStart(2,"0")}`; })();
 function load(k,f){ try{ const s=localStorage.getItem(k); return s?JSON.parse(s):f }catch{ return f } }
 function save(k,v){ localStorage.setItem(k, JSON.stringify(v)) }
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"), 2000); }
 function badge(el, ok, onTxt="On track", offTxt="Low"){ el.className = "pill " + (ok ? "ok" : "warn"); el.textContent = ok ? onTxt : offTxt; }
-function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"), 2200); }
 
-/* ================= Sheets Sync Config ================= */
-const SHEETS_URL = localStorage.getItem('SHEETS_URL') || '';
-const SHEETS_KEY = localStorage.getItem('SHEETS_KEY') || '';
-
-/* ================= Data & Migration ================= */
-const STORE_KEY = "store";
-let store = load(STORE_KEY, { version: 2, weeks: {} });
-
-function migrateIfNeeded(){
-  if(!store.version || store.version < STORE_VERSION){
-    Object.keys(store.weeks || {}).forEach(wk=>{
-      const v = store.weeks[wk];
-      if(Array.isArray(v)) store.weeks[wk] = { sessions: v, recovery: [], liftHistory: {}, version: APP_VERSION };
-      else {
-        v.sessions = v.sessions || [];
-        v.recovery = v.recovery || [];
-        v.liftHistory = v.liftHistory || {};
-        v.version = APP_VERSION;
-      }
-      // Normalize sessions to carry wodEff + bwOnlyEff containers
-      v.sessions.forEach(s=>{
-        s.version = APP_VERSION;
-        s.wodEff = s.wodEff || { Quads:0, Posterior:0, Chest:0, Back:0, Delts:0, Arms:0, Calves:0, Tib:0, Core:0 };
-        s.wodEffBW = s.wodEffBW || { Quads:0, Posterior:0, Chest:0, Back:0, Delts:0, Arms:0, Calves:0, Tib:0, Core:0 };
-        // v9->v10: rename per-set techOK->fail handled previously; keep rpe nullable
-        if(s.main && Array.isArray(s.main.setsDetail)){
-          s.main.setsDetail.forEach(sd=>{
-            if(sd.fail === undefined && sd.techOK !== undefined){ sd.fail = !sd.techOK; delete sd.techOK; }
-            if(sd.fail === undefined) sd.fail = false;
-            if(sd.rpe === undefined) sd.rpe = null;
-          });
-        }
-      });
-    });
-    store.version = STORE_VERSION;
-    save(STORE_KEY, store);
-  }
-}
-migrateIfNeeded();
-
-function week(){ if(!store.weeks[weekKey]) store.weeks[weekKey] = { sessions: [], recovery: [], liftHistory: {}, version: APP_VERSION }; return store.weeks[weekKey]; }
+/* ================= Data ================= */
+let store = load(STORE_KEY, { version: APP_VERSION, weeks: {} });
+function week(){ if(!store.weeks[weekKey]) store.weeks[weekKey] = { sessions: [], recovery: [] }; return store.weeks[weekKey]; }
 function saveStore(){ save(STORE_KEY, store); }
 
-/* ================= Targets, Pools, Map ================= */
-const TARGETS = { Quads:10, Posterior:10, Chest:10, Back:12, Delts:10, Arms:8, Calves:4, Tib:4, Core:8 };
-const TOP3 = {
-  Hinge:["Conventional Deadlift","Trap Bar Deadlift","Romanian Deadlift"],
-  Squat:["Back Squat","Front Squat","Pause Back Squat"],
-  Oly:["Clean & Jerk","Clean","Snatch"]
-};
-const POOLS = {
-  Quads:["Front-Foot Elevated Split Squat","Front Squat (light)","Leg Press","Hack/Belt Squat","Step-Up (heavy)","Goblet Squat (tempo)","Sissy Squat (controlled)","Wall Ball","Thruster","Walking Lunge"],
-  Posterior:["Romanian Deadlift","Hip Thrust / Glute Bridge","Nordic Curl / Assisted","Seated Leg Curl","Back Extension (45°)","Good Morning (light)","Cable Pull-Through","KB Swing","DB Snatch (alt)"],
-  Chest:["DB Bench Press","Incline DB Press","Machine Chest Press","Cable Fly (mid)","Push-Up (weighted)","Deficit Push-Up","Dips (assisted)"],
-  Back:["Chest-Supported Row","One-Arm DB Row","Lat Pulldown","Seated Cable Row","Meadows Row","T-Bar Row","Pull-Up (strict)","Dead Hang (for time)","Row (cal)"],
-  Delts:["DB Lateral Raise","Cable Lateral Raise","Rear Delt Fly (machine)","Face Pull","Y-Raise (incline)","Leaning Lateral Raise","DB Overhead Press (light)"],
-  Arms:["EZ-Bar Curl","Incline DB Curl","Hammer Curl","Rope Pressdown","Overhead Cable Extension","Close-Grip Push-Up"],
-  Calves:["Standing Calf Raise","Seated Calf Raise","Donkey Calf Raise","Single-Leg Calf Raise","Jump Rope","Double-Under"],
-  Tib:["Tibialis Raise","Seated Dorsiflexion (band)","Tib Bar Raise"],
-  Core:["Hanging Knee Raise","Toe-to-Bar (strict)","Cable Crunch","Ab Wheel Rollout","Reverse Crunch","Pallof Press","Side Plank (sec)","Copenhagen Plank (sec)","Dead Bug (slow)","Hollow Hold (sec)"]
-};
-const EXERCISE_MAP = (()=>{ const m = {};
-  Object.entries(POOLS).forEach(([t,arr])=> arr.forEach(n=> m[n.toLowerCase()] = t));
-  [
-    ["Kettlebell Swing","Posterior"],["Box Jump","Quads"],["Burpee","Chest"],["Sit-Up","Core"],
-    ["Thruster","Quads"],["Walking Lunge","Quads"],["Double-Under","Calves"],["Wall Ball","Quads"],
-    ["Cal Row","Back"],["Row (cal)","Back"],["Bike (cal)","Quads"],["Run","Quads"],["Ruck","Posterior"],
-    ["Dead Hang","Back"],["Pull-Up","Back"],["Push-Up","Chest"],["Air Squat","Quads"],["DB Snatch (alt)","Posterior"]
-  ].forEach(([n,t])=> m[n.toLowerCase()] = t);
-  return m;
-})();
-const poolIdx = JSON.parse(localStorage.getItem("poolIdx") || "{}");
-function nextPool(target,len){ const i = poolIdx[target]??0; poolIdx[target]=(i+1)%len; localStorage.setItem("poolIdx",JSON.stringify(poolIdx)); return i; }
-function defaultsFor(target){
-  if(target==="Calves"||target==="Tib"||target==="Core") return {sets:3,reps:15};
-  if(target==="Arms") return {sets:3,reps:12};
-  return {sets:3,reps:10};
-}
+/* ================= Targets ================= */
+const TARGETS = { Quads:10, Posterior:10, Chest:10, Back:12, Delts:10, Arms:8, Core:8 };
 
-/* =================== v10 CREDIT SYSTEM =================== */
-const CREDIT_TABLE = [
-  { key:"push-up", target:"Chest", variants:["Push-Up","Push Up","Deficit Push-Up","Ring Push-Up","Deficit Push Up","Ring Push Up"], bwBands:[[8,20,1],[21,35,1.5],[36,60,2]], loaded:{repMin:5, repMax:15, perSet:1} },
-  { key:"dips", target:"Chest", variants:["Dips","Ring Dips","Bar Dips","Assisted Dips"], bwBands:[[6,12,1],[13,20,1.5],[21,30,2]], loaded:{repMin:5, repMax:12, perSet:1} },
-  { key:"pull-up", target:"Back", variants:["Pull-Up","Pull Up","Strict Pull-Up","Kipping Pull-Up","Banded Pull-Up"], bwBands:[[4,8,1],[9,14,1.5],[15,22,2]], loaded:{repMin:3, repMax:10, perSet:1} },
-  { key:"ring-row", target:"Back", variants:["Ring Row","Body Row","TRX Row"], bwBands:[[8,15,1],[16,25,1.5],[26,40,2]], loaded:{repMin:8, repMax:15, perSet:1} },
-  { key:"row-cal", target:"Back", variants:["Row (cal)","Cal Row","Erg Row"], bwBands=[[20,40,1],[41,70,1.5],[71,100,2]], loaded:{repMin:0, repMax:0, perSet:0} },
-  { key:"air-squat", target:"Quads", variants:["Air Squat","Squat (air)","Prisoner Squat"], bwBands:[[12,25,1],[26,45,1.5],[46,70,2]], loaded:{repMin:6, repMax:15, perSet:1} },
-  { key:"wall-ball", target:"Quads", variants:["Wall Ball","WB"], bwBands:[[20,40,1],[41,70,1.5],[71,100,2]], loaded:{repMin:8, repMax:20, perSet:1} },
-  { key:"thruster", target:"Quads", variants:["Thruster","DB Thruster","Barbell Thruster"], bwBands:[[8,15,1],[16,25,1.5],[26,35,2]], loaded:{repMin:5, repMax:15, perSet:1} },
-  { key:"walking-lunge", target:"Quads", variants:["Walking Lunge","Lunge (walking)","Forward Lunge"], bwBands:[[16,30,1],[31,50,1.5],[51,70,2]], loaded:{repMin:8, repMax:20, perSet:1} },
-  { key:"box-jump", target:"Quads", variants:["Box Jump"], bwBands:[[10,20,1],[21,35,1.5],[36,50,2]], loaded:{repMin:0, repMax:0, perSet:0} },
-  { key:"kb-swing", target:"Posterior", variants:["KB Swing","Kettlebell Swing"], bwBands:[[10,20,1],[21,35,1.5],[36,50,2]], loaded:{repMin:10, repMax:20, perSet:1} },
-  { key:"db-snatch-alt", target:"Posterior", variants:["DB Snatch (alt)","Dumbbell Snatch"], bwBands:[[6,10,0.5],[11,16,1],[17,24,1.5]], loaded:{repMin:6, repMax:12, perSet:1} },
-  { key:"back-ext", target:"Posterior", variants:["Back Extension","Hip Extension","GHD Hip Extension"], bwBands:[[8,15,1],[16,25,1.5],[26,35,2]], loaded:{repMin:8, repMax:15, perSet:1} },
-  { key:"toes-to-bar", target:"Core", variants:["Toes-to-Bar","T2B","Hanging Knee Raise","Knee Raise"], bwBands:[[6,12,1],[13,20,1.5],[21,30,2]], loaded:{repMin:0, repMax:0, perSet:0} },
-  { key:"ab-wheel", target:"Core", variants:["Ab Wheel","Ab Rollout","Ab Wheel Rollout"], bwBands:[[8,15,1],[16,25,1.5]], loaded:{repMin:0, repMax:0, perSet:0} },
-  { key:"hollow-hold", target:"Core", variants:["Hollow Hold","Side Plank","Copenhagen Plank","Plank"], bwBands:[[25,40,0.5],[41,70,1],[71,100,1.5]], loaded:{repMin:0, repMax:0, perSet:0} },
-  { key:"sit-up", target:"Core", variants:["Sit-Up","Butterfly Sit-Up"], bwBands:[[15,30,1],[31,50,1.5],[51,80,2]], loaded:{repMin:0, repMax:0, perSet:0} },
-  { key:"calf-raise", target:"Calves", variants:["Calf Raise","Standing Calf Raise","Seated Calf Raise"], bwBands:[[15,25,1],[26,40,1.5]], loaded:{repMin:10, repMax:20, perSet:1} },
-  { key:"tib-raise", target:"Tib", variants:["Tibialis Raise","Tib Raise","Dorsiflexion"], bwBands:[[15,25,1],[26,40,1.5]], loaded:{repMin:12, repMax:25, perSet:1} }
-];
-const CREDIT_LOOKUP = (()=>{ const m=new Map(); CREDIT_TABLE.forEach((e,i)=> e.variants.forEach(v=> m.set(v.toLowerCase(),{idx:i,key:e.key,target:e.target}))); return m; })();
-const WEEKLY_BW_CAP = 6;           // per target
-const PER_MOVE_SESSION_CAP = 3;
-
-function isBWMove(move){ return !!move.bw; }
-function parseRepsOrTime(val){
-  if(!val) return 0;
-  const s = String(val).trim().toLowerCase();
-  const num = parseFloat(s.replace(/[^\d.]/g,''));
-  if(!Number.isFinite(num)) return 0;
-  if(/each|per side|\/arm|\/leg/.test(s)) return num*2;
-  return num;
-}
-function creditBW(entry, totalUnits){
-  if(!entry.bwBands) return 0;
-  for(const [min,max,cred] of entry.bwBands){ if(totalUnits>=min && totalUnits<=max) return cred; }
-  const last = entry.bwBands[entry.bwBands.length-1];
-  return (totalUnits>(last?.[1]??1e9)) ? (last?.[2]||0) : 0;
-}
-function creditLoaded(entry, reps, setCount){
-  const {repMin,repMax,perSet}=entry.loaded||{};
-  if(!perSet) return 0;
-  if(!Number.isFinite(reps) || reps<=0) return 0;
-  if(reps<repMin || reps>repMax) return 0.5 * Math.min(setCount, PER_MOVE_SESSION_CAP);
-  return perSet * Math.min(setCount, PER_MOVE_SESSION_CAP);
-}
-function blankEff(){ return { Quads:0, Posterior:0, Chest:0, Back:0, Delts:0, Arms:0, Calves:0, Tib:0, Core:0 }; }
-function addEff(a,b){ const k=Object.keys(a); const r={}; k.forEach(x=> r[x]=(a[x]||0)+(b[x]||0)); return r; }
-
-function computeEffSetsForMove(move, sessionRounds=1){
-  const eff = blankEff();
-  const lookup = CREDIT_LOOKUP.get((move.name||"").toLowerCase());
-  const entry = lookup ? CREDIT_TABLE[lookup.idx] : null;
-  const tgt = entry?.target || move.target || null;
-  if(!tgt) return eff;
-
-  const perRound = parseRepsOrTime(move.reps);
-  const rounds = Math.max(1, Number(sessionRounds||1));
-  const total = perRound * rounds;
-
-  let credit = 0;
-  if(isBWMove(move)){
-    credit = creditBW(entry, total);
-  }else{
-    const setCount = Math.max(1, rounds);
-    credit = creditLoaded(entry, perRound, setCount);
-  }
-  credit = Math.min(credit, PER_MOVE_SESSION_CAP);
-  if(credit>0) eff[tgt]=credit;
-  return eff;
-}
-function applyWeeklyBWCap(currentBW, eff, isBW){
-  if(!isBW) return eff;
-  const out = {...eff};
-  for(const t of Object.keys(out)){
-    const have = currentBW[t]||0;
-    const room = Math.max(0, WEEKLY_BW_CAP - have);
-    if(out[t] > room) out[t] = room;
-  }
-  return out;
-}
-function computeWODEffSets(wod, weeklyBWSofar){
-  let eff = blankEff();
-  let bwEff = blankEff();
-  if(!wod || !Array.isArray(wod.moves)) return {effSets:eff, bwOnlyEffSets:bwEff};
-  const rounds = Math.max(1, Number(wod.rounds||1));
-  for(const m of wod.moves){
-    const perMove = computeEffSetsForMove(m, rounds);
-    const capped = applyWeeklyBWCap(weeklyBWSofar, perMove, !!m.bw);
-    eff = addEff(eff, capped);
-    if(m.bw){ bwEff = addEff(bwEff, capped); for(const t of Object.keys(capped)){ weeklyBWSofar[t]=(weeklyBWSofar[t]||0)+capped[t]; } }
-  }
-  return {effSets:eff, bwOnlyEffSets:bwEff};
-}
-
-/* ================= Progression (e1RM hint) ================= */
-function e1RM(load, reps){ return load * (1 + reps/30); }
-function suggestNext(movement, sets){
-  const good = sets.filter(s=> !s.fail && s.rpe!=null && s.rpe<=9.5 && s.reps>0 && s.load>0);
-  if(good.length===0) return "";
-  const best = Math.max(...good.map(s=> e1RM(s.load, s.reps)));
-  const upper = ["Bench","Press","Row","Pulldown","Pull-Up","DB"].some(k=> (movement||"").includes(k));
-  return upper ? "Next: push reps toward 10–12 before adding load" : "Next: +2.5–5 lb if ≤8 RPE at target reps";
-}
-
-/* ================= UI State Grabs ================= */
+/* ================= UI Refs ================= */
 const sleep = $("#sleep"), food=$("#food"), sore=$("#sore"), mood=$("#mood");
 const bw=$("#bw"), sleepHrs=$("#sleepHrs");
 const recoPill = $("#recoPill"), recoHint=$("#recoHint");
 const dayKind = $("#dayKind"), modWrap=$("#modWrap"), modality=$("#modality");
-const pwaBtn = $("#pwaBtn");
 
 const strengthView = $("#strengthView"),
       enduranceView = $("#enduranceView"),
@@ -507,11 +309,11 @@ const pattern  = $("#pattern"),
       restMin  = $("#restMin"),
       rpe      = $("#rpe");
 
-const progGhost = $("#progGhost");
-const setsWrap  = $("#setsWrap"),
-      addSet    = $("#addSet"),
-      hardCount = $("#hardCount");
-const z2 = $("#z2"), notes = $("#notes");
+const setsBody = $("#setsBody"),
+      addSetBtn = $("#addSet"),
+      hardCount = $("#hardCount"),
+      progGhost = $("#progGhost");
+
 const toggleWod  = $("#toggleWod"),
       wodWrap    = $("#wodWrap"),
       toggleWod2 = $("#toggleWod2"),
@@ -520,341 +322,214 @@ const toggleWod  = $("#toggleWod"),
       wodWrap4   = $("#wodWrap4");
 
 const accList       = $("#accList"),
-      recommendAcc  = $("#recommendAcc"),
-      recommend3    = $("#recommend3"),
       newAccTarget  = $("#newAccTarget"),
       newAccName    = $("#newAccName"),
-      newAccLoad    = $("#newAccLoad"),
-      addManualAcc  = $("#addManualAcc");
+      newAccLoad    = $("#newAccLoad");
 
-const saveBtn   = $("#saveBtn"),
-      resetWeek = $("#resetWeek");
+/* ================= Recommendation ================= */
+function recommend(s,f,so,m){ const n=(s+f+so+m)/8; if(n>=0.82) return "Strength"; if(n>=0.65) return "GPP Good"; if(n>=0.48) return "Endurance"; return "GPP Bad"; }
+const numVal = el => { const n = Number(el?.value); return Number.isFinite(n)?n:1; };
 
-const qSets = $("#qSets"), pSets = $("#pSets"),
-      cSets = $("#cSets"), bSets = $("#bSets"),
-      dSets = $("#dSets"), aSets = $("#aSets"),
-      coreSets = $("#coreSets"),
-      qStatus = $("#qStatus"), pStatus = $("#pStatus"), coreStatus = $("#coreStatus"),
-      endStatus = $("#endStatus"),
-      z2Min = $("#z2Min"), vigMin = $("#vigMin"),
-      hist = $("#hist");
-
-/* ================= Working State ================= */
-let workSets = [];
-let accessories = [];
-let wod = null;
-function adaptBuilder(){
-  const k = dayKind.value;
-  $("#modWrap").style.display = (k==="Endurance") ? "" : "none";
-  $("#buildTitle").textContent = {
-    Strength:"Build Today’s Strength Session",
-    Endurance:"Build Today’s Endurance Session",
-    "GPP Good":"Build Today’s GPP (Good) Session",
-    "GPP Bad":"Build Today’s GPP (Bad) Session",
-    Recovery:"Plan Today’s Recovery"
-  }[k] || "Build Today’s Session";
-
-  strengthView.style.display = (k==="Strength")?"":"none";
-  enduranceView.style.display = (k==="Endurance")?"":"none";
-  gppGoodView.style.display = (k==="GPP Good")?"":"none";
-  gppBadView.style.display = (k==="GPP Bad")?"":"none";
-  recoveryView.style.display = (k==="Recovery")?"":"none";
-
-  if(k==="Strength"){ if(!movement.options.length) renderTop3(); if(workSets.length===0) addWorkSetRow(); }
-  if(k==="GPP Good"){ wodUI3 = buildWodUI(wodWrap3, "good"); }
-  if(k==="GPP Bad"){ wodUI4 = buildWodUI(wodWrap4, "bad"); }
-  if(k==="Endurance"){ $("#ruckWrap").style.display = (modality.value==="Ruck") ? "" : "none"; }
+function updateReco(){
+  const r = recommend(numVal(sleep),numVal(food),numVal(sore),numVal(mood));
+  if(!dayKind.__manualPick) dayKind.value = r;
+  recoPill.textContent = r;
+  recoHint.textContent = r==="Strength"?"Long rests · 3–6 reps · RPE 7–9":(r==="Endurance"?"30–40′ Z2 preferred":"");
+  adaptBuilder();
 }
+["input","change"].forEach(evt=>{ [sleep,food,sore,mood].forEach(el=> el.addEventListener(evt, updateReco)); });
+dayKind.addEventListener("change", ()=>{ dayKind.__manualPick = true; adaptBuilder(); });
+["input","change"].forEach(evt=>{ [sleep,food,sore,mood].forEach(el=> el.addEventListener(evt, ()=> dayKind.__manualPick=false)); });
 
-/* ================= Components ================= */
+/* ================= Strength Main Lifts ================= */
+const TOP3 = {
+  Hinge:["Conventional Deadlift","Trap Bar Deadlift","Romanian Deadlift"],
+  Squat:["Back Squat","Front Squat","Pause Back Squat"],
+  Oly:["Clean & Jerk","Clean","Snatch"],
+  None:["—"]
+};
 function renderTop3(){
-  const list = ({"Hinge":TOP3.Hinge,"Squat":TOP3.Squat,"Oly":TOP3.Oly}[pattern.value]) || [""];
+  const list = TOP3[pattern.value] || ["—"];
   movement.innerHTML = list.map(x=>`<option>${x}</option>`).join("");
   progGhost.textContent="";
 }
-function addWorkSetRow(reps="", load="", rpeVal="", fail=false){
-  const id = uid();
-  const row = document.createElement("div");
-  row.className = "grid g4"; row.style.gridTemplateColumns = "1.1fr .8fr .8fr .8fr .6fr auto"; row.dataset.id = id;
-  row.innerHTML = `
-    <div class="small muted" style="align-self:center">Set ${workSets.length+1} — ${movement.value||pattern.value}</div>
-    <label class="small">Reps<input type="number" inputmode="numeric" pattern="[0-9]*" min="1" step="1" placeholder="Reps" value="${reps}"></label>
-    <label class="small">Weight<input type="number" inputmode="numeric" pattern="[0-9]*" min="0" step="1" placeholder="Weight" value="${load}"></label>
-    <label class="small">RPE<input type="number" inputmode="numeric" pattern="[0-9]*" min="5" max="10" step="0.5" placeholder="e.g., 8" value="${rpeVal}"></label>
-    <label class="small" style="align-items:center;gap:6px;flex-direction:row"><input type="checkbox" ${fail?'checked':''}> <span>Fail</span></label>
-    <button class="btn bad">X</button>`;
-  const [_, repsLab, loadLab, rpeLab, failLab, delBtn] = row.children;
-  const repsIn = repsLab.querySelector("input");
-  const loadIn = loadLab.querySelector("input");
-  const rpeIn = rpeLab.querySelector("input");
-  const failIn = failLab.querySelector("input");
-  delBtn.addEventListener("click", ()=>{ row.remove(); workSets = workSets.filter(s=>s.id!==id); recountSets(); showProgGhost(); });
-  setsWrap.appendChild(row);
-  workSets.push({id, reps:repsIn, load:loadIn, rpe:rpeIn, fail:failIn});
-  [repsIn, loadIn, rpeIn, failIn].forEach(inp=> inp.addEventListener("input", ()=>{ recountSets(); showProgGhost(); }));
-  recountSets(); showProgGhost();
+pattern.addEventListener("change", renderTop3);
+
+function addSetRow(vals={ reps:"", load:"", rpe:"", fail:false }){
+  const tr = document.createElement("tr");
+  const idx = setsBody.children.length + 1;
+  tr.innerHTML = `
+    <td><span class="tag">Set ${idx}</span></td>
+    <td>${movement.value || pattern.value}</td>
+    <td><input type="number" min="1" step="1" value="${vals.reps}"></td>
+    <td><input type="number" min="0" step="1" value="${vals.load}"></td>
+    <td><input type="number" min="5" max="10" step="0.5" value="${vals.rpe}"></td>
+    <td style="text-align:center"><input type="checkbox" ${vals.fail?"checked":""}></td>
+    <td><button class="btn bad">X</button></td>`;
+  const [_,__,reps,load,rpe,fail,del] = tr.children;
+  const delBtn = del.querySelector("button");
+  delBtn.addEventListener("click", ()=>{ tr.remove(); recountHardSets(); refreshSetNumbers(); });
+  [reps.querySelector("input"),load.querySelector("input"),rpe.querySelector("input"),fail.querySelector("input")].forEach(inp=> inp.addEventListener("input", ()=>{ recountHardSets(); updateProgHint(); }));
+  setsBody.appendChild(tr);
+  recountHardSets(); updateProgHint();
 }
-function recountSets(){
-  let count = 0;
-  workSets.forEach(s=>{
-    const r=Number(s.reps.value||0), l=Number(s.load.value||0); const ok = !s.fail.checked;
-    if(r>0 && l>0 && ok) count++;
+function refreshSetNumbers(){
+  [...setsBody.children].forEach((tr,i)=>{ tr.firstElementChild.innerHTML = `<span class="tag">Set ${i+1}</span>`; });
+}
+function recountHardSets(){
+  let count=0;
+  [...setsBody.querySelectorAll("tr")].forEach(tr=>{
+    const reps=Number(tr.children[2].querySelector("input").value||0);
+    const load=Number(tr.children[3].querySelector("input").value||0);
+    const fail=tr.children[5].querySelector("input").checked;
+    if(reps>0 && load>0 && !fail) count++;
   });
   hardCount.textContent = count;
 }
-function showProgGhost(){
-  const sets = workSets.map(s=>({reps:Number(s.reps.value||0), load:Number(s.load.value||0), rpe:(s.rpe.value?Number(s.rpe.value):null), fail:!!s.fail.checked}));
-  const tip = suggestNext(movement.value||pattern.value, sets);
-  progGhost.textContent = tip || "";
+function updateProgHint(){
+  const good=[];
+  [...setsBody.querySelectorAll("tr")].forEach(tr=>{
+    const reps=Number(tr.children[2].querySelector("input").value||0);
+    const load=Number(tr.children[3].querySelector("input").value||0);
+    const rpe=Number(tr.children[4].querySelector("input").value||0);
+    const fail=tr.children[5].querySelector("input").checked;
+    if(!fail && rpe>0 && rpe<=9.5 && reps>0 && load>0){ good.push({reps,load}); }
+  });
+  if(!good.length){ progGhost.textContent=""; return; }
+  const best = Math.max(...good.map(s=> s.load*(1+s.reps/30)));
+  const upper = ["Bench","Press","Row","Pulldown","Pull-Up","DB"].some(k=> (movement.value||"").includes(k));
+  progGhost.textContent = upper ? "Next: push reps toward 10–12 before adding load" : "Next: +2.5–5 lb if ≤8 RPE at target reps";
 }
+addSetBtn.addEventListener("click", ()=> addSetRow());
 
-/* ================= WOD Builder ================= */
+/* ================= WOD Builder (simple) ================= */
 function buildWodUI(container, preset){
-  container.innerHTML = `<div class="g4 grid">
+  container.innerHTML = `
+    <div class="g4 grid">
       <label class="small">Style
         <select class="w-style"><option>AMRAP</option><option>For Time</option><option>EMOM</option><option>Intervals</option><option>Chipper</option></select>
       </label>
       <label class="small">Name (optional)<input class="w-name" type="text" placeholder="e.g., 4RFT Row/Wall Ball/Sit-Up"></label>
-      <label class="small">Time cap/duration (min)<input class="w-cap" type="number" inputmode="numeric" pattern="[0-9]*" min="0" step="1" value="20"></label>
-      <label class="small">Rounds Counter<input class="w-rounds" type="number" inputmode="numeric" pattern="[0-9]*" min="1" step="1" value="${preset==='bad'?1:3}"></label>
+      <label class="small">Time (min)<input class="w-cap" type="number" min="0" step="1" value="20"></label>
+      <label class="small">Rounds<input class="w-rounds" type="number" min="1" step="1" value="${preset==='bad'?1:3}"></label>
     </div>
     <div class="line"></div>
     <div class="space flex"><div><b>Movements</b></div><button class="btn w-add">+ Add Movement</button></div>
     <div class="w-list grid" style="margin-top:6px"></div>
-    <div class="muted small" style="margin-top:6px">Mark BW if body-weight; otherwise it’s treated as loaded.</div>`;
-  const style=container.querySelector(".w-style"), name=container.querySelector(".w-name"), cap=container.querySelector(".w-cap"), rounds=container.querySelector(".w-rounds"), add=container.querySelector(".w-add"), list=container.querySelector(".w-list");
-
-  function addMove(nameV="", repsV="", loadV="", targetV="", bw=false){
-    const row=document.createElement("div");
-    row.className="row-mini";
+    <div class="muted small" style="margin-top:6px">Mark BW if body-weight.</div>`;
+  const add = container.querySelector(".w-add");
+  const list = container.querySelector(".w-list");
+  function addMove(nameV="", repsV="", loadV="", bw=false){
+    const row = document.createElement("div");
+    row.className="grid g4";
     row.innerHTML=`
-      <label class="small">Movement
-        <input type="text" placeholder="e.g., KB Swing" list="moveNames">
-        <small class="muted target-pill" style="display:block;margin-top:4px"></small>
-      </label>
-      <label class="small">Reps / Time<input type="text" placeholder="e.g., 15 or 30s"></label>
-      <label class="small">Load<input type="text" placeholder="e.g., light / 24kg"></label>
-      <label class="small" style="align-items:center;flex-direction:row;gap:8px"><span class="bw-pill"><input class="w-bw" type="checkbox"> BW</span></label>
-      <button class="btn bad">X</button>`;
-    const [nameLab,repsLab,loadLab,bwLab,del]=row.children;
-    const nameIn = nameLab.querySelector("input");
-    const repsIn = repsLab.querySelector("input");
-    const loadIn = loadLab.querySelector("input");
-    const bwIn   = bwLab.querySelector(".w-bw");
-    const pill = nameLab.querySelector(".target-pill");
-    nameIn.value = nameV; repsIn.value=repsV; loadIn.value=loadV; bwIn.checked = !!bw; pill.textContent = targetV?("Target: "+targetV):"";
-    function resolveTarget(){ const t = EXERCISE_MAP[(nameIn.value||"").toLowerCase()] || ""; pill.textContent = t ? ("Target: "+t) : ""; row.dataset.target = t; }
-    nameIn.addEventListener("input", resolveTarget);
-    resolveTarget();
-    del.addEventListener("click",()=>row.remove());
+      <input placeholder="Movement (e.g., KB Swing)" value="${nameV}">
+      <input placeholder="Reps/Time (e.g., 15 or 30s)" value="${repsV}">
+      <input placeholder="Load (e.g., 24kg or light)" value="${loadV}">
+      <div class="flex" style="justify-content:space-between">
+        <label class="small" style="flex-direction:row;gap:8px;align-items:center"><input class="w-bw" type="checkbox" ${bw?"checked":""}> BW</label>
+        <button class="btn bad w-del">X</button>
+      </div>`;
+    row.querySelector(".w-del").addEventListener("click", ()=> row.remove());
     list.appendChild(row);
   }
-  add.addEventListener("click",()=>addMove("","","","",false));
-  if(preset==="bad"){ [["Air Squat","15","bodyweight", "Quads", true],["Push-Up","10","bodyweight","Chest", true],["Dead Hang (sec)","20","bodyweight","Back", true]].forEach(m=>addMove(...m)); }
-
+  if(preset==="bad"){
+    [["Air Squat","15","BW",true],["Push-Up","10","BW",true],["Dead Hang (sec)","20","BW",true]].forEach(x=>addMove(...x));
+  }
+  add.addEventListener("click", ()=> addMove());
   return { read(){
-    const moves=[...list.children].map(row=>{
-      const [nameLab,repsLab,loadLab,bwLab] = row.querySelectorAll("label");
-      const target = row.dataset.target || "";
-      return {
-        name:nameLab.querySelector("input").value.trim(),
-        reps:repsLab.querySelector("input").value.trim(),
-        load:loadLab.querySelector("input").value.trim(),
-        target,
-        bw: !!bwLab.querySelector(".w-bw").checked
-      };
+    const style = container.querySelector(".w-style").value;
+    const name  = container.querySelector(".w-name").value.trim();
+    const cap   = Number(container.querySelector(".w-cap").value||0);
+    const rounds= Number(container.querySelector(".w-rounds").value||1);
+    const moves=[...container.querySelectorAll(".w-list > div")].map(row=>{
+      const [n,r,l] = row.querySelectorAll("input");
+      const bw = row.querySelector(".w-bw")?.checked || false;
+      return {name:n.value.trim(), reps:r.value.trim(), load:l.value.trim(), bw};
     }).filter(m=>m.name);
-    return {style:style.value,name:name.value.trim(),cap:Number(cap.value)||0,rounds:Number(rounds.value)||1,moves};
+    return {style,name,cap,rounds,moves};
   }};
 }
 let wodUI=null, wodUI2=null, wodUI3=null, wodUI4=null;
 
-pattern.addEventListener("change", ()=>{ renderTop3(); progGhost.textContent=""; });
-addSet.addEventListener("click", ()=> addWorkSetRow());
-
-toggleWod.addEventListener("click", ()=>{
-  if (wodWrap.style.display==="none" || !wodWrap.style.display){
-    wodWrap.style.display=""; wodUI = buildWodUI(wodWrap); toggleWod.textContent="Remove WOD";
-  } else {
-    wodWrap.style.display="none"; wodWrap.innerHTML=""; toggleWod.textContent="+ Add WOD"; wod=null;
-  }
+$("#toggleWod").addEventListener("click", ()=>{
+  if(wodWrap.style.display==="none"){ wodWrap.style.display=""; wodUI = buildWodUI(wodWrap); $("#toggleWod").textContent="Remove WOD"; }
+  else { wodWrap.style.display="none"; wodWrap.innerHTML=""; $("#toggleWod").textContent="+ Add WOD"; wodUI=null; }
 });
-toggleWod2.addEventListener("click", ()=>{
-  if (wodWrap2.style.display==="none" || !wodWrap2.style.display){
-    wodWrap2.style.display=""; wodUI2 = buildWodUI(wodWrap2); toggleWod2.textContent="Remove WOD";
-  } else {
-    wodWrap2.style.display="none"; wodWrap2.innerHTML=""; toggleWod2.textContent="+ Add WOD"; wod=null;
-  }
+$("#toggleWod2").addEventListener("click", ()=>{
+  if(wodWrap2.style.display==="none"){ wodWrap2.style.display=""; wodUI2 = buildWodUI(wodWrap2); $("#toggleWod2").textContent="Remove WOD"; }
+  else { wodWrap2.style.display="none"; wodWrap2.innerHTML=""; $("#toggleWod2").textContent="+ Add WOD"; wodUI2=null; }
 });
-modality.addEventListener("change", ()=>{ $("#ruckWrap").style.display = (modality.value==="Ruck") ? "" : "none"; });
 
 /* ================= Accessories ================= */
+let accessories=[];
 function addAccessory(target,name,sets,reps,load=""){
   const id = uid();
   const row = document.createElement("div");
   row.className = "grid g4"; row.style.gridTemplateColumns="2fr 1fr 1fr 1fr auto";
   row.dataset.id = id;
   row.innerHTML = `<div><b>${name}</b><div class="muted small">${target}</div></div>
-    <label class="small">Sets<input type="number" inputmode="numeric" pattern="[0-9]*" min="2" max="5" value="${sets}"></label>
-    <label class="small">Reps<input type="number" inputmode="numeric" pattern="[0-9]*" min="6" max="25" value="${reps}"></label>
-    <label class="small">Weight<input type="number" inputmode="numeric" pattern="[0-9]*" min="0" step="1" placeholder="Weight" value="${load}"></label>
+    <label class="small">Sets<input type="number" min="2" max="5" value="${sets}"></label>
+    <label class="small">Reps<input type="number" min="6" max="25" value="${reps}"></label>
+    <label class="small">Weight<input type="number" min="0" step="1" placeholder="Weight" value="${load}"></label>
     <button class="btn bad">X</button>`;
-  accList.appendChild(row);
+  $("#accList").appendChild(row);
   const delBtn = row.querySelector("button");
-  const setsEl = row.querySelectorAll("input")[0];
-  const repsEl = row.querySelectorAll("input")[1];
-  const loadEl = row.querySelectorAll("input")[2];
+  const [setsEl,repsEl,loadEl] = row.querySelectorAll("input");
   delBtn.addEventListener("click", ()=>{ row.remove(); accessories = accessories.filter(a=>a.id!==id); });
   accessories.push({id,target,name,setsEl,repsEl,loadEl});
 }
-function autoAccessory(){
-  const draft = draftSession({calcOnly:true});
-  const t = totalsCalc(week().sessions.concat([draft]));
-  const pick = chooseLaggingTargetDayAware(
-    { quads:t.quads, post:t.post, chest:t.chest, back:t.back, delts:t.delts, arms:t.arms, calves:t.calves, tib:t.tib, core:t.core },
-    dayKind.value
-  );
-  const pool = POOLS[pick]; const idx = nextPool(pick, pool.length);
-  const name = pool[idx]; const d = defaultsFor(pick);
-  addAccessory(pick, name, d.sets, d.reps);
-}
-function manualAccessory(){
-  let t = newAccTarget.value || "Back";
-  const raw = (newAccName.value || "").trim();
-  if(raw){
-    const hit = EXERCISE_MAP[raw.toLowerCase()];
-    if(hit){ t = hit; newAccTarget.value = hit; }
-  }
-  const name = raw || (POOLS[t]?POOLS[t][0]:"Accessory");
+$("#addManualAcc").addEventListener("click", ()=>{
+  const t = newAccTarget.value || "Back";
+  const name = newAccName.value.trim() || "Accessory";
   const load = newAccLoad.value || "";
-  const d = defaultsFor(t);
-  addAccessory(t, name, d.sets, d.reps, load);
-  newAccName.value = ""; newAccLoad.value = "";
-}
-function recommendBundle(){
-  const k = dayKind.value;
-  const draft = draftSession({calcOnly:true});
-  const t = totalsCalc(week().sessions.concat([draft]));
-  let mainPat = "None";
-  if(k==="Strength"){ mainPat = pattern.value; }
-  else if(draft.wod && draft.wod.moves){
-    if(draft.wod.moves.some(m=>["Walking Lunge","Air Squat","Wall Ball","Thruster"].includes(m.name))) mainPat = "Squat";
-    else if(draft.wod.moves.some(m=>["KB Swing","DB Snatch (alt)"].includes(m.name))) mainPat = "Hinge";
-  }
-  const picks=[]; const push=(x)=>{ if(x && !picks.includes(x)) picks.push(x); };
-  if(mainPat==="Squat") push("Posterior");
-  else if(mainPat==="Hinge") push("Quads");
-  else if(mainPat==="Oly"){ push("Back"); push("Delts"); }
-  else if(k==="Endurance"){ push("Core"); push("Calves"); }
-  else if(k==="GPP Bad"){ push("Core"); push("Tib"); }
-  push("Core");
-  const upper = (t.back/TARGETS.Back) <= (t.chest/TARGETS.Chest) ? "Back" : "Chest";
-  push(upper);
-  while(picks.length<3){ push( chooseLaggingTargetDayAware({ quads:t.quads, post:t.post, chest:t.chest, back:t.back, delts:t.delts, arms:t.arms, calves:t.calves, tib:t.tib, core:t.core }, k) ); }
-  picks.slice(0,3).forEach(tgt=>{
-    const pool = POOLS[tgt]; const idx = nextPool(tgt, pool.length);
-    const name = pool[idx]; const d = defaultsFor(tgt);
-    addAccessory(tgt, name, d.sets, d.reps);
-  });
-}
+  const defaults = (t==="Calves"||t==="Core")?{sets:3,reps:15} : (t==="Arms"?{sets:3,reps:12}:{sets:3,reps:10});
+  addAccessory(t, name, defaults.sets, defaults.reps, load);
+  newAccName.value=""; newAccLoad.value="";
+});
 
-/* ================= Draft & Save ================= */
-function draftSession({calcOnly=false}={}){
+/* ================= Session Save & Totals ================= */
+function draftSession(){
   const kind = dayKind.value;
   const main = (kind==="Strength") ? {
     pattern: pattern.value,
-    movement: movement.value||pattern.value,
+    movement: movement.value || pattern.value,
     rpe: Number(rpe.value)||8,
     rest: Number(restMin.value)||3,
-    sets: workSets.filter(s=> Number(s.reps.value||0)>0 && Number(s.load.value||0)>0 && !s.fail.checked ).length,
-    setsDetail: workSets.map(s=>({reps:Number(s.reps.value||0), load:Number(s.load.value||0), rpe:(s.rpe.value?Number(s.rpe.value):null), fail: !!s.fail.checked}))
+    sets: [...setsBody.querySelectorAll("tr")].filter(tr=>{
+      const reps=Number(tr.children[2].querySelector("input").value||0);
+      const load=Number(tr.children[3].querySelector("input").value||0);
+      const fail=tr.children[5].querySelector("input").checked;
+      return reps>0 && load>0 && !fail;
+    }).length,
+    setsDetail: [...setsBody.querySelectorAll("tr")].map(tr=>({
+      reps:Number(tr.children[2].querySelector("input").value||0),
+      load:Number(tr.children[3].querySelector("input").value||0),
+      rpe:Number(tr.children[4].querySelector("input").value||0)||null,
+      fail:tr.children[5].querySelector("input").checked
+    }))
   } : null;
 
   let end = undefined;
   if(kind!=="Strength"){
-    const z = kind==="Endurance" ? Number(z2.value||0) : 0;
-    const vig = (wod && wod.cap) ? Number(wod.cap)||0 : 0;
-    const dist = kind==="Endurance" ? Number(($("#dist")||{}).value||0) : 0;
-    const distUnit = kind==="Endurance" ? (($("#distUnit")||{}).value||"") : "";
-    const ruckWeight = (kind==="Endurance" && modality.value==="Ruck") ? Number(($("#ruckWeight")||{}).value||0) : 0;
-    end = { z2:z, vig:vig, modality: modality.value, dist, distUnit, ruckWeight };
+    end = {
+      z2: kind==="Endurance" ? Number($("#z2").value||0) : 0,
+      vig: (wodUI||wodUI2||wodUI3||wodUI4) ? Number((wodUI||wodUI2||wodUI3||wodUI4).read().cap||0) : 0,
+      modality: $("#modality")?.value || ""
+    };
   }
 
-  const recovery = { date: todayISO(), bw: (bw.value?Number(bw.value):null), sleepHrs: (sleepHrs.value?Number(sleepHrs.value):null) };
+  let wod = null;
+  if(kind==="Strength" && wodUI) wod = wodUI.read();
+  if(kind==="Endurance" && wodUI2) wod = wodUI2.read();
+  if(kind==="GPP Good"){ if(!wodUI3) wodUI3 = buildWodUI(wodWrap3, "good"); wod = wodUI3.read(); }
+  if(kind==="GPP Bad"){ if(!wodUI4) wodUI4 = buildWodUI(wodWrap4, "bad"); wod = wodUI4.read(); }
+
   const acc = accessories.map(a=>({target:a.target, name:a.name, sets:Number(a.setsEl.value||0), reps:Number(a.repsEl.value||0), load:a.loadEl.value}));
-  const obj = { id: uid(), date: todayISO(), kind, main, endurance: end, wod, acc, version: APP_VERSION };
-  if(!calcOnly){ week().recovery.push(recovery); }
-  return obj;
+  return { id: uid(), date: todayISO(), kind, main, endurance: end, wod, acc, version: APP_VERSION };
 }
-
-function sumEff(a,b){ return { Quads:a.Quads+b.Quads, Posterior:a.Posterior+b.Posterior, Chest:a.Chest+b.Chest, Back:a.Back+b.Back, Delts:a.Delts+b.Delts, Arms:a.Arms+b.Arms, Calves:a.Calves+b.Calves, Tib:a.Tib+b.Tib, Core:a.Core+b.Core }; }
-function getWeeklyBWSoFar(){
-  const out = blankEff();
-  (week().sessions||[]).forEach(s=>{
-    const bw = s.wodEffBW||blankEff();
-    for(const k of Object.keys(out)){ out[k]+= (bw[k]||0); }
-  });
-  return out;
-}
-
-async function saveSession(){
-  // Capture WOD from whichever view is visible
-  const viewK = dayKind.value;
-  let wodUIref=null;
-  if(viewK==="Strength"){
-    if(wodWrap.style.display!=="none" && wodWrap.innerHTML.trim()!==""){ wodUIref = wodUI || buildWodUI(wodWrap); wod = wodUIref.read(); } else { wod=null; }
-  } else if(viewK==="Endurance"){
-    if(wodWrap2.style.display!=="none" && wodWrap2.innerHTML.trim()!==""){ wodUIref = wodUI2 || buildWodUI(wodWrap2); wod = wodUIref.read(); } else { wod=null; }
-  } else if(viewK==="GPP Good"){
-    wodUI3 = wodUI3 || buildWodUI(wodWrap3, "good"); wod = wodUI3.read();
-  } else if(viewK==="GPP Bad"){
-    wodUI4 = wodUI4 || buildWodUI(wodWrap4, "bad"); wod = wodUI4.read();
-  } else { wod=null; }
-
-  const s = draftSession();
-
-  // Compute WOD credits with weekly BW cap
-  let wodEff = blankEff(), wodEffBW = blankEff();
-  if(s.wod){
-    const weeklyBWSoFar = getWeeklyBWSoFar();
-    const {effSets, bwOnlyEffSets} = computeWODEffSets(s.wod, weeklyBWSoFar);
-    wodEff = effSets; wodEffBW = bwOnlyEffSets;
-  }
-
-  // Recovery guardrail (unchanged)
-  try{
-    const bwEntries = week().recovery.filter(r=> r.bw!=null);
-    if(bwEntries.length>=2){
-      const last = bwEntries[bwEntries.length-1].bw, prev = bwEntries[0].bw;
-      if(prev>0 && (prev-last)/prev > 0.01){
-        const rpeAvg = (s.main && s.main.setsDetail.length) ? (s.main.setsDetail.map(x=>x.rpe||0).filter(x=>x>0).reduce((a,b)=>a+b,0) / Math.max(1, s.main.setsDetail.filter(x=>x.rpe>0).length)) : 0;
-        if(rpeAvg>=8.5){
-          s.acc = (s.acc||[]).map(a=> (a.target==="Quads"||a.target==="Posterior") ? {...a, sets: Math.min(a.sets, 2) } : a );
-        }
-      }
-    }
-  }catch(e){}
-
-  // Persist WOD eff totals on the session for dashboard math
-  s.wodEff = wodEff;
-  s.wodEffBW = wodEffBW;
-
-  week().sessions.push(s);
-  saveStore();
-  sheetsPost(s).catch(()=>{});
-
-  // Reset UI
-  workSets=[]; setsWrap.innerHTML=""; hardCount.textContent="0"; if(dayKind.value==="Strength") addWorkSetRow();
-  accessories=[]; accList.innerHTML="";
-  wod=null; ["wodWrap","wodWrap2","wodWrap3","wodWrap4"].forEach(id=>{ const el=$("#"+id); if(el) el.innerHTML=""; });
-  $("#toggleWod").textContent = "+ Add WOD"; $("#toggleWod2").textContent = "+ Add WOD";
-  renderDashboard();
-  toast("Session saved.");
-}
-
-/* ================= Totals & Choice ================= */
 function totalsCalc(sess){
-  const t = {quads:0,post:0,chest:0,back:0,delts:0,arms:0,calves:0,tib:0,core:0, z2:0,vig:0, strength:0};
+  const t = {quads:0,post:0,chest:0,back:0,delts:0,arms:0,core:0, z2:0,vig:0, strength:0};
   (sess||[]).forEach(s=>{
     if(s.main && s.main.pattern && s.main.sets){
       const add = s.main.sets;
@@ -870,204 +545,42 @@ function totalsCalc(sess){
       if(a.target==="Back") t.back += a.sets;
       if(a.target==="Delts") t.delts += a.sets;
       if(a.target==="Arms") t.arms += a.sets;
-      if(a.target==="Calves") t.calves += a.sets;
-      if(a.target==="Tib") t.tib += a.sets;
       if(a.target==="Core") t.core += a.sets;
     });
-    // Add credited WOD sets (v10)
-    const we = s.wodEff || blankEff();
-    t.quads += we.Quads; t.post += we.Posterior; t.chest += we.Chest; t.back += we.Back; t.delts += we.Delts; t.arms += we.Arms; t.calves += we.Calves; t.tib += we.Tib; t.core += we.Core;
-
     if(s.kind==="Strength") t.strength++;
   });
   return t;
 }
-function chooseLaggingTargetDayAware(tot, dayKind){
-  const weights = {
-    Strength:{Quads:.8,Posterior:.8,Chest:1,Back:1,Delts:1,Arms:1.1,Calves:1,Tib:1,Core:1},
-    "GPP Good":{Quads:.9,Posterior:.9,Chest:1,Back:1,Delts:1,Arms:1,Calves:1,Tib:1,Core:1},
-    "GPP Bad":{Quads:1.1,Posterior:1.1,Chest:1,Back:1,Delts:1,Arms:1,Calves:.9,Tib:.9,Core:1},
-    Endurance:{Quads:1.1,Posterior:1.1,Chest:.9,Back:.9,Delts:.9,Arms:.9,Calves:1,Tib:1,Core:1},
-    Recovery:{Quads:1.2,Posterior:1.2,Chest:1.2,Back:1.2,Delts:1.2,Arms:1.2,Calves:1.2,Tib:1.2,Core:1.2},
-  }[dayKind]||{};
-  const arr = [
-    ["Quads",tot.quads,TARGETS.Quads],
-    ["Posterior",tot.post,TARGETS.Posterior],
-    ["Chest",tot.chest,TARGETS.Chest],
-    ["Back",tot.back,TARGETS.Back],
-    ["Delts",tot.delts,TARGETS.Delts],
-    ["Arms",tot.arms,TARGETS.Arms],
-    ["Calves",tot.calves,TARGETS.Calves],
-    ["Tib",tot.tib,TARGETS.Tib],
-    ["Core",tot.core,TARGETS.Core],
-  ];
-  let best=null, score=1e9;
-  arr.forEach(([name,got,need])=>{ const base = need>0 ? (got/need) : 1; const w = (weights[name]??1); const s = base*w; if(s<score){score=s;best=name;} });
-  return best||"Delts";
-}
-
-/* ================= Dashboard ================= */
 function renderDashboard(){
   const t = totalsCalc(week().sessions);
-  z2Min.textContent = t.z2+"′"; vigMin.textContent = t.vig+"′";
-  qSets.textContent = t.quads; pSets.textContent = t.post; cSets.textContent = t.chest; bSets.textContent = t.back; dSets.textContent = t.delts; aSets.textContent = t.arms;
-  coreSets.textContent = t.core;
-  badge(qStatus, t.quads>=TARGETS.Quads); badge(pStatus, t.post>=TARGETS.Posterior);
-  badge(coreStatus, t.core>=TARGETS.Core);
+  $("#z2Min").textContent = t.z2+"′"; $("#vigMin").textContent = t.vig+"′";
+  $("#qSets").textContent = t.quads; $("#pSets").textContent = t.post;
+  $("#cSets").textContent = t.chest||0; $("#bSets").textContent = t.back||0;
+  $("#dSets").textContent = t.delts||0; $("#aSets").textContent = t.arms||0; $("#coreSets").textContent = t.core||0;
+  badge($("#qStatus"), t.quads>=TARGETS.Quads); badge($("#pStatus"), t.post>=TARGETS.Posterior);
+  badge($("#coreStatus"), t.core>=TARGETS.Core);
   const endOK = (t.z2>=150) || (t.vig>=75) || ((t.z2*0.5 + t.vig)>=75);
-  badge(endStatus, endOK, "On track", "Low this week");
-  hist.innerHTML = week().sessions.map(s=>{
+  badge($("#endStatus"), endOK, "On track", "Low this week");
+  $("#hist").innerHTML = week().sessions.map(s=>{
     const d=new Date(s.date).toLocaleDateString();
-    const tag = s.kind==="Strength" ? (s.main?.movement || s.main?.pattern) : (s.wod?.name || s.endurance?.modality || (s.wod?.moves?.[0]?.name || ""));
+    const tag = s.kind==="Strength" ? (s.main?.movement || s.main?.pattern) : (s.wod?.name || s.endurance?.modality || "");
     return `<div class="space flex"><span>${d} · ${s.kind}</span><span class="muted small">${tag||""}</span></div>`;
   }).join("") || '<div class="muted">No sessions yet.</div>';
-  // Benchmarks (kept simple)
-  const wkNum = Number(weekKey.split("W")[1]||"0");
-  const due = (wkNum % 13) === 0;
-  $("#bmNext")?.textContent = "Next due: " + (due ? "This week" : "In " + (13 - (wkNum%13)) + " weeks");
-  $("#bmList")?.innerHTML = ["3RM Squat/Hinge", "8RM RDL/Front Squat", "10-min Row", "5k Run", "Pull-Ups AMRAP", "Hollow 60s"].map(x=> `<div>• ${x}</div>`).join("");
 }
 
-// ===== Recommendation & Adaptation (robust wiring) =====
-function recommend(s, f, so, m) {
-  // sliders: 0..2 each → normalize by /2 and average
-  const n = (s + f + so + m) / 8; // 0..1
-  if (n >= 0.82) return "Strength";
-  if (n >= 0.65) return "GPP Good";
-  if (n >= 0.48) return "Endurance";
-  return "GPP Bad";
-}
-const numVal = el => {
-  const n = Number(el && el.value);
-  return Number.isFinite(n) ? n : 1; // default to "Fine"
-};
-
-function updateReco() {
-  const sleep = document.getElementById('sleep');
-  const food  = document.getElementById('food');
-  const sore  = document.getElementById('sore');
-  const mood  = document.getElementById('mood');
-  const dayKind = document.getElementById('dayKind');
-  const recoPill = document.getElementById('recoPill');
-  const recoHint = document.getElementById('recoHint');
-
-  if (!sleep || !food || !sore || !mood || !dayKind) return;
-
-  const r = recommend(numVal(sleep), numVal(food), numVal(sore), numVal(mood));
-
-  if (!dayKind.__manualPick) dayKind.value = r;
-
-  if (recoPill) recoPill.textContent = r;
-  if (recoHint) {
-    recoHint.textContent =
-      r === "Strength" ? "Long rests · 3–6 reps · RPE 7–9" :
-      r === "Endurance" ? "30–40′ Z2 preferred" : "";
-  }
-
-  adaptBuilder();
+function saveSession(){
+  const s = draftSession();
+  week().sessions.push(s);
+  week().recovery.push({ date: todayISO(), bw: (bw.value?Number(bw.value):null), sleepHrs: (sleepHrs.value?Number(sleepHrs.value):null) });
+  saveStore();
+  // reset builder
+  setsBody.innerHTML=""; accessories=[]; $("#accList").innerHTML="";
+  if(dayKind.value==="Strength") addSetRow();
+  renderDashboard();
+  toast("Session saved.");
 }
 
-// Wire EVERYTHING once, after DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-  const sleep = document.getElementById('sleep');
-  const food  = document.getElementById('food');
-  const sore  = document.getElementById('sore');
-  const mood  = document.getElementById('mood');
-  const dayKind = document.getElementById('dayKind');
-
-  // set sane defaults if empty (iOS sometimes reports "")
-  [sleep, food, sore, mood].forEach(el => { if (el && el.value === "") el.value = "1"; });
-
-  // one delegated listener that catches both drag & change (mobile + desktop)
-  const handler = (e) => {
-    if (!e || !e.target) return;
-    const id = e.target.id;
-    if (id === 'sleep' || id === 'food' || id === 'sore' || id === 'mood') {
-      // sliders imply user wants auto suggestion again
-      if (dayKind) dayKind.__manualPick = false;
-      updateReco();
-    }
-  };
-  document.addEventListener('input', handler, { passive: true });
-  document.addEventListener('change', handler, { passive: true });
-
-  // flipping day type is manual override
-  if (dayKind) {
-    dayKind.addEventListener('change', () => {
-      dayKind.__manualPick = true;
-      adaptBuilder();
-    });
-  }
-
-  // first compute
-  updateReco();
-});
-
-/* ================= Datalists ================= */
-const moveDL = document.createElement("datalist"); moveDL.id = "moveNames";
-const moveNames = Object.keys(EXERCISE_MAP).concat(...CREDIT_TABLE.map(e=>e.variants)).map(s=>s.toLowerCase());
-moveDL.innerHTML = [...new Set(moveNames)].sort().map(n=>`<option value="${n.replace(/^./, c=>c.toUpperCase())}">`).join("");
-document.body.appendChild(moveDL);
-const accNamesDL = $("#accNames");
-function seedAccDatalist(){
-  const names = new Set();
-  Object.values(POOLS).forEach(arr=> arr.forEach(n=>names.add(n)));
-  ["KB Swing","Box Jump","Burpee","Wall Ball","Sit-Up","Walking Lunge","Thruster","Double-Under","Row (cal)","Cal Row","Bike (cal)","Run","Ruck","Dead Hang","Pull-Up","Push-Up","Air Squat","DB Snatch (alt)"].forEach(n=>names.add(n));
-  accNamesDL.innerHTML = [...names].sort().map(n=>`<option value="${n}">`).join("");
-}
-seedAccDatalist();
-newAccName.addEventListener("input", ()=>{ const raw = (newAccName.value||"").toLowerCase(); const hit = EXERCISE_MAP[raw]; if(hit){ newAccTarget.value = hit; } });
-
-/* ================= Sheets Sync ================= */
-function setSheetsConfig(url, key=''){
-  localStorage.setItem('SHEETS_URL', url||'');
-  localStorage.setItem('SHEETS_KEY', key||'');
-  syncState.textContent = url ? "Configured" : "Not configured";
-}
-const saveSheetsCfg = $("#saveSheetsCfg"),
-      sheetsUrl = $("#sheetsUrl"),
-      sheetsKey = $("#sheetsKey"),
-      syncState = $("#syncState");
-sheetsUrl.value = localStorage.getItem('SHEETS_URL')||'';
-sheetsKey.value = localStorage.getItem('SHEETS_KEY')||'';
-syncState.textContent = sheetsUrl.value ? "Configured" : "Not configured";
-saveSheetsCfg.addEventListener("click", ()=>{ setSheetsConfig(sheetsUrl.value, sheetsKey.value); toast("Sync settings saved."); });
-
-async function sheetsPost(session){
-  const url = localStorage.getItem('SHEETS_URL')||'';
-  if(!url) return;
-  const key = localStorage.getItem('SHEETS_KEY')||'';
-  try{
-    await fetch(url + (key?("?key="+encodeURIComponent(key)):""), {
-      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({...session, weekKey})
-    });
-  }catch(e){ console.warn("Sheets POST failed", e); }
-}
-async function sheetsGet(){
-  const url = localStorage.getItem('SHEETS_URL')||'';
-  if(!url) return [];
-  const key = localStorage.getItem('SHEETS_KEY')||'';
-  try{
-    const res = await fetch(url + (key?("?key="+encodeURIComponent(key)):""), { method:'GET' });
-    if(!res.ok) return [];
-    const data = await res.json();
-    return Array.isArray(data.sessions) ? data.sessions : [];
-  }catch(e){ console.warn("Sheets GET failed", e); return []; }
-}
-function mergeSessions(existing, incoming){
-  const map = new Map();
-  existing.forEach(s=> map.set(s.id, s));
-  incoming.forEach(s=>{
-    const cur = map.get(s.id);
-    if(!cur){ map.set(s.id, s); return; }
-    const curHard = (cur.main?.sets||0) + (cur.acc||[]).reduce((a,b)=>a+(b.sets||0),0);
-    const incHard = (s.main?.sets||0) + (s.acc||[]).reduce((a,b)=>a+(b.sets||0),0);
-    if(incHard>curHard || (incHard===curHard && new Date(s.date)>new Date(cur.date))){ map.set(s.id, s); }
-  });
-  return [...map.values()];
-}
-
-/* ================= Export / Import ================= */
+/* ================= Export / Import / Reset ================= */
 $("#exportBtn").addEventListener("click", ()=>{
   const blob = new Blob([JSON.stringify(store,null,2)], {type:'application/json'});
   const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`hybrid_store_${weekKey}.json`; a.click();
@@ -1078,76 +591,37 @@ $("#importFile").addEventListener("change", (e)=>{
   r.onload = ()=>{ try{ const data = JSON.parse(r.result); if(data && data.weeks){ store = data; saveStore(); renderDashboard(); toast("Import success."); } else toast("Invalid file."); }catch{ toast("Failed to parse JSON."); } };
   r.readAsText(f);
 });
-
-/* ================= PWA (manifest + SW) ================= */
-let deferredPrompt=null;
-window.addEventListener('beforeinstallprompt', (e)=>{ e.preventDefault(); deferredPrompt=e; pwaBtn.style.display=''; });
-pwaBtn.addEventListener('click', async ()=>{ if(!deferredPrompt){ toast("Already installed or unsupported."); return; } deferredPrompt.prompt(); deferredPrompt=null; });
-(function(){ const manifest = {"name":"Hybrid Trainer","short_name":"HybridTrainer","start_url":"./","display":"standalone","background_color":"#0b0b0c","theme_color":"#0b0b0c","icons":[]}; const blob = new Blob([JSON.stringify(manifest)], {type:'application/json'}); const url = URL.createObjectURL(blob); const link = document.createElement('link'); link.rel='manifest'; link.href=url; document.head.appendChild(link);})();
-(function(){
-  const swCode = `
-    const CACHE='hybrid-v10c'; // bump when you ship
-    self.addEventListener('install', e=>{
-      e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./'])));
-      self.skipWaiting();
-    });
-    self.addEventListener('activate', e=>{
-      e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));
-      self.clients.claim();
-    });
-    self.addEventListener('fetch', e=>{
-      const req = e.request;
-      if (req.mode === 'navigate') {
-        e.respondWith(fetch(req).catch(()=>caches.match('./')));
-        return;
-      }
-      e.respondWith(caches.match(req).then(r=> r || fetch(req)));
-    });
-  `;
-  const blob = new Blob([swCode], {type:'text/javascript'});
-  const url = URL.createObjectURL(blob);
-  if('serviceWorker' in navigator){ navigator.serviceWorker.register(url).catch(()=>{}); }
-})();
-
-/* ================= Weekly Auto-Export Prompt ================= */
-function maybeWeeklyExport(){
-  const last = localStorage.getItem('EXPORT_LAST_WEEK')||'';
-  if(last !== weekKey){
-    setTimeout(()=>{
-      if(confirm("Export last week’s JSON for backup?")){
-        const keys = Object.keys(store.weeks).sort();
-        const idx = keys.indexOf(weekKey);
-        const wkKey = idx>0 ? keys[idx-1] : weekKey;
-        const data = store.weeks[wkKey] || {sessions:[],recovery:[],liftHistory:{}};
-        const blob = new Blob([JSON.stringify({[wkKey]:data},null,2)], {type:'application/json'});
-        const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`hybrid_${wkKey}.json`; a.click();
-        localStorage.setItem('EXPORT_LAST_WEEK', weekKey);
-      }
-    }, 800);
-  }
-}
-
-/* ================= Init & Wiring ================= */
-function renderDashboardAndUI(){ renderDashboard(); }
-function initialSync(){
-  sheetsGet().then(remote=>{
-    if(remote.length){
-      const merged = mergeSessions(week().sessions, remote);
-      week().sessions = merged;
-      saveStore();
-      renderDashboard();
-      toast("Synced from Sheets.");
-    }
-  });
-}
-$("#resetWeek").addEventListener("click", ()=>{ if(confirm("Reset this week's data?")){ store.weeks[weekKey]={sessions:[],recovery:[],liftHistory:{},version:APP_VERSION}; saveStore(); renderDashboard(); } });
+$("#resetWeek").addEventListener("click", ()=>{ if(confirm("Reset this week's data?")){ store.weeks[weekKey]={sessions:[],recovery:[],version:APP_VERSION}; saveStore(); renderDashboard(); } });
 $("#saveBtn").addEventListener("click", saveSession);
-$("#recommendAcc").addEventListener("click", autoAccessory);
-$("#recommend3").addEventListener("click", recommendBundle);
-$("#addManualAcc").addEventListener("click", manualAccessory);
 
-updateReco(); adaptBuilder(); renderDashboardAndUI(); maybeWeeklyExport(); initialSync();
-syncState.textContent = (localStorage.getItem('SHEETS_URL')||'') ? "Configured" : "Not configured";
+/* ================= Builder + Views ================= */
+function adaptBuilder(){
+  const k = dayKind.value;
+  $("#modWrap").style.display = (k==="Endurance") ? "" : "none";
+  $("#buildTitle").textContent = {
+    Strength:"Build Today’s Strength Session",
+    Endurance:"Build Today’s Endurance Session",
+    "GPP Good":"Build Today’s GPP (Good) Session",
+    "GPP Bad":"Build Today’s GPP (Bad) Session",
+    Recovery:"Plan Today’s Recovery"
+  }[k] || "Build Today’s Session";
+  strengthView.style.display = (k==="Strength")?"":"none";
+  enduranceView.style.display = (k==="Endurance")?"":"none";
+  gppGoodView.style.display = (k==="GPP Good")?"":"none";
+  gppBadView.style.display = (k==="GPP Bad")?"":"none";
+  recoveryView.style.display = (k==="Recovery")?"":"none";
+  if(k==="Strength"){ if(!movement.options.length) renderTop3(); if(!setsBody.children.length) addSetRow(); }
+  if(k==="Endurance"){ $("#ruckWrap").style.display = ($("#modality").value==="Ruck") ? "" : "none"; }
+}
+$("#modality").addEventListener("change", ()=>{ $("#ruckWrap").style.display = ($("#modality").value==="Ruck") ? "" : "none"; });
+
+/* ================= Init ================= */
+document.addEventListener("DOMContentLoaded", ()=>{
+  ["sleep","food","sore","mood"].forEach(id=>{ const el=$("#"+id); if(!el.value) el.value = 1; });
+  updateReco();
+  adaptBuilder();
+  renderDashboard();
+});
 </script>
 </body>
 </html>
