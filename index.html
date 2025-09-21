@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Hybrid Trainer — v10.2</title>
+<title>Hybrid Trainer — v10.3</title>
 <meta name="theme-color" content="#0b0b0c" />
 <style>
   :root { --bg:#0b0b0c; --card:#141416; --muted:#9aa0a6; --text:#e7e9ea; --accent:#1db954; --warn:#f59e0b; --danger:#ef4444; --line:#24262a; }
@@ -43,7 +43,7 @@
   <div class="wrap">
     <div class="space flex">
       <div>
-        <h1>Hybrid Trainer — v10.2 </h1>
+        <h1>Hybrid Trainer — v10.3 </h1>
         <div class="muted small">Single HTML. Local save + optional Sheets sync. Installable PWA. <b>Do not publish</b>.</div>
       </div>
       <div class="flex">
@@ -275,6 +275,19 @@
   <div id="toast" class="toast"></div>
 
 <script>
+  // DEV: nuke service workers & caching if needed
+if ('serviceWorker' in navigator) {
+  // set this once in console:  localStorage.DEV_NOSW = '1'
+  if (localStorage.DEV_NOSW === '1') {
+    navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister()));
+    // also bypass HTTP cache for this page load
+    if ('reload' in location) location.reload();
+  } else {
+    // always try to update the active SW on load (helps bust stale caches)
+    navigator.serviceWorker.getRegistration().then(r => r && r.update());
+  }
+}
+
 /* ================= Versions & Storage ================= */
 const APP_VERSION = 10;           // v10 draft
 const STORE_VERSION = 3;
@@ -915,8 +928,7 @@ function renderDashboard(){
   $("#bmList")?.innerHTML = ["3RM Squat/Hinge", "8RM RDL/Front Squat", "10-min Row", "5k Run", "Pull-Ups AMRAP", "Hollow 60s"].map(x=> `<div>• ${x}</div>`).join("");
 }
 
-// ===== Recommendation & Adaptation (clean, single-script) =====
-
+// ===== Recommendation & Adaptation (robust wiring) =====
 function recommend(s, f, so, m) {
   // sliders: 0..2 each → normalize by /2 and average
   const n = (s + f + so + m) / 8; // 0..1
@@ -925,23 +937,24 @@ function recommend(s, f, so, m) {
   if (n >= 0.48) return "Endurance";
   return "GPP Bad";
 }
-
 const numVal = el => {
-  const n = Number(el?.value);
+  const n = Number(el && el.value);
   return Number.isFinite(n) ? n : 1; // default to "Fine"
 };
 
 function updateReco() {
-  if (!sleep || !food || !sore || !mood) return;
+  const sleep = document.getElementById('sleep');
+  const food  = document.getElementById('food');
+  const sore  = document.getElementById('sore');
+  const mood  = document.getElementById('mood');
+  const dayKind = document.getElementById('dayKind');
+  const recoPill = document.getElementById('recoPill');
+  const recoHint = document.getElementById('recoHint');
 
-  const r = recommend(
-    numVal(sleep),
-    numVal(food),
-    numVal(sore),
-    numVal(mood)
-  );
+  if (!sleep || !food || !sore || !mood || !dayKind) return;
 
-  // Only override if user hasn't manually picked
+  const r = recommend(numVal(sleep), numVal(food), numVal(sore), numVal(mood));
+
   if (!dayKind.__manualPick) dayKind.value = r;
 
   if (recoPill) recoPill.textContent = r;
@@ -954,36 +967,41 @@ function updateReco() {
   adaptBuilder();
 }
 
-// Wire once
-["input","change"].forEach(evt => {
-  sleep.addEventListener(evt, updateReco);
-  food.addEventListener(evt, updateReco);
-  sore.addEventListener(evt, updateReco);
-  mood.addEventListener(evt, updateReco);
-});
+// Wire EVERYTHING once, after DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+  const sleep = document.getElementById('sleep');
+  const food  = document.getElementById('food');
+  const sore  = document.getElementById('sore');
+  const mood  = document.getElementById('mood');
+  const dayKind = document.getElementById('dayKind');
 
-// Mark manual when user changes day type
-dayKind.addEventListener("change", () => {
-  dayKind.__manualPick = true;
-  adaptBuilder();
-});
+  // set sane defaults if empty (iOS sometimes reports "")
+  [sleep, food, sore, mood].forEach(el => { if (el && el.value === "") el.value = "1"; });
 
-// Reset manual flag on any slider move (input or change)
-["input","change"].forEach(evt => {
-  [sleep, food, sore, mood].forEach(el =>
-    el.addEventListener(evt, () => { dayKind.__manualPick = false; })
-  );
-});
+  // one delegated listener that catches both drag & change (mobile + desktop)
+  const handler = (e) => {
+    if (!e || !e.target) return;
+    const id = e.target.id;
+    if (id === 'sleep' || id === 'food' || id === 'sore' || id === 'mood') {
+      // sliders imply user wants auto suggestion again
+      if (dayKind) dayKind.__manualPick = false;
+      updateReco();
+    }
+  };
+  document.addEventListener('input', handler, { passive: true });
+  document.addEventListener('change', handler, { passive: true });
 
-// Initial compute once DOM is ready
-document.addEventListener("DOMContentLoaded", () => {
-  if (!sleep.value) sleep.value = 1;
-  if (!food.value)  food.value  = 1;
-  if (!sore.value)  sore.value  = 1;
-  if (!mood.value)  mood.value  = 1;
+  // flipping day type is manual override
+  if (dayKind) {
+    dayKind.addEventListener('change', () => {
+      dayKind.__manualPick = true;
+      adaptBuilder();
+    });
+  }
+
+  // first compute
   updateReco();
 });
-
 
 /* ================= Datalists ================= */
 const moveDL = document.createElement("datalist"); moveDL.id = "moveNames";
