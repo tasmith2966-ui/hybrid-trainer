@@ -915,24 +915,23 @@ function renderDashboard(){
   $("#bmList")?.innerHTML = ["3RM Squat/Hinge", "8RM RDL/Front Squat", "10-min Row", "5k Run", "Pull-Ups AMRAP", "Hollow 60s"].map(x=> `<div>• ${x}</div>`).join("");
 }
 
-// ===== Recommendation & Adaptation (clean) =====
+// ===== Recommendation & Adaptation (clean, single-script) =====
+
 function recommend(s, f, so, m) {
-  // sliders: 0..2 each. Normalize to 0..1 by /2, then average
-  const n = (s + f + so + m) / 8; // 0..1 (because 0..2 * 4 / 8)
+  // sliders: 0..2 each → normalize by /2 and average
+  const n = (s + f + so + m) / 8; // 0..1
   if (n >= 0.82) return "Strength";
   if (n >= 0.65) return "GPP Good";
   if (n >= 0.48) return "Endurance";
   return "GPP Bad";
 }
 
-// single source of truth for coercion
 const numVal = el => {
   const n = Number(el?.value);
   return Number.isFinite(n) ? n : 1; // default to "Fine"
 };
 
 function updateReco() {
-  // guard: if any slider missing, bail quietly
   if (!sleep || !food || !sore || !mood) return;
 
   const r = recommend(
@@ -942,11 +941,9 @@ function updateReco() {
     numVal(mood)
   );
 
-  // only overwrite the select if user hasn't manually picked something since last recompute
-  // we track a flag on the element
+  // Only override if user hasn't manually picked
   if (!dayKind.__manualPick) dayKind.value = r;
 
-  // UI pills
   if (recoPill) recoPill.textContent = r;
   if (recoHint) {
     recoHint.textContent =
@@ -954,37 +951,39 @@ function updateReco() {
       r === "Endurance" ? "30–40′ Z2 preferred" : "";
   }
 
-  adaptBuilder(); // re-render appropriate builder view
+  adaptBuilder();
 }
 
-// Wire once, cleanly
-["input", "change"].forEach(evt => {
+// Wire once
+["input","change"].forEach(evt => {
   sleep.addEventListener(evt, updateReco);
   food.addEventListener(evt, updateReco);
   sore.addEventListener(evt, updateReco);
   mood.addEventListener(evt, updateReco);
 });
 
-// When user changes the day type manually, mark it as manual until a slider moves again.
+// Mark manual when user changes day type
 dayKind.addEventListener("change", () => {
   dayKind.__manualPick = true;
   adaptBuilder();
 });
 
-// Reset the manual flag if any slider moves
-[sleep, food, sore, mood].forEach(el =>
-  el.addEventListener("input", () => { dayKind.__manualPick = false; })
-);
+// Reset manual flag on any slider move (input or change)
+["input","change"].forEach(evt => {
+  [sleep, food, sore, mood].forEach(el =>
+    el.addEventListener(evt, () => { dayKind.__manualPick = false; })
+  );
+});
 
-// initial compute after DOM is ready
+// Initial compute once DOM is ready
 document.addEventListener("DOMContentLoaded", () => {
-  // sanity defaults if HTML didn't set them
   if (!sleep.value) sleep.value = 1;
   if (!food.value)  food.value  = 1;
   if (!sore.value)  sore.value  = 1;
   if (!mood.value)  mood.value  = 1;
   updateReco();
 });
+
 
 /* ================= Datalists ================= */
 const moveDL = document.createElement("datalist"); moveDL.id = "moveNames";
