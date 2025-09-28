@@ -234,6 +234,8 @@
           <div class="grid">
             <div>Quads: <b id="qSets">0</b> <span id="qStatus" class="pill"></span></div>
             <div>Posterior: <b id="pSets">0</b> <span id="pStatus" class="pill"></span></div>
+            <div>Calves: <b id="calfSets">0</b></div>
+            <div>Tibialis: <b id="tibSets">0</b></div>
             <div class="muted small">Targets — Quads ≥10 · Posterior ≥10</div>
           </div>
         </div>
@@ -244,6 +246,7 @@
             <div>Delts <b id="dSets">0</b></div><div>Arms <b id="aSets">0</b></div>
           </div>
           <div style="margin-top:6px">Core <b id="coreSets">0</b> <span id="coreStatus" class="pill"></span></div>
+          <div class="muted small" style="margin-top:6px">WOD Credits — Loaded <b id="wodLoadSets">0</b> · BW <b id="wodBwSets">0</b></div>
           <div class="muted small" style="margin-top:6px">Targets — Chest 10 · Back 12 · Delts 10 · Arms 8 · Core 8</div>
         </div>
       </div>
@@ -450,6 +453,62 @@ function buildWodUI(container, preset){
     return {style,name,cap,rounds,moves};
   }};
 }
+
+const WOD_SPECIFIC_RULES = [
+  {re:/burpee/, targets:["quads","chest","core"]},
+  {re:/wall ball/, targets:["quads","delts"]},
+  {re:/thruster/, targets:["quads","delts","chest"]},
+  {re:/kettlebell swing|kb swing/, targets:["post"]},
+  {re:/carry|farmer|waiter|suitcase|front rack hold|overhead hold/, targets:["post","core"]},
+  {re:/sled|prowler/, targets:["quads","post","calves"]},
+  {re:/box jump|step-up|step up/, targets:["quads","calves"]},
+  {re:/double under|jump rope|rope skip|single under/, targets:["calves"]}
+];
+function wodTargetsForMove(name=""){
+  const low = name.toLowerCase();
+  const set = new Set();
+  WOD_SPECIFIC_RULES.forEach(rule=>{ if(rule.re.test(low)) rule.targets.forEach(t=>set.add(t)); });
+  if(/squat|lunge|split squat|step-down|pistol/.test(low)) set.add("quads");
+  if(/deadlift|hinge|good morning|hip thrust|bridge|glute|hamstring|rdl|clean|snatch|swing/.test(low)) set.add("post");
+  if(/row|pull-up|pullup|chin-up|chinup|rope climb|muscle-up|face pull|fly|pullover/.test(low)) set.add("back");
+  if(/press|push-up|pushup|dip|bench|jerk|hspu|handstand/.test(low)){ set.add("chest"); set.add("delts"); }
+  if(/strict press|shoulder press|overhead press/.test(low)) set.add("delts");
+  if(/curl|tricep|bicep|extension|skull|pressdown|chin-up|chinup/.test(low)) set.add("arms");
+  if(/sit-up|situp|crunch|toe to bar|toes to bar|t2b|leg raise|hollow|plank|v-up|abmat|ghd|mountain climber|bear crawl|core/.test(low)) set.add("core");
+  if(/calf|jump|bounding|hop/.test(low)) set.add("calves");
+  if(/tib|shin|toe raise|dorsiflex|heel walk|march/.test(low)) set.add("tib");
+  return Array.from(set);
+}
+function parseWodRepCredit(str=""){
+  if(!str) return 1;
+  const low = str.toLowerCase();
+  const match = str.match(/[\d.]+/);
+  if(!match) return 1;
+  let num = Number(match[0]);
+  if(!Number.isFinite(num)) return 1;
+  if(low.includes("min")) return Math.max(1, Math.round((num*60)/30));
+  if(low.includes("sec")) return Math.max(1, Math.round(num/30));
+  return Math.max(1, Math.round(num/12));
+}
+function calcWodSetCredits(wod){
+  if(!wod) return {loaded:{}, bw:{}};
+  const rounds = Math.max(1, Number(wod.rounds)||1);
+  const loaded = {}, bw = {};
+  const add = (bucket,target,val)=>{
+    if(!target || !val) return;
+    bucket[target] = (bucket[target]||0) + val;
+  };
+  (wod.moves||[]).forEach(move=>{
+    if(!move?.name) return;
+    const targets = wodTargetsForMove(move.name);
+    if(!targets.length) return;
+    const perRound = parseWodRepCredit(move.reps);
+    const credit = perRound * rounds;
+    const bucket = move.bw ? bw : loaded;
+    targets.forEach(t=> add(bucket,t,credit));
+  });
+  return {loaded,bw};
+}
 let wodUI=null, wodUI2=null, wodUI3=null, wodUI4=null;
 
 $("#toggleWod").addEventListener("click", ()=>{
@@ -491,6 +550,12 @@ $("#addManualAcc").addEventListener("click", ()=>{
 /* ================= Session Save & Totals ================= */
 function draftSession(){
   const kind = dayKind.value;
+  let wod = null;
+  if(kind==="Strength" && wodUI) wod = wodUI.read();
+  if(kind==="Endurance" && wodUI2) wod = wodUI2.read();
+  if(kind==="GPP Good"){ if(!wodUI3) wodUI3 = buildWodUI(wodWrap3, "good"); wod = wodUI3.read(); }
+  if(kind==="GPP Bad"){ if(!wodUI4) wodUI4 = buildWodUI(wodWrap4, "bad"); wod = wodUI4.read(); }
+
   const main = (kind==="Strength") ? {
     pattern: pattern.value,
     movement: movement.value || pattern.value,
@@ -514,22 +579,19 @@ function draftSession(){
   if(kind!=="Strength"){
     end = {
       z2: kind==="Endurance" ? Number($("#z2").value||0) : 0,
-      vig: (wodUI||wodUI2||wodUI3||wodUI4) ? Number((wodUI||wodUI2||wodUI3||wodUI4).read().cap||0) : 0,
+      vig: wod ? Number(wod.cap||0) : 0,
       modality: $("#modality")?.value || ""
     };
   }
 
-  let wod = null;
-  if(kind==="Strength" && wodUI) wod = wodUI.read();
-  if(kind==="Endurance" && wodUI2) wod = wodUI2.read();
-  if(kind==="GPP Good"){ if(!wodUI3) wodUI3 = buildWodUI(wodWrap3, "good"); wod = wodUI3.read(); }
-  if(kind==="GPP Bad"){ if(!wodUI4) wodUI4 = buildWodUI(wodWrap4, "bad"); wod = wodUI4.read(); }
-
   const acc = accessories.map(a=>({target:a.target, name:a.name, sets:Number(a.setsEl.value||0), reps:Number(a.repsEl.value||0), load:a.loadEl.value}));
-  return { id: uid(), date: todayISO(), kind, main, endurance: end, wod, acc, version: APP_VERSION };
+  const eff = wod ? calcWodSetCredits(wod) : {loaded:{},bw:{}};
+  const wodEff = Object.keys(eff.loaded||{}).length ? eff.loaded : null;
+  const wodEffBW = Object.keys(eff.bw||{}).length ? eff.bw : null;
+  return { id: uid(), date: todayISO(), kind, main, endurance: end, wod, wodEff, wodEffBW, acc, version: APP_VERSION };
 }
 function totalsCalc(sess){
-  const t = {quads:0,post:0,chest:0,back:0,delts:0,arms:0,core:0, z2:0,vig:0, strength:0};
+  const t = {quads:0,post:0,chest:0,back:0,delts:0,arms:0,core:0,calves:0,tib:0, z2:0,vig:0, strength:0,wodLoaded:0,wodBw:0};
   (sess||[]).forEach(s=>{
     if(s.main && s.main.pattern && s.main.sets){
       const add = s.main.sets;
@@ -538,6 +600,10 @@ function totalsCalc(sess){
       if(s.main.pattern==="Oly"){ t.quads += Math.ceil(add/2); t.post += Math.floor(add/2); }
     }
     if(s.endurance){ t.z2 += s.endurance.z2||0; t.vig += s.endurance.vig||0; }
+    if(s.wod && Number(s.wod.cap||0) && (s.kind==="Strength" || s.wodEff || s.wodEffBW)){
+      const already = (s.kind!=="Strength" && s.endurance && (s.endurance.vig||0) >= Number(s.wod.cap||0));
+      if(!already || s.kind==="Strength") t.vig += Number(s.wod.cap||0);
+    }
     (s.acc||[]).forEach(a=>{
       if(a.target==="Quads") t.quads += a.sets;
       if(a.target==="Posterior") t.post += a.sets;
@@ -546,7 +612,29 @@ function totalsCalc(sess){
       if(a.target==="Delts") t.delts += a.sets;
       if(a.target==="Arms") t.arms += a.sets;
       if(a.target==="Core") t.core += a.sets;
+      if(a.target==="Calves") t.calves += a.sets;
+      if(a.target==="Tib") t.tib += a.sets;
     });
+    const addWod = (eff,isBw)=>{
+      if(!eff) return;
+      let sum=0;
+      Object.entries(eff).forEach(([k,v])=>{
+        if(!v) return;
+        sum += v;
+        if(k==="quads") t.quads += v;
+        else if(k==="post"||k==="posterior") t.post += v;
+        else if(k==="chest") t.chest += v;
+        else if(k==="back") t.back += v;
+        else if(k==="delts") t.delts += v;
+        else if(k==="arms") t.arms += v;
+        else if(k==="core") t.core += v;
+        else if(k==="calves") t.calves += v;
+        else if(k==="tib") t.tib += v;
+      });
+      if(sum){ if(isBw) t.wodBw += sum; else t.wodLoaded += sum; }
+    };
+    addWod(s.wodEff,false);
+    addWod(s.wodEffBW,true);
     if(s.kind==="Strength") t.strength++;
   });
   return t;
@@ -555,8 +643,10 @@ function renderDashboard(){
   const t = totalsCalc(week().sessions);
   $("#z2Min").textContent = t.z2+"′"; $("#vigMin").textContent = t.vig+"′";
   $("#qSets").textContent = t.quads; $("#pSets").textContent = t.post;
+  $("#calfSets").textContent = t.calves||0; $("#tibSets").textContent = t.tib||0;
   $("#cSets").textContent = t.chest||0; $("#bSets").textContent = t.back||0;
   $("#dSets").textContent = t.delts||0; $("#aSets").textContent = t.arms||0; $("#coreSets").textContent = t.core||0;
+  $("#wodLoadSets").textContent = t.wodLoaded||0; $("#wodBwSets").textContent = t.wodBw||0;
   badge($("#qStatus"), t.quads>=TARGETS.Quads); badge($("#pStatus"), t.post>=TARGETS.Posterior);
   badge($("#coreStatus"), t.core>=TARGETS.Core);
   const endOK = (t.z2>=150) || (t.vig>=75) || ((t.z2*0.5 + t.vig)>=75);
