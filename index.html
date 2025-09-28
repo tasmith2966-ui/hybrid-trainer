@@ -39,6 +39,9 @@
   th{background:#1a1d22;font-weight:600}
   td input{width:100%}
   .tag{font-size:11px;color:#93c5fd;background:#0b1b30;border:1px solid #173152;border-radius:999px;padding:2px 6px}
+  .qa-item{display:flex;gap:8px;align-items:flex-start}
+  .qa-item .pill{flex-shrink:0;margin-top:2px}
+  .qa-empty{color:var(--muted)}
 </style>
 </head>
 <body>
@@ -98,7 +101,7 @@
       </div>
     </div>
 
-    <div class="card" style="margin-top:14px">
+    <div id="builderCard" class="card" style="margin-top:14px">
       <h2 id="buildTitle">Build Today’s Session</h2>
       <div class="muted small">Per-set <b>Fail</b> = only mark if technique blows up or you truly failed. Otherwise it counts.</div>
 
@@ -220,6 +223,19 @@
         <div id="accList" class="grid" style="margin-top:8px"></div>
       </div>
 
+      <div class="card" id="qaCard" style="margin-top:10px">
+        <div class="space flex">
+          <div>
+            <b>QA Check</b>
+            <div class="muted small">Spot issues before you save + run it.</div>
+          </div>
+          <button class="btn" id="qaBtn">Run QA</button>
+        </div>
+        <div id="qaList" class="grid" style="margin-top:8px;gap:6px">
+          <div class="qa-empty muted small">Run QA to check the plan.</div>
+        </div>
+      </div>
+
       <div class="space flex" style="margin-top:12px">
         <button class="btn green" id="saveBtn">Save Session</button>
         <div class="muted small">Compounds rest ≥2–3′ · Accessories 60–90s · WOD time counts as vigorous</div>
@@ -324,7 +340,24 @@ const toggleWod  = $("#toggleWod"),
 const accList       = $("#accList"),
       newAccTarget  = $("#newAccTarget"),
       newAccName    = $("#newAccName"),
-      newAccLoad    = $("#newAccLoad");
+      newAccLoad    = $("#newAccLoad"),
+      qaBtn         = $("#qaBtn"),
+      qaList        = $("#qaList"),
+      builderCard   = $("#builderCard");
+
+function markQAStale(msg="Session changed — run QA again."){
+  if(!qaList) return;
+  qaList.innerHTML = `<div class="qa-empty muted small">${msg}</div>`;
+}
+
+function handleBuilderAdjust(e){
+  if(e.target.closest("#qaCard")) return;
+  markQAStale();
+}
+
+if(builderCard){
+  ["input","change"].forEach(evt=> builderCard.addEventListener(evt, handleBuilderAdjust));
+}
 
 /* ================= Recommendation ================= */
 function recommend(s,f,so,m){ const n=(s+f+so+m)/8; if(n>=0.82) return "Strength"; if(n>=0.65) return "GPP Good"; if(n>=0.48) return "Endurance"; return "GPP Bad"; }
@@ -368,10 +401,10 @@ function addSetRow(vals={ reps:"", load:"", rpe:"", fail:false }){
     <td><button class="btn bad">X</button></td>`;
   const [_,__,reps,load,rpe,fail,del] = tr.children;
   const delBtn = del.querySelector("button");
-  delBtn.addEventListener("click", ()=>{ tr.remove(); recountHardSets(); refreshSetNumbers(); });
+  delBtn.addEventListener("click", ()=>{ tr.remove(); recountHardSets(); refreshSetNumbers(); markQAStale(); });
   [reps.querySelector("input"),load.querySelector("input"),rpe.querySelector("input"),fail.querySelector("input")].forEach(inp=> inp.addEventListener("input", ()=>{ recountHardSets(); updateProgHint(); }));
   setsBody.appendChild(tr);
-  recountHardSets(); updateProgHint();
+  recountHardSets(); updateProgHint(); markQAStale();
 }
 function refreshSetNumbers(){
   [...setsBody.children].forEach((tr,i)=>{ tr.firstElementChild.innerHTML = `<span class="tag">Set ${i+1}</span>`; });
@@ -419,7 +452,7 @@ function buildWodUI(container, preset){
     <div class="muted small" style="margin-top:6px">Mark BW if body-weight.</div>`;
   const add = container.querySelector(".w-add");
   const list = container.querySelector(".w-list");
-  function addMove(nameV="", repsV="", loadV="", bw=false){
+  function addMove(nameV="", repsV="", loadV="", bw=false, quiet=false){
     const row = document.createElement("div");
     row.className="grid g4";
     row.innerHTML=`
@@ -430,13 +463,16 @@ function buildWodUI(container, preset){
         <label class="small" style="flex-direction:row;gap:8px;align-items:center"><input class="w-bw" type="checkbox" ${bw?"checked":""}> BW</label>
         <button class="btn bad w-del">X</button>
       </div>`;
-    row.querySelector(".w-del").addEventListener("click", ()=> row.remove());
+    row.querySelector(".w-del").addEventListener("click", ()=>{ row.remove(); markQAStale(); });
     list.appendChild(row);
+    if(!quiet) markQAStale();
   }
   if(preset==="bad"){
-    [["Air Squat","15","BW",true],["Push-Up","10","BW",true],["Dead Hang (sec)","20","BW",true]].forEach(x=>addMove(...x));
+    [["Air Squat","15","BW",true],["Push-Up","10","BW",true],["Dead Hang (sec)","20","BW",true]].forEach(x=>addMove(...x, true));
   }
   add.addEventListener("click", ()=> addMove());
+  container.addEventListener("input", e=>{ if(!e.target.closest(".w-del")) markQAStale(); });
+  container.addEventListener("change", e=>{ if(!e.target.closest(".w-del")) markQAStale(); });
   return { read(){
     const style = container.querySelector(".w-style").value;
     const name  = container.querySelector(".w-name").value.trim();
@@ -455,10 +491,12 @@ let wodUI=null, wodUI2=null, wodUI3=null, wodUI4=null;
 $("#toggleWod").addEventListener("click", ()=>{
   if(wodWrap.style.display==="none"){ wodWrap.style.display=""; wodUI = buildWodUI(wodWrap); $("#toggleWod").textContent="Remove WOD"; }
   else { wodWrap.style.display="none"; wodWrap.innerHTML=""; $("#toggleWod").textContent="+ Add WOD"; wodUI=null; }
+  markQAStale();
 });
 $("#toggleWod2").addEventListener("click", ()=>{
   if(wodWrap2.style.display==="none"){ wodWrap2.style.display=""; wodUI2 = buildWodUI(wodWrap2); $("#toggleWod2").textContent="Remove WOD"; }
   else { wodWrap2.style.display="none"; wodWrap2.innerHTML=""; $("#toggleWod2").textContent="+ Add WOD"; wodUI2=null; }
+  markQAStale();
 });
 
 /* ================= Accessories ================= */
@@ -476,8 +514,9 @@ function addAccessory(target,name,sets,reps,load=""){
   $("#accList").appendChild(row);
   const delBtn = row.querySelector("button");
   const [setsEl,repsEl,loadEl] = row.querySelectorAll("input");
-  delBtn.addEventListener("click", ()=>{ row.remove(); accessories = accessories.filter(a=>a.id!==id); });
+  delBtn.addEventListener("click", ()=>{ row.remove(); accessories = accessories.filter(a=>a.id!==id); markQAStale(); });
   accessories.push({id,target,name,setsEl,repsEl,loadEl});
+  markQAStale();
 }
 $("#addManualAcc").addEventListener("click", ()=>{
   const t = newAccTarget.value || "Back";
@@ -487,6 +526,98 @@ $("#addManualAcc").addEventListener("click", ()=>{
   addAccessory(t, name, defaults.sets, defaults.reps, load);
   newAccName.value=""; newAccLoad.value="";
 });
+
+/* ================= QA Checks ================= */
+function renderQAList(issues){
+  if(!qaList) return;
+  qaList.innerHTML = "";
+  if(!issues.length){
+    const row = document.createElement("div");
+    row.className = "qa-item";
+    row.innerHTML = `<span class="pill ok">Ready</span><div>Session looks good — go run it.</div>`;
+    qaList.appendChild(row);
+    return;
+  }
+  issues.forEach(issue=>{
+    const row = document.createElement("div");
+    row.className = "qa-item";
+    const pill = document.createElement("span");
+    pill.className = issue.level==="warn" ? "pill warn" : (issue.level==="info" ? "pill" : "pill ok");
+    pill.textContent = issue.level==="warn" ? "Warn" : (issue.level==="info" ? "Info" : "OK");
+    const text = document.createElement("div");
+    text.textContent = issue.message;
+    row.append(pill, text);
+    qaList.appendChild(row);
+  });
+}
+
+function qaCollect(){
+  const session = draftSession();
+  const issues = [];
+  const warn = msg => issues.push({level:"warn", message:msg});
+  const info = msg => issues.push({level:"info", message:msg});
+  const readiness = recommend(numVal(sleep),numVal(food),numVal(sore),numVal(mood));
+
+  if(session.kind==="Strength" && (readiness==="GPP Bad" || readiness==="Recovery")){
+    warn("Readiness is low — consider swapping to a lighter day or scaling the strength work.");
+  } else if(session.kind!==readiness){
+    info(`Readiness suggestion: ${readiness}. Make sure this plan matches how you feel.`);
+  }
+
+  if(session.kind==="Strength"){
+    const detail = session.main?.setsDetail || [];
+    const quality = detail.filter(s=>!s.fail && s.reps>0 && s.load>0);
+    if(!quality.length) warn("Add at least one quality main set with reps and load.");
+    if(quality.length>0 && quality.length<3) warn("Log ≥3 quality main sets on strength days to drive progress.");
+    if(quality.some(s=>!s.rpe || s.rpe<6)) info("Fill in RPE 6–9 for every quality set to guide programming.");
+    if((session.main?.rest||0) < 2) info("Rest ≥2 minutes between main sets so they count as hard work.");
+    const fails = detail.filter(s=>s.fail).length;
+    if(fails) info(`You marked ${fails} set${fails>1?"s":""} as fail — adjust loading next time.`);
+  }
+
+  if(session.kind==="Endurance"){
+    const z2 = Number($("#z2").value||0);
+    const cap = session.wod?.cap || 0;
+    if(z2 < 20 && cap < 15) warn("Aim for ≥20′ of Zone 2 or structured intervals on endurance days.");
+    if(session.wod && (!session.wod.moves || !session.wod.moves.length)) warn("Add movements to the optional endurance WOD.");
+    if($("#modality").value==="Ruck" && !Number($("#ruckWeight").value||0)) info("Log the ruck weight to track the load." );
+  }
+
+  if(session.kind==="GPP Good" || session.kind==="GPP Bad"){
+    const moves = session.wod?.moves?.length || 0;
+    if(!moves) warn("Add at least one movement to the GPP WOD.");
+    if((session.wod?.cap||0) < 10) info("Consider a 10′+ cap so the GPP piece has enough density.");
+  }
+
+  if(session.kind==="Recovery"){
+    const walk = Number($("#walkMin").value||0);
+    const mob = Number($("#mobMin").value||0);
+    const yoga = Number($("#yogaMin").value||0);
+    if((walk+mob+yoga) < 30) warn("Stack at least 30′ of walking, mobility, or breath work on recovery days.");
+  }
+
+  const accMissing = session.acc.filter(a=> (Number(a.sets)||0)===0 || (Number(a.reps)||0)===0);
+  if(accMissing.length) warn("Fill in sets and reps for every accessory.");
+  const accTotal = session.acc.reduce((sum,a)=> sum + (Number(a.sets)||0),0);
+  if(accTotal > 18) info("Accessory volume is high — ensure you can recover from it.");
+
+  return {session, issues};
+}
+
+function runQA(opts={}){
+  const {silent=false} = opts;
+  const result = qaCollect();
+  renderQAList(result.issues);
+  const hasWarn = result.issues.some(i=>i.level==="warn");
+  if(!silent){
+    toast(hasWarn ? "QA flagged items — review the list below." : "QA passed. Ready to run it.");
+  }
+  return {...result, hasWarn};
+}
+
+if(qaBtn){
+  qaBtn.addEventListener("click", ()=> runQA());
+}
 
 /* ================= Session Save & Totals ================= */
 function draftSession(){
@@ -569,7 +700,7 @@ function renderDashboard(){
 }
 
 function saveSession(){
-  const s = draftSession();
+  const {session: s, hasWarn} = runQA({silent:true});
   week().sessions.push(s);
   week().recovery.push({ date: todayISO(), bw: (bw.value?Number(bw.value):null), sleepHrs: (sleepHrs.value?Number(sleepHrs.value):null) });
   saveStore();
@@ -577,7 +708,8 @@ function saveSession(){
   setsBody.innerHTML=""; accessories=[]; $("#accList").innerHTML="";
   if(dayKind.value==="Strength") addSetRow();
   renderDashboard();
-  toast("Session saved.");
+  markQAStale();
+  toast(hasWarn ? "Saved with QA warnings — check the QA list." : "Session saved.");
 }
 
 /* ================= Export / Import / Reset ================= */
