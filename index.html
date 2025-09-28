@@ -659,6 +659,29 @@ function draftSession(){
   const acc = accessories.map(a=>({target:a.target, name:a.name, sets:Number(a.setsEl.value||0), reps:Number(a.repsEl.value||0), load:a.loadEl.value}));
   return { id: uid(), date: todayISO(), kind, main, endurance: end, wod, acc, version: APP_VERSION };
 }
+const WOD_CREDIT_RULES = [
+  {match:/\bthruster\b|wall ball/i, add:{quads:1, delts:1}},
+  {match:/\bburpee\b/i, add:{quads:1, chest:1}},
+  {match:/\bclean\b/i, add:{quads:1, post:1}},
+  {match:/\bsnatch\b/i, add:{post:1, delts:1}},
+  {match:/\bswing\b|\bdeadlift\b|hinge|hip thrust|good morning|\brdl\b|glute bridge/i, add:{post:1}},
+  {match:/squat|lunge|step-?up|box jump|pistol/i, add:{quads:1}},
+  {match:/push-up|pushup|bench|dip/i, add:{chest:1}},
+  {match:/\brow\b|pull-?up|chin-?up|rope climb|ring row|muscle-up/i, add:{back:1}},
+  {match:/strict press|push press|press\b|jerk|handstand|hspu|wall walk|overhead/i, add:{delts:1}},
+  {match:/curl|tricep|triceps|bicep|hammer/i, add:{arms:1}},
+  {match:/sit-?up|situp|toe-?s?-?to-?bar|leg raise|knee raise|v-?up|plank|hollow|ghd|dead bug|mountain climber/i, add:{core:1}},
+  {match:/carry|sandbag|yoke/i, add:{core:1, post:1}}
+];
+function creditWodMovement(name, rounds, totals){
+  if(!name) return;
+  const lower = name.toLowerCase();
+  WOD_CREDIT_RULES.forEach(rule=>{
+    if(rule.match.test(lower)){
+      Object.entries(rule.add).forEach(([k,v])=>{ if(k in totals) totals[k] += v*rounds; });
+    }
+  });
+}
 function totalsCalc(sess){
   const t = {quads:0,post:0,chest:0,back:0,delts:0,arms:0,core:0, z2:0,vig:0, strength:0};
   (sess||[]).forEach(s=>{
@@ -669,6 +692,11 @@ function totalsCalc(sess){
       if(s.main.pattern==="Oly"){ t.quads += Math.ceil(add/2); t.post += Math.floor(add/2); }
     }
     if(s.endurance){ t.z2 += s.endurance.z2||0; t.vig += s.endurance.vig||0; }
+    if(s.wod){
+      const rounds = Math.max(1, Number(s.wod.rounds)||1);
+      if(s.wod.cap) t.vig += Number(s.wod.cap)||0;
+      (s.wod.moves||[]).forEach(m=> creditWodMovement(m?.name||"", rounds, t));
+    }
     (s.acc||[]).forEach(a=>{
       if(a.target==="Quads") t.quads += a.sets;
       if(a.target==="Posterior") t.post += a.sets;
@@ -681,6 +709,28 @@ function totalsCalc(sess){
     if(s.kind==="Strength") t.strength++;
   });
   return t;
+}
+function runTotalsTests(){
+  const baseSession = [{
+    kind:"Strength",
+    main:{pattern:"Squat", sets:3},
+    wod:{cap:12, rounds:2, moves:[{name:"Wall Ball"},{name:"Pull-Up"}]},
+    acc:[]
+  }];
+  const t1 = totalsCalc(baseSession);
+  console.assert(t1.quads===5, "WOD quads credit mismatch", t1);
+  console.assert(t1.back===2, "WOD back credit mismatch", t1);
+  console.assert(t1.delts===2, "WOD delts credit mismatch", t1);
+  console.assert(t1.vig===12, "WOD minutes should credit vigorous time", t1);
+
+  const gppSession = [{
+    kind:"GPP Good",
+    wod:{cap:15, rounds:3, moves:[{name:"Sit-Up"},{name:"Sandbag Carry"}]},
+    acc:[]
+  }];
+  const t2 = totalsCalc(gppSession);
+  console.assert(t2.core===6 && t2.post===3, "GPP WOD accessory credits mismatch", t2);
+  console.assert(t2.vig===15, "GPP WOD should add vigorous minutes", t2);
 }
 function renderDashboard(){
   const t = totalsCalc(week().sessions);
@@ -753,6 +803,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   updateReco();
   adaptBuilder();
   renderDashboard();
+  runTotalsTests();
 });
 </script>
 </body>
