@@ -641,23 +641,48 @@ function draftSession(){
     }))
   } : null;
 
-  let end = undefined;
-  if(kind!=="Strength"){
-    end = {
-      z2: kind==="Endurance" ? Number($("#z2").value||0) : 0,
-      vig: (wodUI||wodUI2||wodUI3||wodUI4) ? Number((wodUI||wodUI2||wodUI3||wodUI4).read().cap||0) : 0,
-      modality: $("#modality")?.value || ""
+  let endurance = null;
+  let recoveryPlan = null;
+  let wod = null;
+
+  if(kind==="Strength"){
+    if(wodUI) wod = wodUI.read();
+  } else if(kind==="Endurance"){
+    const z2 = Number($("#z2").value||0);
+    const distanceVal = Number($("#dist").value);
+    const distance = (Number.isFinite(distanceVal) && distanceVal>0) ? distanceVal : null;
+    const ruckVal = Number($("#ruckWeight").value);
+    const modalityVal = $("#modality")?.value || "";
+    endurance = {
+      z2,
+      vig: 0,
+      distance,
+      distUnit: $("#distUnit")?.value || "mi",
+      modality: modalityVal,
+      ruckWeight: (modalityVal==="Ruck" && Number.isFinite(ruckVal) && ruckVal>0) ? ruckVal : null,
+      notes: $("#notes")?.value.trim() || ""
+    };
+    if(wodUI2) wod = wodUI2.read();
+  } else if(kind==="GPP Good"){
+    if(!wodUI3) wodUI3 = buildWodUI(wodWrap3, "good");
+    wod = wodUI3.read();
+  } else if(kind==="GPP Bad"){
+    if(!wodUI4) wodUI4 = buildWodUI(wodWrap4, "bad");
+    wod = wodUI4.read();
+  } else if(kind==="Recovery"){
+    const walk = Number($("#walkMin").value||0);
+    const mob = Number($("#mobMin").value||0);
+    const yoga = Number($("#yogaMin").value||0);
+    recoveryPlan = {
+      walk,
+      mobility: mob,
+      yoga,
+      notes: $("#notesRec")?.value.trim() || ""
     };
   }
 
-  let wod = null;
-  if(kind==="Strength" && wodUI) wod = wodUI.read();
-  if(kind==="Endurance" && wodUI2) wod = wodUI2.read();
-  if(kind==="GPP Good"){ if(!wodUI3) wodUI3 = buildWodUI(wodWrap3, "good"); wod = wodUI3.read(); }
-  if(kind==="GPP Bad"){ if(!wodUI4) wodUI4 = buildWodUI(wodWrap4, "bad"); wod = wodUI4.read(); }
-
   const acc = accessories.map(a=>({target:a.target, name:a.name, sets:Number(a.setsEl.value||0), reps:Number(a.repsEl.value||0), load:a.loadEl.value}));
-  return { id: uid(), date: todayISO(), kind, main, endurance: end, wod, acc, version: APP_VERSION };
+  return { id: uid(), date: todayISO(), kind, main, endurance, recovery: recoveryPlan, wod, acc, version: APP_VERSION };
 }
 const WOD_CREDIT_RULES = [
   {match:/\bthruster\b|wall ball/i, add:{quads:1, delts:1}},
@@ -731,6 +756,16 @@ function runTotalsTests(){
   const t2 = totalsCalc(gppSession);
   console.assert(t2.core===6 && t2.post===3, "GPP WOD accessory credits mismatch", t2);
   console.assert(t2.vig===15, "GPP WOD should add vigorous minutes", t2);
+
+  const enduSession = [{
+    kind:"Endurance",
+    endurance:{z2:40, vig:0},
+    wod:{cap:20, rounds:1, moves:[]},
+    acc:[]
+  }];
+  const t3 = totalsCalc(enduSession);
+  console.assert(t3.z2===40, "Endurance Z2 minutes mismatch", t3);
+  console.assert(t3.vig===20, "Endurance WOD minutes should not double count", t3);
 }
 function renderDashboard(){
   const t = totalsCalc(week().sessions);
@@ -792,6 +827,8 @@ function adaptBuilder(){
   gppGoodView.style.display = (k==="GPP Good")?"":"none";
   gppBadView.style.display = (k==="GPP Bad")?"":"none";
   recoveryView.style.display = (k==="Recovery")?"":"none";
+  if(k==="GPP Good" && !wodUI3){ wodUI3 = buildWodUI(wodWrap3, "good"); }
+  if(k==="GPP Bad" && !wodUI4){ wodUI4 = buildWodUI(wodWrap4, "bad"); }
   if(k==="Strength"){ if(!movement.options.length) renderTop3(); if(!setsBody.children.length) addSetRow(); }
   if(k==="Endurance"){ $("#ruckWrap").style.display = ($("#modality").value==="Ruck") ? "" : "none"; }
 }
