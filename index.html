@@ -545,14 +545,53 @@ if(builderCard){
 }
 
 /* ================= Recommendation ================= */
-function recommend(s,f,so,m){ const n=(s+f+so+m)/8; if(n>=0.82) return "Strength"; if(n>=0.65) return "GPP Good"; if(n>=0.48) return "Endurance"; return "GPP Bad"; }
+const WEEKLY_PRIORITY = ["Strength","GPP","Endurance","Recovery"];
+
+function weeklyCounts(){
+  const counts = {Strength:0, GPP:0, Endurance:0, Recovery:0};
+  const sessions = Array.isArray(week().sessions) ? week().sessions : [];
+  sessions.forEach(sess=>{
+    if(sess?.kind==="Strength") counts.Strength++;
+    else if(sess?.kind==="Endurance") counts.Endurance++;
+    else if(sess?.kind==="Recovery") counts.Recovery++;
+    else if(sess?.kind==="GPP Good" || sess?.kind==="GPP Bad") counts.GPP++;
+  });
+  return counts;
+}
+
+function readinessScore(s,f,so,m){
+  return (s+f+so+m)/8;
+}
+
+function recommend(s,f,so,m){
+  const score = readinessScore(s,f,so,m);
+  const counts = weeklyCounts();
+  const needed = WEEKLY_PRIORITY.find(kind=> counts[kind]===0);
+  if(needed){
+    if(needed==="GPP") return score>=0.65?"GPP Good":"GPP Bad";
+    return needed;
+  }
+  if(score>=0.82) return "Strength";
+  if(score>=0.65) return "GPP Good";
+  if(score>=0.48) return "Endurance";
+  if(score>=0.30) return "GPP Bad";
+  return "Recovery";
+}
+
 const numVal = el => { const n = Number(el?.value); return Number.isFinite(n)?n:1; };
+const RECO_HINTS = {
+  Strength:"Long rests · 3–6 reps · RPE 7–9",
+  Endurance:"30–40′ Z2 preferred",
+  "GPP Good":"Mix 3–4 movements · 10–20′ cap",
+  "GPP Bad":"Keep it light — focus on blood flow",
+  Recovery:"Walk + mobility + breath work"
+};
 
 function updateReco(){
   const r = recommend(numVal(sleep),numVal(food),numVal(sore),numVal(mood));
   if(!dayKind.__manualPick) dayKind.value = r;
   recoPill.textContent = r;
-  recoHint.textContent = r==="Strength"?"Long rests · 3–6 reps · RPE 7–9":(r==="Endurance"?"30–40′ Z2 preferred":"");
+  recoHint.textContent = RECO_HINTS[r] || "";
   adaptBuilder();
 }
 ["input","change"].forEach(evt=>{ [sleep,food,sore,mood].forEach(el=> el.addEventListener(evt, updateReco)); });
@@ -1061,6 +1100,8 @@ function saveSession(){
   setsBody.innerHTML=""; accessories=[]; $("#accList").innerHTML="";
   if(dayKind.value==="Strength") addSetRow();
   renderDashboard();
+  dayKind.__manualPick = false;
+  updateReco();
   markQAStale();
   toast(hasWarn ? "Saved with QA warnings — check the QA list." : "Session saved.");
 }
@@ -1073,10 +1114,10 @@ $("#exportBtn").addEventListener("click", ()=>{
 $("#importFile").addEventListener("change", (e)=>{
   const f = e.target.files && e.target.files[0]; if(!f) return;
   const r = new FileReader();
-  r.onload = ()=>{ try{ const data = JSON.parse(r.result); if(data && data.weeks){ store = data; saveStore(); renderDashboard(); toast("Import success."); } else toast("Invalid file."); }catch{ toast("Failed to parse JSON."); } };
+  r.onload = ()=>{ try{ const data = JSON.parse(r.result); if(data && data.weeks){ store = data; saveStore(); renderDashboard(); dayKind.__manualPick=false; updateReco(); toast("Import success."); } else toast("Invalid file."); }catch{ toast("Failed to parse JSON."); } };
   r.readAsText(f);
 });
-$("#resetWeek").addEventListener("click", ()=>{ if(confirm("Reset this week's data?")){ store.weeks[weekKey]={sessions:[],recovery:[],version:APP_VERSION}; saveStore(); renderDashboard(); } });
+$("#resetWeek").addEventListener("click", ()=>{ if(confirm("Reset this week's data?")){ store.weeks[weekKey]={sessions:[],recovery:[],version:APP_VERSION}; saveStore(); renderDashboard(); dayKind.__manualPick=false; updateReco(); } });
 $("#saveBtn").addEventListener("click", saveSession);
 
 /* ================= Builder + Views ================= */
