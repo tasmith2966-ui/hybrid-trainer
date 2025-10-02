@@ -1,1156 +1,2035 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Hybrid Trainer — v11</title>
-  <meta name="theme-color" content="#030212" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600&family=Press+Start+2P&display=swap"
-    rel="stylesheet"
-  />
-  <style>
-    :root {
-      --bg:#030212;
-      --grid:#06122a;
-      --card:#041d3d;
-      --card-alt:#072c63;
-      --muted:#58b6ff;
-      --text:#f5f8ff;
-      --accent:#ffcf00;
-      --accent-dark:#c9a200;
-      --warn:#f7a600;
-      --danger:#ff4d4d;
-      --line:#0f3f7f;
-      --glow:#2dfbff;
-    }
-    *{box-sizing:border-box}
-    body{
-      margin:0;
-      background-color:var(--bg);
-      background-image:
-        radial-gradient(var(--grid) 1px, transparent 1px),
-        radial-gradient(var(--grid) 1px, transparent 1px);
-      background-size:22px 22px;
-      background-position:0 0,11px 11px;
-      color:var(--text);
-      font-family:"Chakra Petch","Press Start 2P","Courier New",monospace;
-      font-size:15px;
-      line-height:1.7;
-      letter-spacing:0.2px;
-      text-rendering:optimizeLegibility;
-      -webkit-font-smoothing:antialiased;
-    }
-    .wrap{max-width:1120px;margin:24px auto;padding:0 20px}
-    h1{font-family:"Press Start 2P","Chakra Petch","Courier New",monospace;font-size:24px;margin:0 0 8px;letter-spacing:1.5px;text-shadow:0 0 12px var(--glow)}
-    h1::before{content:"◥";color:var(--accent);margin-right:10px;text-shadow:0 0 8px var(--accent)}
-    h2{font-family:"Press Start 2P","Chakra Petch","Courier New",monospace;font-size:16px;margin:0 0 10px;letter-spacing:1px;text-transform:uppercase;text-shadow:0 0 10px rgba(45,251,255,.6);display:flex;align-items:center;gap:8px}
-    h2::before{content:"◢";color:var(--accent);text-shadow:0 0 10px var(--accent);}
-  .row{display:grid;grid-template-columns:1fr 1fr;gap:18px}
-  @media (max-width:900px){.row{grid-template-columns:1fr}}
-    .card{
-      background:linear-gradient(180deg,var(--card) 0%,var(--card-alt) 100%);
-      border:2px solid var(--line);
-      padding:20px 18px;
-      box-shadow:0 0 0 2px #000 inset,4px 4px 0 0 rgba(0,0,0,.75);
-      transition:box-shadow .15s ease,transform .15s ease;
-    }
-    .card:hover{box-shadow:0 0 0 2px var(--accent) inset,6px 6px 0 0 rgba(0,0,0,.85);transform:translate(-2px,-2px)}
-  .muted{color:var(--muted)} .small{font-size:0.9rem}
-    .btn{
-      background:linear-gradient(180deg,var(--card-alt),#03102a);
-      color:var(--accent);
-      border:2px solid var(--line);
-      padding:10px 14px;
-      cursor:pointer;
-      box-shadow:0 0 0 2px #000 inset,4px 4px 0 0 rgba(0,0,0,.85);
-      text-transform:uppercase;
-      letter-spacing:0.6px;
-      font-size:0.95rem;
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      transition:transform .12s ease,box-shadow .12s ease,background .12s ease,color .12s ease;
-    }
-    .btn:hover,
-    .btn:focus-visible{
-      background:linear-gradient(180deg,var(--accent),var(--accent-dark));
-      color:#000;
-      border-color:var(--accent);
-      box-shadow:0 0 0 2px var(--accent-dark) inset,4px 4px 0 0 var(--accent-dark);
-      transform:translate(-1px,-1px);
-    }
-    .btn:focus-visible{outline:none}
-    .btn.bad{
-      background:linear-gradient(180deg,#400913,#220006);
-      color:#ff7f9d;
-      border-color:#8f1230;
-    }
-    .btn.bad:hover,
-    .btn.bad:focus-visible{
-      background:linear-gradient(180deg,#ff7f9d,#b30b2c);
-      color:#1d0205;
-      border-color:#ff436f;
-      box-shadow:0 0 0 2px #b30b2c inset,4px 4px 0 0 #80001d;
-    }
-    .btn.green{
-      background:linear-gradient(180deg,#09341f,#04170d);
-      color:#68ffb0;
-      border-color:#1c8051;
-    }
-    .btn.green:hover,
-    .btn.green:focus-visible{
-      background:linear-gradient(180deg,#68ffb0,#1c8051);
-      color:#021108;
-      border-color:#68ffb0;
-      box-shadow:0 0 0 2px #1c8051 inset,4px 4px 0 0 #0d2f1d;
-    }
-    .pill{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      background:linear-gradient(180deg,var(--card-alt),#03102a);
-      color:var(--accent);
-      border:2px solid var(--accent-dark);
-      padding:6px 12px;
-      font-size:0.8rem;
-      letter-spacing:0.4px;
-      box-shadow:2px 2px 0 0 rgba(0,0,0,.85);
-      position:relative;
-      text-transform:uppercase;
-    }
-    .pill::before{content:"◉";color:var(--accent);text-shadow:0 0 6px var(--accent)}
-    .pill:empty{display:none}
-    .pill:empty::before{content:""}
-    .pill.ok{border-color:#00ffa2;color:#00ffa2}
-    .pill.ok::before{color:#00ffa2;text-shadow:0 0 6px #00ffa2}
-    .pill.warn{border-color:var(--warn);color:var(--warn)}
-    .pill.warn::before{color:var(--warn);text-shadow:0 0 6px var(--warn)}
-  .grid{display:grid;gap:12px}
-  .g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
-    input[type=number],input[type=text],select{
-      width:100%;
-      background:#06152f;
-      border:2px solid var(--line);
-      color:var(--text);
-      border-radius:0;
-      padding:10px;
-      box-shadow:inset 0 0 0 2px #000;
-      font-family:inherit;
-      letter-spacing:0.4px;
-    }
-    input[type=number]:focus,input[type=text]:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:inset 0 0 0 2px #000,0 0 10px rgba(255,207,0,.6)}
-    input[type=range]{width:100%;accent-color:var(--accent)}
-  .list{max-height:180px;overflow:auto;border-top:1px solid var(--line);margin-top:8px;padding-top:8px}
-  .line{height:1px;background:var(--line);margin:10px 0}
-  label.small{display:flex;flex-direction:column;gap:4px}
-    .toast{
-      position:fixed;left:50%;bottom:16px;transform:translateX(-50%);
-      background:linear-gradient(180deg,var(--card-alt),#03102a);
-      color:var(--text);
-      border:2px solid var(--accent);
-      padding:10px 14px;
-      opacity:0;
-      pointer-events:none;
-      transition:opacity .2s;
-      z-index:9999;
-      box-shadow:4px 4px 0 0 rgba(0,0,0,.85);
-      text-transform:uppercase;
-      letter-spacing:0.5px;
-    }
-  .toast.show{opacity:1}
-  table{width:100%;border-collapse:collapse}
-    th,td{border:2px solid var(--line);padding:6px 8px;text-align:left;background:#03102a}
-    th{background:var(--card-alt);font-weight:600;color:var(--accent);text-shadow:0 0 6px rgba(45,251,255,.6)}
-  td input{width:100%}
-    .tag{
-      font-size:0.8rem;
-      color:var(--muted);
-      background:linear-gradient(180deg,#041029,#020713);
-      border:2px solid var(--line);
-      padding:4px 8px;
-      letter-spacing:0.4px;
-      text-transform:uppercase;
-      box-shadow:2px 2px 0 0 rgba(0,0,0,.8);
-    }
-  .qa-item{display:flex;gap:10px;align-items:flex-start}
-  .qa-item .pill{flex-shrink:0;margin-top:2px}
-  .qa-empty{color:var(--muted)}
-  .flex{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-  .space{justify-content:space-between;gap:16px}
-  @media (max-width:720px){
-    body{font-size:16px;line-height:1.75;letter-spacing:0.1px}
-    .wrap{margin:16px auto;padding:0 14px}
-    .space{flex-direction:column;align-items:flex-start}
-    .space>.flex{width:100%;justify-content:stretch}
-    .space>.flex .btn{flex:1 1 30%;min-width:0;justify-content:center}
-    .row{grid-template-columns:1fr;gap:16px}
-    .g2,.g3,.g4{grid-template-columns:1fr}
-    .card{padding:18px 16px}
-    h1{font-size:20px;line-height:1.4}
-    h2{font-size:14px}
-    .btn{width:100%}
-    table{font-size:0.95rem}
-    th,td{padding:8px 10px}
-  }
-</style>
-</head>
-<body>
-  <div class="wrap">
-    <div class="space flex">
-      <div>
-        <h1>Hybrid Trainer — v11</h1>
-        <div class="muted small">Single HTML. Local save + export/import. No service worker.</div>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Hybrid Trainer — v11</title>
+    <meta name="theme-color" content="#030212" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600&family=Press+Start+2P&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #030212;
+        --grid: #06122a;
+        --card: #041d3d;
+        --card-alt: #072c63;
+        --muted: #58b6ff;
+        --text: #f5f8ff;
+        --accent: #ffcf00;
+        --accent-dark: #c9a200;
+        --warn: #f7a600;
+        --danger: #ff4d4d;
+        --line: #0f3f7f;
+        --glow: #2dfbff;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background-color: var(--bg);
+        background-image:
+          radial-gradient(var(--grid) 1px, transparent 1px),
+          radial-gradient(var(--grid) 1px, transparent 1px);
+        background-size: 22px 22px;
+        background-position:
+          0 0,
+          11px 11px;
+        color: var(--text);
+        font-family: "Chakra Petch", "Press Start 2P", "Courier New", monospace;
+        font-size: 15px;
+        line-height: 1.7;
+        letter-spacing: 0.2px;
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+      }
+      .wrap {
+        max-width: 1120px;
+        margin: 24px auto;
+        padding: 0 20px;
+      }
+      h1 {
+        font-family: "Press Start 2P", "Chakra Petch", "Courier New", monospace;
+        font-size: 24px;
+        margin: 0 0 8px;
+        letter-spacing: 1.5px;
+        text-shadow: 0 0 12px var(--glow);
+      }
+      h1::before {
+        content: "◥";
+        color: var(--accent);
+        margin-right: 10px;
+        text-shadow: 0 0 8px var(--accent);
+      }
+      h2 {
+        font-family: "Press Start 2P", "Chakra Petch", "Courier New", monospace;
+        font-size: 16px;
+        margin: 0 0 10px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        text-shadow: 0 0 10px rgba(45, 251, 255, 0.6);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      h2::before {
+        content: "◢";
+        color: var(--accent);
+        text-shadow: 0 0 10px var(--accent);
+      }
+      .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+      }
+      @media (max-width: 900px) {
+        .row {
+          grid-template-columns: 1fr;
+        }
+      }
+      .card {
+        background: linear-gradient(
+          180deg,
+          var(--card) 0%,
+          var(--card-alt) 100%
+        );
+        border: 2px solid var(--line);
+        padding: 20px 18px;
+        box-shadow:
+          0 0 0 2px #000 inset,
+          4px 4px 0 0 rgba(0, 0, 0, 0.75);
+        transition:
+          box-shadow 0.15s ease,
+          transform 0.15s ease;
+      }
+      .card:hover {
+        box-shadow:
+          0 0 0 2px var(--accent) inset,
+          6px 6px 0 0 rgba(0, 0, 0, 0.85);
+        transform: translate(-2px, -2px);
+      }
+      .muted {
+        color: var(--muted);
+      }
+      .small {
+        font-size: 0.9rem;
+      }
+      .btn {
+        background: linear-gradient(180deg, var(--card-alt), #03102a);
+        color: var(--accent);
+        border: 2px solid var(--line);
+        padding: 10px 14px;
+        cursor: pointer;
+        box-shadow:
+          0 0 0 2px #000 inset,
+          4px 4px 0 0 rgba(0, 0, 0, 0.85);
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        font-size: 0.95rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition:
+          transform 0.12s ease,
+          box-shadow 0.12s ease,
+          background 0.12s ease,
+          color 0.12s ease;
+      }
+      .btn:hover,
+      .btn:focus-visible {
+        background: linear-gradient(180deg, var(--accent), var(--accent-dark));
+        color: #000;
+        border-color: var(--accent);
+        box-shadow:
+          0 0 0 2px var(--accent-dark) inset,
+          4px 4px 0 0 var(--accent-dark);
+        transform: translate(-1px, -1px);
+      }
+      .btn:focus-visible {
+        outline: none;
+      }
+      .btn.bad {
+        background: linear-gradient(180deg, #400913, #220006);
+        color: #ff7f9d;
+        border-color: #8f1230;
+      }
+      .btn.bad:hover,
+      .btn.bad:focus-visible {
+        background: linear-gradient(180deg, #ff7f9d, #b30b2c);
+        color: #1d0205;
+        border-color: #ff436f;
+        box-shadow:
+          0 0 0 2px #b30b2c inset,
+          4px 4px 0 0 #80001d;
+      }
+      .btn.green {
+        background: linear-gradient(180deg, #09341f, #04170d);
+        color: #68ffb0;
+        border-color: #1c8051;
+      }
+      .btn.green:hover,
+      .btn.green:focus-visible {
+        background: linear-gradient(180deg, #68ffb0, #1c8051);
+        color: #021108;
+        border-color: #68ffb0;
+        box-shadow:
+          0 0 0 2px #1c8051 inset,
+          4px 4px 0 0 #0d2f1d;
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: linear-gradient(180deg, var(--card-alt), #03102a);
+        color: var(--accent);
+        border: 2px solid var(--accent-dark);
+        padding: 6px 12px;
+        font-size: 0.8rem;
+        letter-spacing: 0.4px;
+        box-shadow: 2px 2px 0 0 rgba(0, 0, 0, 0.85);
+        position: relative;
+        text-transform: uppercase;
+      }
+      .pill::before {
+        content: "◉";
+        color: var(--accent);
+        text-shadow: 0 0 6px var(--accent);
+      }
+      .pill:empty {
+        display: none;
+      }
+      .pill:empty::before {
+        content: "";
+      }
+      .pill.ok {
+        border-color: #00ffa2;
+        color: #00ffa2;
+      }
+      .pill.ok::before {
+        color: #00ffa2;
+        text-shadow: 0 0 6px #00ffa2;
+      }
+      .pill.warn {
+        border-color: var(--warn);
+        color: var(--warn);
+      }
+      .pill.warn::before {
+        color: var(--warn);
+        text-shadow: 0 0 6px var(--warn);
+      }
+      .grid {
+        display: grid;
+        gap: 12px;
+      }
+      .g2 {
+        grid-template-columns: 1fr 1fr;
+      }
+      .g3 {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      .g4 {
+        grid-template-columns: repeat(4, 1fr);
+      }
+      input[type="number"],
+      input[type="text"],
+      select {
+        width: 100%;
+        background: #06152f;
+        border: 2px solid var(--line);
+        color: var(--text);
+        border-radius: 0;
+        padding: 10px;
+        box-shadow: inset 0 0 0 2px #000;
+        font-family: inherit;
+        letter-spacing: 0.4px;
+      }
+      input[type="number"]:focus,
+      input[type="text"]:focus,
+      select:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow:
+          inset 0 0 0 2px #000,
+          0 0 10px rgba(255, 207, 0, 0.6);
+      }
+      input[type="range"] {
+        width: 100%;
+        accent-color: var(--accent);
+      }
+      .list {
+        max-height: 180px;
+        overflow: auto;
+        border-top: 1px solid var(--line);
+        margin-top: 8px;
+        padding-top: 8px;
+      }
+      .line {
+        height: 1px;
+        background: var(--line);
+        margin: 10px 0;
+      }
+      label.small {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .toast {
+        position: fixed;
+        left: 50%;
+        bottom: 16px;
+        transform: translateX(-50%);
+        background: linear-gradient(180deg, var(--card-alt), #03102a);
+        color: var(--text);
+        border: 2px solid var(--accent);
+        padding: 10px 14px;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s;
+        z-index: 9999;
+        box-shadow: 4px 4px 0 0 rgba(0, 0, 0, 0.85);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .toast.show {
+        opacity: 1;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        border: 2px solid var(--line);
+        padding: 6px 8px;
+        text-align: left;
+        background: #03102a;
+      }
+      th {
+        background: var(--card-alt);
+        font-weight: 600;
+        color: var(--accent);
+        text-shadow: 0 0 6px rgba(45, 251, 255, 0.6);
+      }
+      td input {
+        width: 100%;
+      }
+      .tag {
+        font-size: 0.8rem;
+        color: var(--muted);
+        background: linear-gradient(180deg, #041029, #020713);
+        border: 2px solid var(--line);
+        padding: 4px 8px;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+        box-shadow: 2px 2px 0 0 rgba(0, 0, 0, 0.8);
+      }
+      .qa-item {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+      }
+      .qa-item .pill {
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+      .qa-empty {
+        color: var(--muted);
+      }
+      .flex {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .space {
+        justify-content: space-between;
+        gap: 16px;
+      }
+      @media (max-width: 720px) {
+        body {
+          font-size: 16px;
+          line-height: 1.75;
+          letter-spacing: 0.1px;
+        }
+        .wrap {
+          margin: 16px auto;
+          padding: 0 14px;
+        }
+        .space {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+        .space > .flex {
+          width: 100%;
+          justify-content: stretch;
+        }
+        .space > .flex .btn {
+          flex: 1 1 30%;
+          min-width: 0;
+          justify-content: center;
+        }
+        .row {
+          grid-template-columns: 1fr;
+          gap: 16px;
+        }
+        .g2,
+        .g3,
+        .g4 {
+          grid-template-columns: 1fr;
+        }
+        .card {
+          padding: 18px 16px;
+        }
+        h1 {
+          font-size: 20px;
+          line-height: 1.4;
+        }
+        h2 {
+          font-size: 14px;
+        }
+        .btn {
+          width: 100%;
+        }
+        table {
+          font-size: 0.95rem;
+        }
+        th,
+        td {
+          padding: 8px 10px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="space flex">
+        <div>
+          <h1>Hybrid Trainer — v11</h1>
+          <div class="muted small">
+            Single HTML. Local save + export/import. No service worker.
+          </div>
+        </div>
+        <div class="flex">
+          <button id="exportBtn" class="btn">Export</button>
+          <label class="btn"
+            ><input
+              id="importFile"
+              type="file"
+              accept="application/json"
+              style="display: none"
+            />Import</label
+          >
+          <button id="resetWeek" class="btn">Reset Week</button>
+        </div>
       </div>
-      <div class="flex">
-        <button id="exportBtn" class="btn">Export</button>
-        <label class="btn"><input id="importFile" type="file" accept="application/json" style="display:none">Import</label>
-        <button id="resetWeek" class="btn">Reset Week</button>
-      </div>
-    </div>
 
-    <div class="row" style="margin-top:12px">
-      <div class="card">
-        <h2>Readiness</h2>
-        <div class="muted small" style="margin-bottom:8px">0=Bad, 1=Fine, 2=Good. Worst days → <b>GPP Bad</b>.</div>
-        <div class="grid">
-          <div class="g3 grid">
-            <label class="small">Sleep <input type="range" min="0" max="2" step="1" id="sleep" value="1"></label>
-            <label class="small">Nutrition <input type="range" min="0" max="2" step="1" id="food" value="1"></label>
-            <label class="small">Soreness <input type="range" min="0" max="2" step="1" id="sore" value="1"></label>
+      <div class="row" style="margin-top: 12px">
+        <div class="card">
+          <h2>Readiness</h2>
+          <div class="muted small" style="margin-bottom: 8px">
+            0=Bad, 1=Fine, 2=Good. Worst days → <b>GPP Bad</b>.
+          </div>
+          <div class="grid">
+            <div class="g3 grid">
+              <label class="small"
+                >Sleep
+                <input
+                  type="range"
+                  min="0"
+                  max="2"
+                  step="1"
+                  id="sleep"
+                  value="1"
+              /></label>
+              <label class="small"
+                >Nutrition
+                <input
+                  type="range"
+                  min="0"
+                  max="2"
+                  step="1"
+                  id="food"
+                  value="1"
+              /></label>
+              <label class="small"
+                >Soreness
+                <input
+                  type="range"
+                  min="0"
+                  max="2"
+                  step="1"
+                  id="sore"
+                  value="1"
+              /></label>
+            </div>
+            <div class="g2 grid">
+              <label class="small"
+                >Mood
+                <input
+                  type="range"
+                  min="0"
+                  max="2"
+                  step="1"
+                  id="mood"
+                  value="1"
+              /></label>
+              <label class="small"
+                >Morning BW
+                <input
+                  type="number"
+                  inputmode="numeric"
+                  pattern="[0-9]*"
+                  id="bw"
+                  placeholder="lbs/kg"
+              /></label>
+            </div>
+            <div>
+              <label class="small"
+                >Sleep (hrs)
+                <input
+                  type="number"
+                  inputmode="numeric"
+                  pattern="[0-9]*"
+                  id="sleepHrs"
+                  min="0"
+                  step="0.5"
+              /></label>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Recommendation</h2>
+          <div
+            class="flex"
+            style="flex-wrap: wrap; gap: 6px 8px; margin-bottom: 8px"
+          >
+            <span id="recoPill" class="pill">—</span>
+            <span id="recoHint" class="pill"></span>
           </div>
           <div class="g2 grid">
-            <label class="small">Mood <input type="range" min="0" max="2" step="1" id="mood" value="1"></label>
-            <label class="small">Morning BW <input type="number" inputmode="numeric" pattern="[0-9]*" id="bw" placeholder="lbs/kg"></label>
+            <label class="small"
+              >Day type
+              <select id="dayKind">
+                <option>Strength</option>
+                <option>Endurance</option>
+                <option>GPP Good</option>
+                <option>GPP Bad</option>
+                <option>Recovery</option>
+              </select>
+            </label>
+            <label class="small" id="modWrap" style="display: none"
+              >Endurance Modality
+              <select id="modality">
+                <option>Row</option>
+                <option>Bike</option>
+                <option>Run</option>
+                <option>Ruck</option>
+                <option>Swim</option>
+                <option>Other</option>
+              </select>
+            </label>
           </div>
-          <div><label class="small">Sleep (hrs) <input type="number" inputmode="numeric" pattern="[0-9]*" id="sleepHrs" min="0" step="0.5"></label></div>
         </div>
       </div>
 
-      <div class="card">
-        <h2>Recommendation</h2>
-        <div class="flex" style="flex-wrap:wrap;gap:6px 8px;margin-bottom:8px">
-          <span id="recoPill" class="pill">—</span>
-          <span id="recoHint" class="pill"></span>
+      <div id="builderCard" class="card" style="margin-top: 14px">
+        <h2 id="buildTitle">Build Today’s Session</h2>
+        <div class="muted small">
+          Per-set <b>Fail</b> = only mark if technique blows up or you truly
+          failed. Otherwise it counts.
         </div>
-        <div class="g2 grid">
-          <label class="small">Day type
-            <select id="dayKind">
-              <option>Strength</option>
-              <option>Endurance</option>
-              <option>GPP Good</option>
-              <option>GPP Bad</option>
-              <option>Recovery</option>
-            </select>
-          </label>
-          <label class="small" id="modWrap" style="display:none">Endurance Modality
-            <select id="modality">
-              <option>Row</option><option>Bike</option><option>Run</option><option>Ruck</option><option>Swim</option><option>Other</option>
-            </select>
-          </label>
+
+        <!-- Strength -->
+        <div id="strengthView" style="display: none">
+          <div class="line"></div>
+          <div class="g4 grid">
+            <label class="small"
+              >Pattern
+              <select id="pattern">
+                <option>Hinge</option>
+                <option>Squat</option>
+                <option>Oly</option>
+                <option>None</option>
+              </select>
+            </label>
+            <label class="small"
+              >Movement (top 3)
+              <select id="movement"></select>
+            </label>
+            <label class="small"
+              >Rest (min)<input
+                type="number"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                id="restMin"
+                min="2"
+                max="5"
+                step="0.5"
+                value="3"
+            /></label>
+            <label class="small"
+              >Target RPE<input
+                type="number"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                id="rpe"
+                min="5"
+                max="10"
+                step="0.5"
+                value="8"
+            /></label>
+          </div>
+          <div class="small muted" id="progGhost" style="margin-top: 6px"></div>
+
+          <div class="card" style="margin-top: 10px">
+            <div class="space flex">
+              <div>
+                <b>Main Lifts</b>
+                <span class="muted small">Enter each work set</span>
+              </div>
+              <div class="small">Hard sets: <b id="hardCount">0</b></div>
+            </div>
+            <div style="overflow: auto">
+              <table id="setsTable">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Movement</th>
+                    <th>Reps</th>
+                    <th>Weight</th>
+                    <th>RPE</th>
+                    <th>Fail</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="setsBody"></tbody>
+              </table>
+            </div>
+            <div style="margin-top: 8px" class="flex">
+              <button class="btn" id="addSet">+ Add Set</button>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top: 10px">
+            <div class="space flex">
+              <div><b>Optional Finisher WOD</b></div>
+              <button class="btn" id="toggleWod">+ Add WOD</button>
+            </div>
+            <div id="wodWrap" style="display: none; margin-top: 8px"></div>
+          </div>
+        </div>
+
+        <!-- Endurance -->
+        <div id="enduranceView" style="display: none">
+          <div class="line"></div>
+          <div class="g3 grid">
+            <label class="small"
+              >Duration (min)<input
+                id="z2"
+                type="number"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                min="0"
+                step="5"
+                value="30"
+            /></label>
+            <label class="small"
+              >Distance<input
+                id="dist"
+                type="number"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                min="0"
+                step="0.1"
+                placeholder="5"
+            /></label>
+            <label class="small"
+              >Unit<select id="distUnit">
+                <option>mi</option>
+                <option>km</option>
+              </select></label
+            >
+          </div>
+          <div class="g3 grid" style="margin-top: 6px">
+            <label class="small" id="ruckWrap" style="display: none"
+              >Ruck weight<input
+                id="ruckWeight"
+                type="number"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                min="0"
+                step="1"
+                placeholder="lbs"
+            /></label>
+            <div></div>
+            <div></div>
+          </div>
+          <div class="card" style="margin-top: 10px">
+            <div class="space flex">
+              <div><b>Optional WOD</b></div>
+              <button class="btn" id="toggleWod2">+ Add WOD</button>
+            </div>
+            <div id="wodWrap2" style="display: none; margin-top: 8px"></div>
+          </div>
+          <div style="margin-top: 8px">
+            <label class="small"
+              >Notes<input
+                id="notes"
+                type="text"
+                placeholder="HR, pace, terrain…"
+            /></label>
+          </div>
+        </div>
+
+        <!-- GPP Good -->
+        <div id="gppGoodView" style="display: none">
+          <div class="line"></div>
+          <div class="card">
+            <div><b>Build a WOD</b></div>
+            <div id="wodWrap3" style="margin-top: 8px"></div>
+          </div>
+        </div>
+
+        <!-- GPP Bad -->
+        <div id="gppBadView" style="display: none">
+          <div class="line"></div>
+          <div class="card">
+            <div>
+              <b>Minimum viable session</b>
+              <span class="muted small"
+                >12′ AMRAP: Air Squat / Push-Up / Dead Hang</span
+              >
+            </div>
+            <div id="wodWrap4" style="margin-top: 8px"></div>
+          </div>
+        </div>
+
+        <!-- Recovery -->
+        <div id="recoveryView" style="display: none">
+          <div class="line"></div>
+          <div class="g3 grid">
+            <label class="small"
+              >Walk (min)<input
+                id="walkMin"
+                type="number"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                min="0"
+                step="5"
+                value="30"
+            /></label>
+            <label class="small"
+              >Mobility (min)<input
+                id="mobMin"
+                type="number"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                min="0"
+                step="5"
+                value="10"
+            /></label>
+            <label class="small"
+              >Yoga/Breath (min)<input
+                id="yogaMin"
+                type="number"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                min="0"
+                step="5"
+                value="10"
+            /></label>
+          </div>
+          <div style="margin-top: 8px">
+            <label class="small"
+              >Notes<input
+                id="notesRec"
+                type="text"
+                placeholder="How you felt…"
+            /></label>
+          </div>
+        </div>
+
+        <div class="line"></div>
+
+        <!-- Accessories -->
+        <div id="accWrap">
+          <div class="space flex">
+            <h3 style="margin: 0">Accessories</h3>
+            <div class="flex" style="flex-wrap: wrap; gap: 6px 8px">
+              <select id="newAccTarget">
+                <option>Back</option>
+                <option>Chest</option>
+                <option>Delts</option>
+                <option>Arms</option>
+                <option>Quads</option>
+                <option>Posterior</option>
+                <option>Calves</option>
+                <option>Tib</option>
+                <option>Core</option>
+              </select>
+              <input
+                id="newAccName"
+                type="text"
+                placeholder="Accessory name"
+                list="accOptions"
+              />
+              <datalist id="accOptions"></datalist>
+              <input
+                id="newAccLoad"
+                type="number"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                min="0"
+                step="1"
+                placeholder="Weight or plate"
+              />
+              <button class="btn" id="addManualAcc">+ Add</button>
+              <button class="btn" id="autoAcc">AUTO</button>
+            </div>
+          </div>
+          <div class="muted small" id="accHelp" style="margin-top: 6px">
+            Defaults: big groups <b>3×8–12</b>, arms <b>3×10–15</b>,
+            calves/tib/core <b>3×12–20</b>. 1–3 RIR.
+          </div>
+          <div id="accList" class="grid" style="margin-top: 8px"></div>
+        </div>
+
+        <div class="card" id="qaCard" style="margin-top: 10px">
+          <div class="space flex">
+            <div>
+              <b>QA Check</b>
+              <div class="muted small">
+                Spot issues before you save + run it.
+              </div>
+            </div>
+            <button class="btn" id="qaBtn">Run QA</button>
+          </div>
+          <div id="qaList" class="grid" style="margin-top: 8px; gap: 6px">
+            <div class="qa-empty muted small">Run QA to check the plan.</div>
+          </div>
+        </div>
+
+        <div class="space flex" style="margin-top: 12px">
+          <button class="btn green" id="saveBtn">Save Session</button>
+          <div class="muted small">
+            Compounds rest ≥2–3′ · Accessories 60–90s · WOD time counts as
+            vigorous
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: 14px">
+        <h2>Weekly Dashboard</h2>
+        <div class="row">
+          <div class="card">
+            <div class="space flex"><div>Lower Body Sets</div></div>
+            <div class="grid">
+              <div>
+                Quads: <b id="qSets">0</b>
+                <span id="qStatus" class="pill"></span>
+              </div>
+              <div>
+                Posterior: <b id="pSets">0</b>
+                <span id="pStatus" class="pill"></span>
+              </div>
+              <div class="muted small">Targets — Quads ≥10 · Posterior ≥10</div>
+            </div>
+          </div>
+          <div class="card">
+            <div>Upper/Other Sets</div>
+            <div class="g2 grid" style="margin-top: 6px">
+              <div>Chest <b id="cSets">0</b></div>
+              <div>Back <b id="bSets">0</b></div>
+              <div>Delts <b id="dSets">0</b></div>
+              <div>Arms <b id="aSets">0</b></div>
+            </div>
+            <div style="margin-top: 6px">
+              Core <b id="coreSets">0</b>
+              <span id="coreStatus" class="pill"></span>
+            </div>
+            <div class="muted small" style="margin-top: 6px">
+              Targets — Chest 10 · Back 12 · Delts 10 · Arms 8 · Core 8
+            </div>
+          </div>
+        </div>
+        <div class="row" style="margin-top: 12px">
+          <div class="card">
+            <div>Endurance Minutes</div>
+            <div class="g2 grid" style="margin-top: 6px">
+              <div>Z2 <b id="z2Min">0′</b></div>
+              <div>Vig <b id="vigMin">0′</b></div>
+            </div>
+            <div id="endStatus" class="pill" style="margin-top: 6px"></div>
+          </div>
+          <div class="card">
+            <div>History (This Week)</div>
+            <div id="hist" class="list"></div>
+          </div>
+        </div>
+        <div class="muted small" style="margin-top: 8px; text-align: center">
+          Clean build v11 — no PWA cache.
         </div>
       </div>
     </div>
 
-    <div id="builderCard" class="card" style="margin-top:14px">
-      <h2 id="buildTitle">Build Today’s Session</h2>
-      <div class="muted small">Per-set <b>Fail</b> = only mark if technique blows up or you truly failed. Otherwise it counts.</div>
+    <div id="toast" class="toast"></div>
 
-      <!-- Strength -->
-      <div id="strengthView" style="display:none">
-        <div class="line"></div>
-        <div class="g4 grid">
-          <label class="small">Pattern
-            <select id="pattern">
-              <option>Hinge</option><option>Squat</option><option>Oly</option><option>None</option>
-            </select>
-          </label>
-          <label class="small">Movement (top 3)
-            <select id="movement"></select>
-          </label>
-          <label class="small">Rest (min)<input type="number" inputmode="numeric" pattern="[0-9]*" id="restMin" min="2" max="5" step="0.5" value="3"></label>
-          <label class="small">Target RPE<input type="number" inputmode="numeric" pattern="[0-9]*" id="rpe" min="5" max="10" step="0.5" value="8"></label>
-        </div>
-        <div class="small muted" id="progGhost" style="margin-top:6px"></div>
+    <script>
+      /* ================= Versions & Storage ================= */
+      const APP_VERSION = 11;
+      const STORE_KEY = "hybrid_v11";
 
-        <div class="card" style="margin-top:10px">
-          <div class="space flex">
-            <div><b>Main Lifts</b> <span class="muted small">Enter each work set</span></div>
-            <div class="small">Hard sets: <b id="hardCount">0</b></div>
-          </div>
-          <div style="overflow:auto">
-            <table id="setsTable">
-              <thead>
-                <tr><th>#</th><th>Movement</th><th>Reps</th><th>Weight</th><th>RPE</th><th>Fail</th><th></th></tr>
-              </thead>
-              <tbody id="setsBody"></tbody>
-            </table>
-          </div>
-          <div style="margin-top:8px" class="flex">
-            <button class="btn" id="addSet">+ Add Set</button>
-          </div>
-        </div>
+      /* ================= Utilities ================= */
+      const $ = (s) => document.querySelector(s);
+      const $$ = (s) => Array.from(document.querySelectorAll(s));
+      const uid = () => Math.random().toString(36).slice(2, 9);
+      const todayISO = () => {
+        const d = new Date();
+        d.setHours(0, 0, 0, 0);
+        return d.toISOString();
+      };
+      const weekKey = (() => {
+        const d = new Date(),
+          onejan = new Date(d.getFullYear(), 0, 1);
+        const w = Math.ceil(
+          ((d - onejan) / 86400000 + onejan.getDay() + 1) / 7,
+        );
+        return `${d.getFullYear()}-W${String(w).padStart(2, "0")}`;
+      })();
+      function load(k, f) {
+        try {
+          const s = localStorage.getItem(k);
+          return s ? JSON.parse(s) : f;
+        } catch {
+          return f;
+        }
+      }
+      function save(k, v) {
+        localStorage.setItem(k, JSON.stringify(v));
+      }
+      function toast(msg) {
+        const t = $("#toast");
+        t.textContent = msg;
+        t.classList.add("show");
+        setTimeout(() => t.classList.remove("show"), 2000);
+      }
+      function badge(el, ok, onTxt = "On track", offTxt = "Low") {
+        el.className = "pill " + (ok ? "ok" : "warn");
+        el.textContent = ok ? onTxt : offTxt;
+      }
 
-        <div class="card" style="margin-top:10px">
-          <div class="space flex">
-            <div><b>Optional Finisher WOD</b></div>
-            <button class="btn" id="toggleWod">+ Add WOD</button>
-          </div>
-          <div id="wodWrap" style="display:none;margin-top:8px"></div>
-        </div>
-      </div>
+      /* ================= Data ================= */
+      let store = load(STORE_KEY, { version: APP_VERSION, weeks: {} });
+      function week() {
+        if (!store.weeks[weekKey])
+          store.weeks[weekKey] = { sessions: [], recovery: [] };
+        return store.weeks[weekKey];
+      }
+      function saveStore() {
+        save(STORE_KEY, store);
+      }
 
-      <!-- Endurance -->
-      <div id="enduranceView" style="display:none">
-        <div class="line"></div>
-        <div class="g3 grid">
-          <label class="small">Duration (min)<input id="z2" type="number" inputmode="numeric" pattern="[0-9]*" min="0" step="5" value="30"></label>
-          <label class="small">Distance<input id="dist" type="number" inputmode="numeric" pattern="[0-9]*" min="0" step="0.1" placeholder="5"></label>
-          <label class="small">Unit<select id="distUnit"><option>mi</option><option>km</option></select></label>
-        </div>
-        <div class="g3 grid" style="margin-top:6px">
-          <label class="small" id="ruckWrap" style="display:none">Ruck weight<input id="ruckWeight" type="number" inputmode="numeric" pattern="[0-9]*" min="0" step="1" placeholder="lbs"></label>
-          <div></div><div></div>
-        </div>
-        <div class="card" style="margin-top:10px">
-          <div class="space flex">
-            <div><b>Optional WOD</b></div>
-            <button class="btn" id="toggleWod2">+ Add WOD</button>
-          </div>
-          <div id="wodWrap2" style="display:none;margin-top:8px"></div>
-        </div>
-        <div style="margin-top:8px"><label class="small">Notes<input id="notes" type="text" placeholder="HR, pace, terrain…"></label></div>
-      </div>
+      /* ================= Targets ================= */
+      const TARGETS = {
+        Quads: 10,
+        Posterior: 10,
+        Chest: 10,
+        Back: 12,
+        Delts: 10,
+        Arms: 8,
+        Core: 8,
+      };
 
-      <!-- GPP Good -->
-      <div id="gppGoodView" style="display:none">
-        <div class="line"></div>
-        <div class="card">
-          <div><b>Build a WOD</b></div>
-          <div id="wodWrap3" style="margin-top:8px"></div>
-        </div>
-      </div>
+      const ACCESSORY_LIBRARY = [
+        { target: "Back", name: "Chest-Supported Row", sets: 3, reps: 10 },
+        { target: "Back", name: "Lat Pulldown", sets: 3, reps: 10 },
+        { target: "Back", name: "Single-Arm Dumbbell Row", sets: 3, reps: 12 },
+        { target: "Chest", name: "DB Bench Press", sets: 3, reps: 10 },
+        { target: "Chest", name: "Push-Up on Rings", sets: 3, reps: 12 },
+        { target: "Chest", name: "Cable Fly", sets: 3, reps: 15 },
+        {
+          target: "Delts",
+          name: "Seated DB Shoulder Press",
+          sets: 3,
+          reps: 10,
+        },
+        { target: "Delts", name: "Dumbbell Lateral Raise", sets: 3, reps: 15 },
+        { target: "Delts", name: "Face Pull", sets: 3, reps: 15 },
+        { target: "Arms", name: "EZ-Bar Curl", sets: 3, reps: 12 },
+        { target: "Arms", name: "Rope Triceps Pushdown", sets: 3, reps: 12 },
+        { target: "Arms", name: "Hammer Curl", sets: 3, reps: 12 },
+        { target: "Quads", name: "Leg Press", sets: 3, reps: 12 },
+        { target: "Quads", name: "Bulgarian Split Squat", sets: 3, reps: 10 },
+        { target: "Quads", name: "Leg Extension", sets: 3, reps: 15 },
+        { target: "Posterior", name: "Romanian Deadlift", sets: 3, reps: 10 },
+        { target: "Posterior", name: "Hip Thrust", sets: 3, reps: 10 },
+        { target: "Posterior", name: "Back Extension", sets: 3, reps: 15 },
+        { target: "Calves", name: "Seated Calf Raise", sets: 3, reps: 15 },
+        { target: "Calves", name: "Standing Calf Raise", sets: 3, reps: 15 },
+        { target: "Tib", name: "Tibialis Raise", sets: 3, reps: 15 },
+        { target: "Tib", name: "Toe Walk", sets: 3, reps: 20 },
+        { target: "Core", name: "Hanging Knee Raise", sets: 3, reps: 12 },
+        { target: "Core", name: "Cable Pallof Press", sets: 3, reps: 12 },
+        { target: "Core", name: "Weighted Plank", sets: 3, reps: 45 },
+      ];
 
-      <!-- GPP Bad -->
-      <div id="gppBadView" style="display:none">
-        <div class="line"></div>
-        <div class="card">
-          <div><b>Minimum viable session</b> <span class="muted small">12′ AMRAP: Air Squat / Push-Up / Dead Hang</span></div>
-          <div id="wodWrap4" style="margin-top:8px"></div>
-        </div>
-      </div>
+      /* ================= UI Refs ================= */
+      const sleep = $("#sleep"),
+        food = $("#food"),
+        sore = $("#sore"),
+        mood = $("#mood");
+      const bw = $("#bw"),
+        sleepHrs = $("#sleepHrs");
+      const recoPill = $("#recoPill"),
+        recoHint = $("#recoHint");
+      const dayKind = $("#dayKind"),
+        modWrap = $("#modWrap"),
+        modality = $("#modality");
 
-      <!-- Recovery -->
-      <div id="recoveryView" style="display:none">
-        <div class="line"></div>
-        <div class="g3 grid">
-          <label class="small">Walk (min)<input id="walkMin" type="number" inputmode="numeric" pattern="[0-9]*" min="0" step="5" value="30"></label>
-          <label class="small">Mobility (min)<input id="mobMin" type="number" inputmode="numeric" pattern="[0-9]*" min="0" step="5" value="10"></label>
-          <label class="small">Yoga/Breath (min)<input id="yogaMin" type="number" inputmode="numeric" pattern="[0-9]*" min="0" step="5" value="10"></label>
-        </div>
-        <div style="margin-top:8px"><label class="small">Notes<input id="notesRec" type="text" placeholder="How you felt…"></label></div>
-      </div>
+      const strengthView = $("#strengthView"),
+        enduranceView = $("#enduranceView"),
+        gppGoodView = $("#gppGoodView"),
+        gppBadView = $("#gppBadView"),
+        recoveryView = $("#recoveryView");
 
-      <div class="line"></div>
+      const pattern = $("#pattern"),
+        movement = $("#movement"),
+        restMin = $("#restMin"),
+        rpe = $("#rpe");
 
-      <!-- Accessories -->
-      <div id="accWrap">
-        <div class="space flex">
-          <h3 style="margin:0">Accessories</h3>
-          <div class="flex" style="flex-wrap:wrap;gap:6px 8px">
-            <select id="newAccTarget">
-              <option>Back</option><option>Chest</option><option>Delts</option><option>Arms</option>
-              <option>Quads</option><option>Posterior</option><option>Calves</option><option>Tib</option>
-              <option>Core</option>
-            </select>
-            <input id="newAccName" type="text" placeholder="Accessory name" list="accOptions">
-            <datalist id="accOptions"></datalist>
-            <input id="newAccLoad" type="number" inputmode="numeric" pattern="[0-9]*" min="0" step="1" placeholder="Weight or plate">
-            <button class="btn" id="addManualAcc">+ Add</button>
-            <button class="btn" id="autoAcc">AUTO</button>
-          </div>
-        </div>
-        <div class="muted small" id="accHelp" style="margin-top:6px">
-          Defaults: big groups <b>3×8–12</b>, arms <b>3×10–15</b>, calves/tib/core <b>3×12–20</b>. 1–3 RIR.
-        </div>
-        <div id="accList" class="grid" style="margin-top:8px"></div>
-      </div>
+      const setsBody = $("#setsBody"),
+        addSetBtn = $("#addSet"),
+        hardCount = $("#hardCount"),
+        progGhost = $("#progGhost");
 
-      <div class="card" id="qaCard" style="margin-top:10px">
-        <div class="space flex">
-          <div>
-            <b>QA Check</b>
-            <div class="muted small">Spot issues before you save + run it.</div>
-          </div>
-          <button class="btn" id="qaBtn">Run QA</button>
-        </div>
-        <div id="qaList" class="grid" style="margin-top:8px;gap:6px">
-          <div class="qa-empty muted small">Run QA to check the plan.</div>
-        </div>
-      </div>
+      const toggleWod = $("#toggleWod"),
+        wodWrap = $("#wodWrap"),
+        toggleWod2 = $("#toggleWod2"),
+        wodWrap2 = $("#wodWrap2"),
+        wodWrap3 = $("#wodWrap3"),
+        wodWrap4 = $("#wodWrap4");
 
-      <div class="space flex" style="margin-top:12px">
-        <button class="btn green" id="saveBtn">Save Session</button>
-        <div class="muted small">Compounds rest ≥2–3′ · Accessories 60–90s · WOD time counts as vigorous</div>
-      </div>
-    </div>
+      const accList = $("#accList"),
+        newAccTarget = $("#newAccTarget"),
+        newAccName = $("#newAccName"),
+        accOptionsList = $("#accOptions"),
+        newAccLoad = $("#newAccLoad"),
+        autoAccBtn = $("#autoAcc"),
+        qaBtn = $("#qaBtn"),
+        qaList = $("#qaList"),
+        builderCard = $("#builderCard");
 
-    <div class="card" style="margin-top:14px">
-      <h2>Weekly Dashboard</h2>
-      <div class="row">
-        <div class="card">
-          <div class="space flex"><div>Lower Body Sets</div></div>
-          <div class="grid">
-            <div>Quads: <b id="qSets">0</b> <span id="qStatus" class="pill"></span></div>
-            <div>Posterior: <b id="pSets">0</b> <span id="pStatus" class="pill"></span></div>
-            <div class="muted small">Targets — Quads ≥10 · Posterior ≥10</div>
-          </div>
-        </div>
-        <div class="card">
-          <div>Upper/Other Sets</div>
-          <div class="g2 grid" style="margin-top:6px">
-            <div>Chest <b id="cSets">0</b></div><div>Back <b id="bSets">0</b></div>
-            <div>Delts <b id="dSets">0</b></div><div>Arms <b id="aSets">0</b></div>
-          </div>
-          <div style="margin-top:6px">Core <b id="coreSets">0</b> <span id="coreStatus" class="pill"></span></div>
-          <div class="muted small" style="margin-top:6px">Targets — Chest 10 · Back 12 · Delts 10 · Arms 8 · Core 8</div>
-        </div>
-      </div>
-      <div class="row" style="margin-top:12px">
-        <div class="card">
-          <div>Endurance Minutes</div>
-          <div class="g2 grid" style="margin-top:6px">
-            <div>Z2 <b id="z2Min">0′</b></div><div>Vig <b id="vigMin">0′</b></div>
-          </div>
-          <div id="endStatus" class="pill" style="margin-top:6px"></div>
-        </div>
-        <div class="card">
-          <div>History (This Week)</div>
-          <div id="hist" class="list"></div>
-        </div>
-      </div>
-      <div class="muted small" style="margin-top:8px;text-align:center">
-        Clean build v11 — no PWA cache.
-      </div>
-    </div>
-  </div>
+      function markQAStale(msg = "Session changed — run QA again.") {
+        if (!qaList) return;
+        qaList.innerHTML = `<div class="qa-empty muted small">${msg}</div>`;
+      }
 
-  <div id="toast" class="toast"></div>
+      function handleBuilderAdjust(e) {
+        if (e.target.closest("#qaCard")) return;
+        markQAStale();
+      }
 
-<script>
-/* ================= Versions & Storage ================= */
-const APP_VERSION = 11;
-const STORE_KEY = "hybrid_v11";
+      if (builderCard) {
+        ["input", "change"].forEach((evt) =>
+          builderCard.addEventListener(evt, handleBuilderAdjust),
+        );
+      }
 
-/* ================= Utilities ================= */
-const $ = s => document.querySelector(s);
-const $$ = s => Array.from(document.querySelectorAll(s));
-const uid = () => Math.random().toString(36).slice(2,9);
-const todayISO = () => { const d=new Date(); d.setHours(0,0,0,0); return d.toISOString(); };
-const weekKey = (()=>{ const d=new Date(), onejan=new Date(d.getFullYear(),0,1); const w=Math.ceil((((d-onejan)/86400000)+onejan.getDay()+1)/7); return `${d.getFullYear()}-W${String(w).padStart(2,"0")}`; })();
-function load(k,f){ try{ const s=localStorage.getItem(k); return s?JSON.parse(s):f }catch{ return f } }
-function save(k,v){ localStorage.setItem(k, JSON.stringify(v)) }
-function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"), 2000); }
-function badge(el, ok, onTxt="On track", offTxt="Low"){ el.className = "pill " + (ok ? "ok" : "warn"); el.textContent = ok ? onTxt : offTxt; }
+      /* ================= Recommendation ================= */
+      const WEEKLY_PRIORITY = ["Strength", "GPP", "Endurance", "Recovery"];
 
-/* ================= Data ================= */
-let store = load(STORE_KEY, { version: APP_VERSION, weeks: {} });
-function week(){ if(!store.weeks[weekKey]) store.weeks[weekKey] = { sessions: [], recovery: [] }; return store.weeks[weekKey]; }
-function saveStore(){ save(STORE_KEY, store); }
+      function weeklyCounts() {
+        const counts = { Strength: 0, GPP: 0, Endurance: 0, Recovery: 0 };
+        const sessions = Array.isArray(week().sessions) ? week().sessions : [];
+        sessions.forEach((sess) => {
+          if (sess?.kind === "Strength") counts.Strength++;
+          else if (sess?.kind === "Endurance") counts.Endurance++;
+          else if (sess?.kind === "Recovery") counts.Recovery++;
+          else if (sess?.kind === "GPP Good" || sess?.kind === "GPP Bad")
+            counts.GPP++;
+        });
+        return counts;
+      }
 
-/* ================= Targets ================= */
-const TARGETS = { Quads:10, Posterior:10, Chest:10, Back:12, Delts:10, Arms:8, Core:8 };
+      function readinessScore(s, f, so, m) {
+        return (s + f + so + m) / 8;
+      }
 
-const ACCESSORY_LIBRARY = [
-  {target:"Back", name:"Chest-Supported Row", sets:3, reps:10},
-  {target:"Back", name:"Lat Pulldown", sets:3, reps:10},
-  {target:"Back", name:"Single-Arm Dumbbell Row", sets:3, reps:12},
-  {target:"Chest", name:"DB Bench Press", sets:3, reps:10},
-  {target:"Chest", name:"Push-Up on Rings", sets:3, reps:12},
-  {target:"Chest", name:"Cable Fly", sets:3, reps:15},
-  {target:"Delts", name:"Seated DB Shoulder Press", sets:3, reps:10},
-  {target:"Delts", name:"Dumbbell Lateral Raise", sets:3, reps:15},
-  {target:"Delts", name:"Face Pull", sets:3, reps:15},
-  {target:"Arms", name:"EZ-Bar Curl", sets:3, reps:12},
-  {target:"Arms", name:"Rope Triceps Pushdown", sets:3, reps:12},
-  {target:"Arms", name:"Hammer Curl", sets:3, reps:12},
-  {target:"Quads", name:"Leg Press", sets:3, reps:12},
-  {target:"Quads", name:"Bulgarian Split Squat", sets:3, reps:10},
-  {target:"Quads", name:"Leg Extension", sets:3, reps:15},
-  {target:"Posterior", name:"Romanian Deadlift", sets:3, reps:10},
-  {target:"Posterior", name:"Hip Thrust", sets:3, reps:10},
-  {target:"Posterior", name:"Back Extension", sets:3, reps:15},
-  {target:"Calves", name:"Seated Calf Raise", sets:3, reps:15},
-  {target:"Calves", name:"Standing Calf Raise", sets:3, reps:15},
-  {target:"Tib", name:"Tibialis Raise", sets:3, reps:15},
-  {target:"Tib", name:"Toe Walk", sets:3, reps:20},
-  {target:"Core", name:"Hanging Knee Raise", sets:3, reps:12},
-  {target:"Core", name:"Cable Pallof Press", sets:3, reps:12},
-  {target:"Core", name:"Weighted Plank", sets:3, reps:45}
-];
+      function recommend(s, f, so, m) {
+        const score = readinessScore(s, f, so, m);
+        const counts = weeklyCounts();
+        const needed = WEEKLY_PRIORITY.find((kind) => counts[kind] === 0);
+        if (needed) {
+          if (needed === "GPP") return score >= 0.65 ? "GPP Good" : "GPP Bad";
+          return needed;
+        }
+        if (score >= 0.82) return "Strength";
+        if (score >= 0.65) return "GPP Good";
+        if (score >= 0.48) return "Endurance";
+        if (score >= 0.3) return "GPP Bad";
+        return "Recovery";
+      }
 
-/* ================= UI Refs ================= */
-const sleep = $("#sleep"), food=$("#food"), sore=$("#sore"), mood=$("#mood");
-const bw=$("#bw"), sleepHrs=$("#sleepHrs");
-const recoPill = $("#recoPill"), recoHint=$("#recoHint");
-const dayKind = $("#dayKind"), modWrap=$("#modWrap"), modality=$("#modality");
+      const numVal = (el) => {
+        const n = Number(el?.value);
+        return Number.isFinite(n) ? n : 1;
+      };
+      const RECO_HINTS = {
+        Strength: "Long rests · 3–6 reps · RPE 7–9",
+        Endurance: "30–40′ Z2 preferred",
+        "GPP Good": "Mix 3–4 movements · 10–20′ cap",
+        "GPP Bad": "Keep it light — focus on blood flow",
+        Recovery: "Walk + mobility + breath work",
+      };
 
-const strengthView = $("#strengthView"),
-      enduranceView = $("#enduranceView"),
-      gppGoodView  = $("#gppGoodView"),
-      gppBadView   = $("#gppBadView"),
-      recoveryView = $("#recoveryView");
+      function updateReco() {
+        const r = recommend(
+          numVal(sleep),
+          numVal(food),
+          numVal(sore),
+          numVal(mood),
+        );
+        if (!dayKind.__manualPick) dayKind.value = r;
+        recoPill.textContent = r;
+        recoHint.textContent = RECO_HINTS[r] || "";
+        adaptBuilder();
+      }
+      ["input", "change"].forEach((evt) => {
+        [sleep, food, sore, mood].forEach((el) =>
+          el.addEventListener(evt, updateReco),
+        );
+      });
+      dayKind.addEventListener("change", () => {
+        dayKind.__manualPick = true;
+        adaptBuilder();
+      });
+      ["input", "change"].forEach((evt) => {
+        [sleep, food, sore, mood].forEach((el) =>
+          el.addEventListener(evt, () => (dayKind.__manualPick = false)),
+        );
+      });
 
-const pattern  = $("#pattern"),
-      movement = $("#movement"),
-      restMin  = $("#restMin"),
-      rpe      = $("#rpe");
+      /* ================= Strength Main Lifts ================= */
+      const TOP3 = {
+        Hinge: [
+          "Conventional Deadlift",
+          "Trap Bar Deadlift",
+          "Romanian Deadlift",
+        ],
+        Squat: ["Back Squat", "Front Squat", "Pause Back Squat"],
+        Oly: ["Clean & Jerk", "Clean", "Snatch"],
+        None: ["—"],
+      };
+      function renderTop3() {
+        const list = TOP3[pattern.value] || ["—"];
+        movement.innerHTML = list.map((x) => `<option>${x}</option>`).join("");
+        progGhost.textContent = "";
+      }
+      pattern.addEventListener("change", renderTop3);
 
-const setsBody = $("#setsBody"),
-      addSetBtn = $("#addSet"),
-      hardCount = $("#hardCount"),
-      progGhost = $("#progGhost");
-
-const toggleWod  = $("#toggleWod"),
-      wodWrap    = $("#wodWrap"),
-      toggleWod2 = $("#toggleWod2"),
-      wodWrap2   = $("#wodWrap2"),
-      wodWrap3   = $("#wodWrap3"),
-      wodWrap4   = $("#wodWrap4");
-
-const accList       = $("#accList"),
-      newAccTarget  = $("#newAccTarget"),
-      newAccName    = $("#newAccName"),
-      accOptionsList= $("#accOptions"),
-      newAccLoad    = $("#newAccLoad"),
-      autoAccBtn    = $("#autoAcc"),
-      qaBtn         = $("#qaBtn"),
-      qaList        = $("#qaList"),
-      builderCard   = $("#builderCard");
-
-function markQAStale(msg="Session changed — run QA again."){
-  if(!qaList) return;
-  qaList.innerHTML = `<div class="qa-empty muted small">${msg}</div>`;
-}
-
-function handleBuilderAdjust(e){
-  if(e.target.closest("#qaCard")) return;
-  markQAStale();
-}
-
-if(builderCard){
-  ["input","change"].forEach(evt=> builderCard.addEventListener(evt, handleBuilderAdjust));
-}
-
-/* ================= Recommendation ================= */
-const WEEKLY_PRIORITY = ["Strength","GPP","Endurance","Recovery"];
-
-function weeklyCounts(){
-  const counts = {Strength:0, GPP:0, Endurance:0, Recovery:0};
-  const sessions = Array.isArray(week().sessions) ? week().sessions : [];
-  sessions.forEach(sess=>{
-    if(sess?.kind==="Strength") counts.Strength++;
-    else if(sess?.kind==="Endurance") counts.Endurance++;
-    else if(sess?.kind==="Recovery") counts.Recovery++;
-    else if(sess?.kind==="GPP Good" || sess?.kind==="GPP Bad") counts.GPP++;
-  });
-  return counts;
-}
-
-function readinessScore(s,f,so,m){
-  return (s+f+so+m)/8;
-}
-
-function recommend(s,f,so,m){
-  const score = readinessScore(s,f,so,m);
-  const counts = weeklyCounts();
-  const needed = WEEKLY_PRIORITY.find(kind=> counts[kind]===0);
-  if(needed){
-    if(needed==="GPP") return score>=0.65?"GPP Good":"GPP Bad";
-    return needed;
-  }
-  if(score>=0.82) return "Strength";
-  if(score>=0.65) return "GPP Good";
-  if(score>=0.48) return "Endurance";
-  if(score>=0.30) return "GPP Bad";
-  return "Recovery";
-}
-
-const numVal = el => { const n = Number(el?.value); return Number.isFinite(n)?n:1; };
-const RECO_HINTS = {
-  Strength:"Long rests · 3–6 reps · RPE 7–9",
-  Endurance:"30–40′ Z2 preferred",
-  "GPP Good":"Mix 3–4 movements · 10–20′ cap",
-  "GPP Bad":"Keep it light — focus on blood flow",
-  Recovery:"Walk + mobility + breath work"
-};
-
-function updateReco(){
-  const r = recommend(numVal(sleep),numVal(food),numVal(sore),numVal(mood));
-  if(!dayKind.__manualPick) dayKind.value = r;
-  recoPill.textContent = r;
-  recoHint.textContent = RECO_HINTS[r] || "";
-  adaptBuilder();
-}
-["input","change"].forEach(evt=>{ [sleep,food,sore,mood].forEach(el=> el.addEventListener(evt, updateReco)); });
-dayKind.addEventListener("change", ()=>{ dayKind.__manualPick = true; adaptBuilder(); });
-["input","change"].forEach(evt=>{ [sleep,food,sore,mood].forEach(el=> el.addEventListener(evt, ()=> dayKind.__manualPick=false)); });
-
-/* ================= Strength Main Lifts ================= */
-const TOP3 = {
-  Hinge:["Conventional Deadlift","Trap Bar Deadlift","Romanian Deadlift"],
-  Squat:["Back Squat","Front Squat","Pause Back Squat"],
-  Oly:["Clean & Jerk","Clean","Snatch"],
-  None:["—"]
-};
-function renderTop3(){
-  const list = TOP3[pattern.value] || ["—"];
-  movement.innerHTML = list.map(x=>`<option>${x}</option>`).join("");
-  progGhost.textContent="";
-}
-pattern.addEventListener("change", renderTop3);
-
-function addSetRow(vals={ reps:"", load:"", rpe:"", fail:false }){
-  const tr = document.createElement("tr");
-  const idx = setsBody.children.length + 1;
-  tr.innerHTML = `
+      function addSetRow(vals = { reps: "", load: "", rpe: "", fail: false }) {
+        const tr = document.createElement("tr");
+        const idx = setsBody.children.length + 1;
+        tr.innerHTML = `
     <td><span class="tag">Set ${idx}</span></td>
     <td>${movement.value || pattern.value}</td>
     <td><input type="number" min="1" step="1" value="${vals.reps}"></td>
     <td><input type="number" min="0" step="1" value="${vals.load}"></td>
     <td><input type="number" min="5" max="10" step="0.5" value="${vals.rpe}"></td>
-    <td style="text-align:center"><input type="checkbox" ${vals.fail?"checked":""}></td>
+    <td style="text-align:center"><input type="checkbox" ${vals.fail ? "checked" : ""}></td>
     <td><button class="btn bad">X</button></td>`;
-  const [_,__,reps,load,rpe,fail,del] = tr.children;
-  const delBtn = del.querySelector("button");
-  delBtn.addEventListener("click", ()=>{ tr.remove(); recountHardSets(); refreshSetNumbers(); markQAStale(); });
-  [reps.querySelector("input"),load.querySelector("input"),rpe.querySelector("input"),fail.querySelector("input")].forEach(inp=> inp.addEventListener("input", ()=>{ recountHardSets(); updateProgHint(); }));
-  setsBody.appendChild(tr);
-  recountHardSets(); updateProgHint(); markQAStale();
-}
-function refreshSetNumbers(){
-  [...setsBody.children].forEach((tr,i)=>{ tr.firstElementChild.innerHTML = `<span class="tag">Set ${i+1}</span>`; });
-}
-function recountHardSets(){
-  let count=0;
-  [...setsBody.querySelectorAll("tr")].forEach(tr=>{
-    const reps=Number(tr.children[2].querySelector("input").value||0);
-    const load=Number(tr.children[3].querySelector("input").value||0);
-    const fail=tr.children[5].querySelector("input").checked;
-    if(reps>0 && load>0 && !fail) count++;
-  });
-  hardCount.textContent = count;
-}
-function updateProgHint(){
-  const good=[];
-  [...setsBody.querySelectorAll("tr")].forEach(tr=>{
-    const reps=Number(tr.children[2].querySelector("input").value||0);
-    const load=Number(tr.children[3].querySelector("input").value||0);
-    const rpe=Number(tr.children[4].querySelector("input").value||0);
-    const fail=tr.children[5].querySelector("input").checked;
-    if(!fail && rpe>0 && rpe<=9.5 && reps>0 && load>0){ good.push({reps,load}); }
-  });
-  if(!good.length){ progGhost.textContent=""; return; }
-  const best = Math.max(...good.map(s=> s.load*(1+s.reps/30)));
-  const upper = ["Bench","Press","Row","Pulldown","Pull-Up","DB"].some(k=> (movement.value||"").includes(k));
-  progGhost.textContent = upper ? "Next: push reps toward 10–12 before adding load" : "Next: +2.5–5 lb if ≤8 RPE at target reps";
-}
-addSetBtn.addEventListener("click", ()=> addSetRow());
+        const [_, __, reps, load, rpe, fail, del] = tr.children;
+        const delBtn = del.querySelector("button");
+        delBtn.addEventListener("click", () => {
+          tr.remove();
+          recountHardSets();
+          refreshSetNumbers();
+          markQAStale();
+        });
+        [
+          reps.querySelector("input"),
+          load.querySelector("input"),
+          rpe.querySelector("input"),
+          fail.querySelector("input"),
+        ].forEach((inp) =>
+          inp.addEventListener("input", () => {
+            recountHardSets();
+            updateProgHint();
+          }),
+        );
+        setsBody.appendChild(tr);
+        recountHardSets();
+        updateProgHint();
+        markQAStale();
+      }
+      function refreshSetNumbers() {
+        [...setsBody.children].forEach((tr, i) => {
+          tr.firstElementChild.innerHTML = `<span class="tag">Set ${i + 1}</span>`;
+        });
+      }
+      function recountHardSets() {
+        let count = 0;
+        [...setsBody.querySelectorAll("tr")].forEach((tr) => {
+          const reps = Number(tr.children[2].querySelector("input").value || 0);
+          const load = Number(tr.children[3].querySelector("input").value || 0);
+          const fail = tr.children[5].querySelector("input").checked;
+          if (reps > 0 && load > 0 && !fail) count++;
+        });
+        hardCount.textContent = count;
+      }
+      function updateProgHint() {
+        const good = [];
+        [...setsBody.querySelectorAll("tr")].forEach((tr) => {
+          const reps = Number(tr.children[2].querySelector("input").value || 0);
+          const load = Number(tr.children[3].querySelector("input").value || 0);
+          const rpe = Number(tr.children[4].querySelector("input").value || 0);
+          const fail = tr.children[5].querySelector("input").checked;
+          if (!fail && rpe > 0 && rpe <= 9.5 && reps > 0 && load > 0) {
+            good.push({ reps, load });
+          }
+        });
+        if (!good.length) {
+          progGhost.textContent = "";
+          return;
+        }
+        const best = Math.max(...good.map((s) => s.load * (1 + s.reps / 30)));
+        const upper = [
+          "Bench",
+          "Press",
+          "Row",
+          "Pulldown",
+          "Pull-Up",
+          "DB",
+        ].some((k) => (movement.value || "").includes(k));
+        progGhost.textContent = upper
+          ? "Next: push reps toward 10–12 before adding load"
+          : "Next: +2.5–5 lb if ≤8 RPE at target reps";
+      }
+      addSetBtn.addEventListener("click", () => addSetRow());
 
-/* ================= WOD Builder (simple) ================= */
-function buildWodUI(container, preset){
-  container.innerHTML = `
+      /* ================= WOD Builder (simple) ================= */
+      function buildWodUI(container, preset) {
+        container.innerHTML = `
     <div class="g4 grid">
       <label class="small">Style
         <select class="w-style"><option>AMRAP</option><option>For Time</option><option>EMOM</option><option>Intervals</option><option>Chipper</option></select>
       </label>
       <label class="small">Name (optional)<input class="w-name" type="text" placeholder="e.g., 4RFT Row/Wall Ball/Sit-Up"></label>
       <label class="small">Time (min)<input class="w-cap" type="number" min="0" step="1" value="20"></label>
-      <label class="small">Rounds<input class="w-rounds" type="number" min="1" step="1" value="${preset==='bad'?1:3}"></label>
+      <label class="small">Rounds<input class="w-rounds" type="number" min="1" step="1" value="${preset === "bad" ? 1 : 3}"></label>
     </div>
     <div class="line"></div>
     <div class="space flex"><div><b>Movements</b></div><button class="btn w-add">+ Add Movement</button></div>
     <div class="w-list grid" style="margin-top:6px"></div>
     <div class="muted small" style="margin-top:6px">Mark BW if body-weight.</div>`;
-  const add = container.querySelector(".w-add");
-  const list = container.querySelector(".w-list");
-  function addMove(nameV="", repsV="", loadV="", bw=false, quiet=false){
-    const row = document.createElement("div");
-    row.className="grid g4";
-    row.innerHTML=`
+        const add = container.querySelector(".w-add");
+        const list = container.querySelector(".w-list");
+        function addMove(
+          nameV = "",
+          repsV = "",
+          loadV = "",
+          bw = false,
+          quiet = false,
+        ) {
+          const row = document.createElement("div");
+          row.className = "grid g4";
+          row.innerHTML = `
       <input placeholder="Movement (e.g., KB Swing)" value="${nameV}">
       <input placeholder="Reps/Time (e.g., 15 or 30s)" value="${repsV}">
       <input placeholder="Load (e.g., 24kg or light)" value="${loadV}">
       <div class="flex" style="justify-content:space-between">
-        <label class="small" style="flex-direction:row;gap:8px;align-items:center"><input class="w-bw" type="checkbox" ${bw?"checked":""}> BW</label>
+        <label class="small" style="flex-direction:row;gap:8px;align-items:center"><input class="w-bw" type="checkbox" ${bw ? "checked" : ""}> BW</label>
         <button class="btn bad w-del">X</button>
       </div>`;
-    row.querySelector(".w-del").addEventListener("click", ()=>{ row.remove(); markQAStale(); });
-    list.appendChild(row);
-    if(!quiet) markQAStale();
-  }
-  if(preset==="bad"){
-    [["Air Squat","15","BW",true],["Push-Up","10","BW",true],["Dead Hang (sec)","20","BW",true]].forEach(x=>addMove(...x, true));
-  }
-  add.addEventListener("click", ()=> addMove());
-  container.addEventListener("input", e=>{ if(!e.target.closest(".w-del")) markQAStale(); });
-  container.addEventListener("change", e=>{ if(!e.target.closest(".w-del")) markQAStale(); });
-  return { read(){
-    const style = container.querySelector(".w-style").value;
-    const name  = container.querySelector(".w-name").value.trim();
-    const cap   = Number(container.querySelector(".w-cap").value||0);
-    const rounds= Number(container.querySelector(".w-rounds").value||1);
-    const moves=[...container.querySelectorAll(".w-list > div")].map(row=>{
-      const [n,r,l] = row.querySelectorAll("input");
-      const bw = row.querySelector(".w-bw")?.checked || false;
-      return {name:n.value.trim(), reps:r.value.trim(), load:l.value.trim(), bw};
-    }).filter(m=>m.name);
-    return {style,name,cap,rounds,moves};
-  }};
-}
-let wodUI=null, wodUI2=null, wodUI3=null, wodUI4=null;
+          row.querySelector(".w-del").addEventListener("click", () => {
+            row.remove();
+            markQAStale();
+          });
+          list.appendChild(row);
+          if (!quiet) markQAStale();
+        }
+        if (preset === "bad") {
+          [
+            ["Air Squat", "15", "BW", true],
+            ["Push-Up", "10", "BW", true],
+            ["Dead Hang (sec)", "20", "BW", true],
+          ].forEach((x) => addMove(...x, true));
+        }
+        add.addEventListener("click", () => addMove());
+        container.addEventListener("input", (e) => {
+          if (!e.target.closest(".w-del")) markQAStale();
+        });
+        container.addEventListener("change", (e) => {
+          if (!e.target.closest(".w-del")) markQAStale();
+        });
+        return {
+          read() {
+            const style = container.querySelector(".w-style").value;
+            const name = container.querySelector(".w-name").value.trim();
+            const cap = Number(container.querySelector(".w-cap").value || 0);
+            const rounds = Number(
+              container.querySelector(".w-rounds").value || 1,
+            );
+            const moves = [...container.querySelectorAll(".w-list > div")]
+              .map((row) => {
+                const [n, r, l] = row.querySelectorAll("input");
+                const bw = row.querySelector(".w-bw")?.checked || false;
+                return {
+                  name: n.value.trim(),
+                  reps: r.value.trim(),
+                  load: l.value.trim(),
+                  bw,
+                };
+              })
+              .filter((m) => m.name);
+            return { style, name, cap, rounds, moves };
+          },
+        };
+      }
+      let wodUI = null,
+        wodUI2 = null,
+        wodUI3 = null,
+        wodUI4 = null;
 
-$("#toggleWod").addEventListener("click", ()=>{
-  if(wodWrap.style.display==="none"){ wodWrap.style.display=""; wodUI = buildWodUI(wodWrap); $("#toggleWod").textContent="Remove WOD"; }
-  else { wodWrap.style.display="none"; wodWrap.innerHTML=""; $("#toggleWod").textContent="+ Add WOD"; wodUI=null; }
-  markQAStale();
-});
-$("#toggleWod2").addEventListener("click", ()=>{
-  if(wodWrap2.style.display==="none"){ wodWrap2.style.display=""; wodUI2 = buildWodUI(wodWrap2); $("#toggleWod2").textContent="Remove WOD"; }
-  else { wodWrap2.style.display="none"; wodWrap2.innerHTML=""; $("#toggleWod2").textContent="+ Add WOD"; wodUI2=null; }
-  markQAStale();
-});
+      $("#toggleWod").addEventListener("click", () => {
+        if (wodWrap.style.display === "none") {
+          wodWrap.style.display = "";
+          wodUI = buildWodUI(wodWrap);
+          $("#toggleWod").textContent = "Remove WOD";
+        } else {
+          wodWrap.style.display = "none";
+          wodWrap.innerHTML = "";
+          $("#toggleWod").textContent = "+ Add WOD";
+          wodUI = null;
+        }
+        markQAStale();
+      });
+      $("#toggleWod2").addEventListener("click", () => {
+        if (wodWrap2.style.display === "none") {
+          wodWrap2.style.display = "";
+          wodUI2 = buildWodUI(wodWrap2);
+          $("#toggleWod2").textContent = "Remove WOD";
+        } else {
+          wodWrap2.style.display = "none";
+          wodWrap2.innerHTML = "";
+          $("#toggleWod2").textContent = "+ Add WOD";
+          wodUI2 = null;
+        }
+        markQAStale();
+      });
 
-/* ================= Accessories ================= */
-function targetAccDefaults(target){
-  if(target==="Arms") return {sets:3,reps:12};
-  if(target==="Calves" || target==="Core" || target==="Tib") return {sets:3,reps:15};
-  return {sets:3,reps:10};
-}
-function findAccessoryByName(name){
-  if(!name) return null;
-  const lookup = name.trim().toLowerCase();
-  return ACCESSORY_LIBRARY.find(acc=> acc.name.toLowerCase()===lookup) || null;
-}
-function updateAccOptions(){
-  if(!accOptionsList) return;
-  const target = newAccTarget?.value || "";
-  const list = ACCESSORY_LIBRARY.filter(acc=> !target || acc.target===target);
-  accOptionsList.innerHTML = list.map(acc=>`<option value="${acc.name}" label="${acc.target}"></option>`).join("");
-}
-function applyAccessoryMatch(){
-  const match = findAccessoryByName(newAccName?.value || "");
-  if(match){
-    if(newAccTarget) newAccTarget.value = match.target;
-    if(newAccLoad && !newAccLoad.value && match.load) newAccLoad.value = match.load;
-  }
-}
-let accessories=[];
-function addAccessory(target,name,sets,reps,load=""){
-  const id = uid();
-  const row = document.createElement("div");
-  row.className = "grid g4"; row.style.gridTemplateColumns="2fr 1fr 1fr 1fr auto";
-  row.dataset.id = id;
-  row.innerHTML = `<div><b>${name}</b><div class="muted small">${target}</div></div>
+      /* ================= Accessories ================= */
+      function targetAccDefaults(target) {
+        if (target === "Arms") return { sets: 3, reps: 12 };
+        if (target === "Calves" || target === "Core" || target === "Tib")
+          return { sets: 3, reps: 15 };
+        return { sets: 3, reps: 10 };
+      }
+      function findAccessoryByName(name) {
+        if (!name) return null;
+        const lookup = name.trim().toLowerCase();
+        return (
+          ACCESSORY_LIBRARY.find((acc) => acc.name.toLowerCase() === lookup) ||
+          null
+        );
+      }
+      function updateAccOptions() {
+        if (!accOptionsList) return;
+        const target = newAccTarget?.value || "";
+        const list = ACCESSORY_LIBRARY.filter(
+          (acc) => !target || acc.target === target,
+        );
+        accOptionsList.innerHTML = list
+          .map(
+            (acc) =>
+              `<option value="${acc.name}" label="${acc.target}"></option>`,
+          )
+          .join("");
+      }
+      function applyAccessoryMatch() {
+        const match = findAccessoryByName(newAccName?.value || "");
+        if (match) {
+          if (newAccTarget) newAccTarget.value = match.target;
+          if (newAccLoad && !newAccLoad.value && match.load)
+            newAccLoad.value = match.load;
+        }
+      }
+      let accessories = [];
+      function addAccessory(target, name, sets, reps, load = "") {
+        const id = uid();
+        const row = document.createElement("div");
+        row.className = "grid g4";
+        row.style.gridTemplateColumns = "2fr 1fr 1fr 1fr auto";
+        row.dataset.id = id;
+        row.innerHTML = `<div><b>${name}</b><div class="muted small">${target}</div></div>
     <label class="small">Sets<input type="number" min="2" max="5" value="${sets}"></label>
     <label class="small">Reps<input type="number" min="6" max="25" value="${reps}"></label>
     <label class="small">Weight<input type="number" min="0" step="1" placeholder="Weight" value="${load}"></label>
     <button class="btn bad">X</button>`;
-  $("#accList").appendChild(row);
-  const delBtn = row.querySelector("button");
-  const [setsEl,repsEl,loadEl] = row.querySelectorAll("input");
-  delBtn.addEventListener("click", ()=>{ row.remove(); accessories = accessories.filter(a=>a.id!==id); markQAStale(); });
-  accessories.push({id,target,name,setsEl,repsEl,loadEl});
-  markQAStale();
-}
-$("#addManualAcc").addEventListener("click", ()=>{
-  applyAccessoryMatch();
-  const typed = newAccName.value.trim();
-  const match = findAccessoryByName(typed);
-  const target = match?.target || newAccTarget.value || "Back";
-  const defaults = match ? {sets:match.sets ?? targetAccDefaults(target).sets, reps:match.reps ?? targetAccDefaults(target).reps} : targetAccDefaults(target);
-  const name = match?.name || typed || "Accessory";
-  const load = newAccLoad.value || match?.load || "";
-  if(newAccTarget) newAccTarget.value = target;
-  addAccessory(target, name, defaults.sets, defaults.reps, load);
-  newAccName.value=""; newAccLoad.value="";
-  updateAccOptions();
-  if(newAccName.focus) newAccName.focus();
-});
+        $("#accList").appendChild(row);
+        const delBtn = row.querySelector("button");
+        const [setsEl, repsEl, loadEl] = row.querySelectorAll("input");
+        delBtn.addEventListener("click", () => {
+          row.remove();
+          accessories = accessories.filter((a) => a.id !== id);
+          markQAStale();
+        });
+        accessories.push({ id, target, name, setsEl, repsEl, loadEl });
+        markQAStale();
+      }
+      $("#addManualAcc").addEventListener("click", () => {
+        applyAccessoryMatch();
+        const typed = newAccName.value.trim();
+        const match = findAccessoryByName(typed);
+        const target = match?.target || newAccTarget.value || "Back";
+        const defaults = match
+          ? {
+              sets: match.sets ?? targetAccDefaults(target).sets,
+              reps: match.reps ?? targetAccDefaults(target).reps,
+            }
+          : targetAccDefaults(target);
+        const name = match?.name || typed || "Accessory";
+        const load = newAccLoad.value || match?.load || "";
+        if (newAccTarget) newAccTarget.value = target;
+        addAccessory(target, name, defaults.sets, defaults.reps, load);
+        newAccName.value = "";
+        newAccLoad.value = "";
+        updateAccOptions();
+        if (newAccName.focus) newAccName.focus();
+      });
 
-if(newAccTarget){
-  newAccTarget.addEventListener("change", ()=>{
-    updateAccOptions();
-  });
-}
-if(newAccName){
-  ["change","blur"].forEach(evt=> newAccName.addEventListener(evt, applyAccessoryMatch));
-  newAccName.addEventListener("input", ()=>{
-    if(findAccessoryByName(newAccName.value)) applyAccessoryMatch();
-  });
-}
-updateAccOptions();
+      if (newAccTarget) {
+        newAccTarget.addEventListener("change", () => {
+          updateAccOptions();
+        });
+      }
+      if (newAccName) {
+        ["change", "blur"].forEach((evt) =>
+          newAccName.addEventListener(evt, applyAccessoryMatch),
+        );
+        newAccName.addEventListener("input", () => {
+          if (findAccessoryByName(newAccName.value)) applyAccessoryMatch();
+        });
+      }
+      updateAccOptions();
 
-if(autoAccBtn){
-  autoAccBtn.addEventListener("click", ()=>{
-    const preview = draftSession();
-    const sessions = week().sessions.slice();
-    if(preview) sessions.push(preview);
-    const totals = totalsCalc(sessions);
-    const totalsByTarget = {
-      Quads: totals.quads || 0,
-      Posterior: totals.post || 0,
-      Chest: totals.chest || 0,
-      Back: totals.back || 0,
-      Delts: totals.delts || 0,
-      Arms: totals.arms || 0,
-      Core: totals.core || 0
-    };
-    const ranked = Object.entries(TARGETS).map(([target, goal])=>{
-      const current = totalsByTarget[target] || 0;
-      const ratio = goal>0 ? current/goal : 1;
-      return {target, goal, current, ratio, missing: goal - current};
-    });
-    const below = ranked.filter(r=> r.missing>0).sort((a,b)=> a.ratio - b.ratio || b.goal - a.goal);
-    const fallback = ranked.slice().sort((a,b)=> a.ratio - b.ratio || b.goal - a.goal);
-    const targetPick = (below[0] || fallback[0] || {target:"Back"}).target;
-    let options = ACCESSORY_LIBRARY.filter(acc=> acc.target===targetPick);
-    if(!options.length) options = ACCESSORY_LIBRARY.slice();
-    const existing = new Set(accessories.map(a=> a.name.toLowerCase()));
-    const available = options.filter(acc=> !existing.has(acc.name.toLowerCase()));
-    const pool = available.length ? available : options;
-    if(!pool.length){ toast("Add accessories manually — library empty."); return; }
-    const pick = pool[Math.floor(Math.random()*pool.length)];
-    const defaults = { ...targetAccDefaults(pick.target), ...(pick.sets?{sets:pick.sets}:{}), ...(pick.reps?{reps:pick.reps}:{}) };
-    const load = pick.load || "";
-    addAccessory(pick.target, pick.name, defaults.sets, defaults.reps, load);
-    if(newAccTarget) newAccTarget.value = pick.target;
-    if(newAccName) newAccName.value = "";
-    if(newAccLoad) newAccLoad.value = "";
-    updateAccOptions();
-    toast(`Added ${pick.target}: ${pick.name}`);
-  });
-}
+      if (autoAccBtn) {
+        autoAccBtn.addEventListener("click", () => {
+          const preview = draftSession();
+          const sessions = week().sessions.slice();
+          if (preview) sessions.push(preview);
+          const totals = totalsCalc(sessions);
+          const totalsByTarget = {
+            Quads: totals.quads || 0,
+            Posterior: totals.post || 0,
+            Chest: totals.chest || 0,
+            Back: totals.back || 0,
+            Delts: totals.delts || 0,
+            Arms: totals.arms || 0,
+            Core: totals.core || 0,
+          };
+          const ranked = Object.entries(TARGETS).map(([target, goal]) => {
+            const current = totalsByTarget[target] || 0;
+            const ratio = goal > 0 ? current / goal : 1;
+            return { target, goal, current, ratio, missing: goal - current };
+          });
+          const below = ranked
+            .filter((r) => r.missing > 0)
+            .sort((a, b) => a.ratio - b.ratio || b.goal - a.goal);
+          const fallback = ranked
+            .slice()
+            .sort((a, b) => a.ratio - b.ratio || b.goal - a.goal);
+          const targetPick = (below[0] || fallback[0] || { target: "Back" })
+            .target;
+          let options = ACCESSORY_LIBRARY.filter(
+            (acc) => acc.target === targetPick,
+          );
+          if (!options.length) options = ACCESSORY_LIBRARY.slice();
+          const existing = new Set(
+            accessories.map((a) => a.name.toLowerCase()),
+          );
+          const available = options.filter(
+            (acc) => !existing.has(acc.name.toLowerCase()),
+          );
+          const pool = available.length ? available : options;
+          if (!pool.length) {
+            toast("Add accessories manually — library empty.");
+            return;
+          }
+          const pick = pool[Math.floor(Math.random() * pool.length)];
+          const defaults = {
+            ...targetAccDefaults(pick.target),
+            ...(pick.sets ? { sets: pick.sets } : {}),
+            ...(pick.reps ? { reps: pick.reps } : {}),
+          };
+          const load = pick.load || "";
+          addAccessory(
+            pick.target,
+            pick.name,
+            defaults.sets,
+            defaults.reps,
+            load,
+          );
+          if (newAccTarget) newAccTarget.value = pick.target;
+          if (newAccName) newAccName.value = "";
+          if (newAccLoad) newAccLoad.value = "";
+          updateAccOptions();
+          toast(`Added ${pick.target}: ${pick.name}`);
+        });
+      }
 
-/* ================= QA Checks ================= */
-function renderQAList(issues){
-  if(!qaList) return;
-  qaList.innerHTML = "";
-  if(!issues.length){
-    const row = document.createElement("div");
-    row.className = "qa-item";
-    row.innerHTML = `<span class="pill ok">Ready</span><div>Session looks good — go run it.</div>`;
-    qaList.appendChild(row);
-    return;
-  }
-  issues.forEach(issue=>{
-    const row = document.createElement("div");
-    row.className = "qa-item";
-    const pill = document.createElement("span");
-    pill.className = issue.level==="warn" ? "pill warn" : (issue.level==="info" ? "pill" : "pill ok");
-    pill.textContent = issue.level==="warn" ? "Warn" : (issue.level==="info" ? "Info" : "OK");
-    const text = document.createElement("div");
-    text.textContent = issue.message;
-    row.append(pill, text);
-    qaList.appendChild(row);
-  });
-}
+      /* ================= QA Checks ================= */
+      function renderQAList(issues) {
+        if (!qaList) return;
+        qaList.innerHTML = "";
+        if (!issues.length) {
+          const row = document.createElement("div");
+          row.className = "qa-item";
+          row.innerHTML = `<span class="pill ok">Ready</span><div>Session looks good — go run it.</div>`;
+          qaList.appendChild(row);
+          return;
+        }
+        issues.forEach((issue) => {
+          const row = document.createElement("div");
+          row.className = "qa-item";
+          const pill = document.createElement("span");
+          pill.className =
+            issue.level === "warn"
+              ? "pill warn"
+              : issue.level === "info"
+                ? "pill"
+                : "pill ok";
+          pill.textContent =
+            issue.level === "warn"
+              ? "Warn"
+              : issue.level === "info"
+                ? "Info"
+                : "OK";
+          const text = document.createElement("div");
+          text.textContent = issue.message;
+          row.append(pill, text);
+          qaList.appendChild(row);
+        });
+      }
 
-function qaCollect(){
-  const session = draftSession();
-  const issues = [];
-  const warn = msg => issues.push({level:"warn", message:msg});
-  const info = msg => issues.push({level:"info", message:msg});
-  const readiness = recommend(numVal(sleep),numVal(food),numVal(sore),numVal(mood));
+      function qaCollect() {
+        const session = draftSession();
+        const issues = [];
+        const warn = (msg) => issues.push({ level: "warn", message: msg });
+        const info = (msg) => issues.push({ level: "info", message: msg });
+        const readiness = recommend(
+          numVal(sleep),
+          numVal(food),
+          numVal(sore),
+          numVal(mood),
+        );
 
-  if(session.kind==="Strength" && (readiness==="GPP Bad" || readiness==="Recovery")){
-    warn("Readiness is low — consider swapping to a lighter day or scaling the strength work.");
-  } else if(session.kind!==readiness){
-    info(`Readiness suggestion: ${readiness}. Make sure this plan matches how you feel.`);
-  }
+        if (
+          session.kind === "Strength" &&
+          (readiness === "GPP Bad" || readiness === "Recovery")
+        ) {
+          warn(
+            "Readiness is low — consider swapping to a lighter day or scaling the strength work.",
+          );
+        } else if (session.kind !== readiness) {
+          info(
+            `Readiness suggestion: ${readiness}. Make sure this plan matches how you feel.`,
+          );
+        }
 
-  if(session.kind==="Strength"){
-    const detail = session.main?.setsDetail || [];
-    const quality = detail.filter(s=>!s.fail && s.reps>0 && s.load>0);
-    if(!quality.length) warn("Add at least one quality main set with reps and load.");
-    if(quality.length>0 && quality.length<3) warn("Log ≥3 quality main sets on strength days to drive progress.");
-    if(quality.some(s=>!s.rpe || s.rpe<6)) info("Fill in RPE 6–9 for every quality set to guide programming.");
-    if((session.main?.rest||0) < 2) info("Rest ≥2 minutes between main sets so they count as hard work.");
-    const fails = detail.filter(s=>s.fail).length;
-    if(fails) info(`You marked ${fails} set${fails>1?"s":""} as fail — adjust loading next time.`);
-  }
+        if (session.kind === "Strength") {
+          const detail = session.main?.setsDetail || [];
+          const quality = detail.filter(
+            (s) => !s.fail && s.reps > 0 && s.load > 0,
+          );
+          if (!quality.length)
+            warn("Add at least one quality main set with reps and load.");
+          if (quality.length > 0 && quality.length < 3)
+            warn(
+              "Log ≥3 quality main sets on strength days to drive progress.",
+            );
+          if (quality.some((s) => !s.rpe || s.rpe < 6))
+            info("Fill in RPE 6–9 for every quality set to guide programming.");
+          if ((session.main?.rest || 0) < 2)
+            info(
+              "Rest ≥2 minutes between main sets so they count as hard work.",
+            );
+          const fails = detail.filter((s) => s.fail).length;
+          if (fails)
+            info(
+              `You marked ${fails} set${fails > 1 ? "s" : ""} as fail — adjust loading next time.`,
+            );
+        }
 
-  if(session.kind==="Endurance"){
-    const z2 = Number($("#z2").value||0);
-    const cap = session.wod?.cap || 0;
-    if(z2 < 20 && cap < 15) warn("Aim for ≥20′ of Zone 2 or structured intervals on endurance days.");
-    if(session.wod && (!session.wod.moves || !session.wod.moves.length)) warn("Add movements to the optional endurance WOD.");
-    if($("#modality").value==="Ruck" && !Number($("#ruckWeight").value||0)) info("Log the ruck weight to track the load." );
-  }
+        if (session.kind === "Endurance") {
+          const z2 = Number($("#z2").value || 0);
+          const cap = session.wod?.cap || 0;
+          if (z2 < 20 && cap < 15)
+            warn(
+              "Aim for ≥20′ of Zone 2 or structured intervals on endurance days.",
+            );
+          if (session.wod && (!session.wod.moves || !session.wod.moves.length))
+            warn("Add movements to the optional endurance WOD.");
+          if (
+            $("#modality").value === "Ruck" &&
+            !Number($("#ruckWeight").value || 0)
+          )
+            info("Log the ruck weight to track the load.");
+        }
 
-  if(session.kind==="GPP Good" || session.kind==="GPP Bad"){
-    const moves = session.wod?.moves?.length || 0;
-    if(!moves) warn("Add at least one movement to the GPP WOD.");
-    if((session.wod?.cap||0) < 10) info("Consider a 10′+ cap so the GPP piece has enough density.");
-  }
+        if (session.kind === "GPP Good" || session.kind === "GPP Bad") {
+          const moves = session.wod?.moves?.length || 0;
+          if (!moves) warn("Add at least one movement to the GPP WOD.");
+          if ((session.wod?.cap || 0) < 10)
+            info("Consider a 10′+ cap so the GPP piece has enough density.");
+        }
 
-  if(session.kind==="Recovery"){
-    const walk = Number($("#walkMin").value||0);
-    const mob = Number($("#mobMin").value||0);
-    const yoga = Number($("#yogaMin").value||0);
-    if((walk+mob+yoga) < 30) warn("Stack at least 30′ of walking, mobility, or breath work on recovery days.");
-  }
+        if (session.kind === "Recovery") {
+          const walk = Number($("#walkMin").value || 0);
+          const mob = Number($("#mobMin").value || 0);
+          const yoga = Number($("#yogaMin").value || 0);
+          if (walk + mob + yoga < 30)
+            warn(
+              "Stack at least 30′ of walking, mobility, or breath work on recovery days.",
+            );
+        }
 
-  const accMissing = session.acc.filter(a=> (Number(a.sets)||0)===0 || (Number(a.reps)||0)===0);
-  if(accMissing.length) warn("Fill in sets and reps for every accessory.");
-  const accTotal = session.acc.reduce((sum,a)=> sum + (Number(a.sets)||0),0);
-  if(accTotal > 18) info("Accessory volume is high — ensure you can recover from it.");
+        const accMissing = session.acc.filter(
+          (a) => (Number(a.sets) || 0) === 0 || (Number(a.reps) || 0) === 0,
+        );
+        if (accMissing.length)
+          warn("Fill in sets and reps for every accessory.");
+        const accTotal = session.acc.reduce(
+          (sum, a) => sum + (Number(a.sets) || 0),
+          0,
+        );
+        if (accTotal > 18)
+          info("Accessory volume is high — ensure you can recover from it.");
 
-  return {session, issues};
-}
+        return { session, issues };
+      }
 
-function runQA(opts={}){
-  const {silent=false} = opts;
-  const result = qaCollect();
-  renderQAList(result.issues);
-  const hasWarn = result.issues.some(i=>i.level==="warn");
-  if(!silent){
-    toast(hasWarn ? "QA flagged items — review the list below." : "QA passed. Ready to run it.");
-  }
-  return {...result, hasWarn};
-}
+      function runQA(opts = {}) {
+        const { silent = false } = opts;
+        const result = qaCollect();
+        renderQAList(result.issues);
+        const hasWarn = result.issues.some((i) => i.level === "warn");
+        if (!silent) {
+          toast(
+            hasWarn
+              ? "QA flagged items — review the list below."
+              : "QA passed. Ready to run it.",
+          );
+        }
+        return { ...result, hasWarn };
+      }
 
-if(qaBtn){
-  qaBtn.addEventListener("click", ()=> runQA());
-}
+      if (qaBtn) {
+        qaBtn.addEventListener("click", () => runQA());
+      }
 
-/* ================= Session Save & Totals ================= */
-function draftSession(){
-  const kind = dayKind.value;
-  const main = (kind==="Strength") ? {
-    pattern: pattern.value,
-    movement: movement.value || pattern.value,
-    rpe: Number(rpe.value)||8,
-    rest: Number(restMin.value)||3,
-    sets: [...setsBody.querySelectorAll("tr")].filter(tr=>{
-      const reps=Number(tr.children[2].querySelector("input").value||0);
-      const load=Number(tr.children[3].querySelector("input").value||0);
-      const fail=tr.children[5].querySelector("input").checked;
-      return reps>0 && load>0 && !fail;
-    }).length,
-    setsDetail: [...setsBody.querySelectorAll("tr")].map(tr=>({
-      reps:Number(tr.children[2].querySelector("input").value||0),
-      load:Number(tr.children[3].querySelector("input").value||0),
-      rpe:Number(tr.children[4].querySelector("input").value||0)||null,
-      fail:tr.children[5].querySelector("input").checked
-    }))
-  } : null;
+      /* ================= Session Save & Totals ================= */
+      function draftSession() {
+        const kind = dayKind.value;
+        const main =
+          kind === "Strength"
+            ? {
+                pattern: pattern.value,
+                movement: movement.value || pattern.value,
+                rpe: Number(rpe.value) || 8,
+                rest: Number(restMin.value) || 3,
+                sets: [...setsBody.querySelectorAll("tr")].filter((tr) => {
+                  const reps = Number(
+                    tr.children[2].querySelector("input").value || 0,
+                  );
+                  const load = Number(
+                    tr.children[3].querySelector("input").value || 0,
+                  );
+                  const fail = tr.children[5].querySelector("input").checked;
+                  return reps > 0 && load > 0 && !fail;
+                }).length,
+                setsDetail: [...setsBody.querySelectorAll("tr")].map((tr) => ({
+                  reps: Number(
+                    tr.children[2].querySelector("input").value || 0,
+                  ),
+                  load: Number(
+                    tr.children[3].querySelector("input").value || 0,
+                  ),
+                  rpe:
+                    Number(tr.children[4].querySelector("input").value || 0) ||
+                    null,
+                  fail: tr.children[5].querySelector("input").checked,
+                })),
+              }
+            : null;
 
-  let endurance = null;
-  let recoveryPlan = null;
-  let wod = null;
+        let endurance = null;
+        let recoveryPlan = null;
+        let wod = null;
 
-  if(kind==="Strength"){
-    if(wodUI) wod = wodUI.read();
-  } else if(kind==="Endurance"){
-    const z2 = Number($("#z2").value||0);
-    const distanceVal = Number($("#dist").value);
-    const distance = (Number.isFinite(distanceVal) && distanceVal>0) ? distanceVal : null;
-    const ruckVal = Number($("#ruckWeight").value);
-    const modalityVal = $("#modality")?.value || "";
-    endurance = {
-      z2,
-      vig: 0,
-      distance,
-      distUnit: $("#distUnit")?.value || "mi",
-      modality: modalityVal,
-      ruckWeight: (modalityVal==="Ruck" && Number.isFinite(ruckVal) && ruckVal>0) ? ruckVal : null,
-      notes: $("#notes")?.value.trim() || ""
-    };
-    if(wodUI2) wod = wodUI2.read();
-  } else if(kind==="GPP Good"){
-    if(!wodUI3) wodUI3 = buildWodUI(wodWrap3, "good");
-    wod = wodUI3.read();
-  } else if(kind==="GPP Bad"){
-    if(!wodUI4) wodUI4 = buildWodUI(wodWrap4, "bad");
-    wod = wodUI4.read();
-  } else if(kind==="Recovery"){
-    const walk = Number($("#walkMin").value||0);
-    const mob = Number($("#mobMin").value||0);
-    const yoga = Number($("#yogaMin").value||0);
-    recoveryPlan = {
-      walk,
-      mobility: mob,
-      yoga,
-      notes: $("#notesRec")?.value.trim() || ""
-    };
-  }
+        if (kind === "Strength") {
+          if (wodUI) wod = wodUI.read();
+        } else if (kind === "Endurance") {
+          const z2 = Number($("#z2").value || 0);
+          const distanceVal = Number($("#dist").value);
+          const distance =
+            Number.isFinite(distanceVal) && distanceVal > 0
+              ? distanceVal
+              : null;
+          const ruckVal = Number($("#ruckWeight").value);
+          const modalityVal = $("#modality")?.value || "";
+          endurance = {
+            z2,
+            vig: 0,
+            distance,
+            distUnit: $("#distUnit")?.value || "mi",
+            modality: modalityVal,
+            ruckWeight:
+              modalityVal === "Ruck" && Number.isFinite(ruckVal) && ruckVal > 0
+                ? ruckVal
+                : null,
+            notes: $("#notes")?.value.trim() || "",
+          };
+          if (wodUI2) wod = wodUI2.read();
+        } else if (kind === "GPP Good") {
+          if (!wodUI3) wodUI3 = buildWodUI(wodWrap3, "good");
+          wod = wodUI3.read();
+        } else if (kind === "GPP Bad") {
+          if (!wodUI4) wodUI4 = buildWodUI(wodWrap4, "bad");
+          wod = wodUI4.read();
+        } else if (kind === "Recovery") {
+          const walk = Number($("#walkMin").value || 0);
+          const mob = Number($("#mobMin").value || 0);
+          const yoga = Number($("#yogaMin").value || 0);
+          recoveryPlan = {
+            walk,
+            mobility: mob,
+            yoga,
+            notes: $("#notesRec")?.value.trim() || "",
+          };
+        }
 
-  const acc = accessories.map(a=>({target:a.target, name:a.name, sets:Number(a.setsEl.value||0), reps:Number(a.repsEl.value||0), load:a.loadEl.value}));
-  return { id: uid(), date: todayISO(), kind, main, endurance, recovery: recoveryPlan, wod, acc, version: APP_VERSION };
-}
-const WOD_CREDIT_RULES = [
-  {match:/\bthruster\b|wall ball/i, add:{quads:1, delts:1}},
-  {match:/\bburpee\b/i, add:{quads:1, chest:1}},
-  {match:/\bclean\b/i, add:{quads:1, post:1}},
-  {match:/\bsnatch\b/i, add:{post:1, delts:1}},
-  {match:/\bswing\b|\bdeadlift\b|hinge|hip thrust|good morning|\brdl\b|glute bridge/i, add:{post:1}},
-  {match:/squat|lunge|step-?up|box jump|pistol/i, add:{quads:1}},
-  {match:/push-up|pushup|bench|dip/i, add:{chest:1}},
-  {match:/\brow\b|pull-?up|chin-?up|rope climb|ring row|muscle-up/i, add:{back:1}},
-  {match:/strict press|push press|press\b|jerk|handstand|hspu|wall walk|overhead/i, add:{delts:1}},
-  {match:/curl|tricep|triceps|bicep|hammer/i, add:{arms:1}},
-  {match:/sit-?up|situp|toe-?s?-?to-?bar|leg raise|knee raise|v-?up|plank|hollow|ghd|dead bug|mountain climber/i, add:{core:1}},
-  {match:/carry|sandbag|yoke/i, add:{core:1, post:1}}
-];
-function creditWodMovement(name, rounds, totals){
-  if(!name) return;
-  const lower = name.toLowerCase();
-  WOD_CREDIT_RULES.forEach(rule=>{
-    if(rule.match.test(lower)){
-      Object.entries(rule.add).forEach(([k,v])=>{ if(k in totals) totals[k] += v*rounds; });
-    }
-  });
-}
-function totalsCalc(sess){
-  const t = {quads:0,post:0,chest:0,back:0,delts:0,arms:0,core:0, z2:0,vig:0, strength:0};
-  (sess||[]).forEach(s=>{
-    if(s.main && s.main.pattern && s.main.sets){
-      const add = s.main.sets;
-      if(s.main.pattern==="Squat") t.quads += add;
-      if(s.main.pattern==="Hinge") t.post += add;
-      if(s.main.pattern==="Oly"){ t.quads += Math.ceil(add/2); t.post += Math.floor(add/2); }
-    }
-    if(s.endurance){ t.z2 += s.endurance.z2||0; t.vig += s.endurance.vig||0; }
-    if(s.wod){
-      const rounds = Math.max(1, Number(s.wod.rounds)||1);
-      if(s.wod.cap) t.vig += Number(s.wod.cap)||0;
-      (s.wod.moves||[]).forEach(m=> creditWodMovement(m?.name||"", rounds, t));
-    }
-    (s.acc||[]).forEach(a=>{
-      if(a.target==="Quads") t.quads += a.sets;
-      if(a.target==="Posterior") t.post += a.sets;
-      if(a.target==="Chest") t.chest += a.sets;
-      if(a.target==="Back") t.back += a.sets;
-      if(a.target==="Delts") t.delts += a.sets;
-      if(a.target==="Arms") t.arms += a.sets;
-      if(a.target==="Core") t.core += a.sets;
-    });
-    if(s.kind==="Strength") t.strength++;
-  });
-  return t;
-}
-function runTotalsTests(){
-  const baseSession = [{
-    kind:"Strength",
-    main:{pattern:"Squat", sets:3},
-    wod:{cap:12, rounds:2, moves:[{name:"Wall Ball"},{name:"Pull-Up"}]},
-    acc:[]
-  }];
-  const t1 = totalsCalc(baseSession);
-  console.assert(t1.quads===5, "WOD quads credit mismatch", t1);
-  console.assert(t1.back===2, "WOD back credit mismatch", t1);
-  console.assert(t1.delts===2, "WOD delts credit mismatch", t1);
-  console.assert(t1.vig===12, "WOD minutes should credit vigorous time", t1);
+        const acc = accessories.map((a) => ({
+          target: a.target,
+          name: a.name,
+          sets: Number(a.setsEl.value || 0),
+          reps: Number(a.repsEl.value || 0),
+          load: a.loadEl.value,
+        }));
+        return {
+          id: uid(),
+          date: todayISO(),
+          kind,
+          main,
+          endurance,
+          recovery: recoveryPlan,
+          wod,
+          acc,
+          version: APP_VERSION,
+        };
+      }
+      const WOD_CREDIT_RULES = [
+        { match: /\bthruster\b|wall ball/i, add: { quads: 1, delts: 1 } },
+        { match: /\bburpee\b/i, add: { quads: 1, chest: 1 } },
+        { match: /\bclean\b/i, add: { quads: 1, post: 1 } },
+        { match: /\bsnatch\b/i, add: { post: 1, delts: 1 } },
+        {
+          match:
+            /\bswing\b|\bdeadlift\b|hinge|hip thrust|good morning|\brdl\b|glute bridge/i,
+          add: { post: 1 },
+        },
+        { match: /squat|lunge|step-?up|box jump|pistol/i, add: { quads: 1 } },
+        { match: /push-up|pushup|bench|dip/i, add: { chest: 1 } },
+        {
+          match: /\brow\b|pull-?up|chin-?up|rope climb|ring row|muscle-up/i,
+          add: { back: 1 },
+        },
+        {
+          match:
+            /strict press|push press|press\b|jerk|handstand|hspu|wall walk|overhead/i,
+          add: { delts: 1 },
+        },
+        { match: /curl|tricep|triceps|bicep|hammer/i, add: { arms: 1 } },
+        {
+          match:
+            /sit-?up|situp|toe-?s?-?to-?bar|leg raise|knee raise|v-?up|plank|hollow|ghd|dead bug|mountain climber/i,
+          add: { core: 1 },
+        },
+        { match: /carry|sandbag|yoke/i, add: { core: 1, post: 1 } },
+      ];
+      function creditWodMovement(name, rounds, totals) {
+        if (!name) return;
+        const lower = name.toLowerCase();
+        WOD_CREDIT_RULES.forEach((rule) => {
+          if (rule.match.test(lower)) {
+            Object.entries(rule.add).forEach(([k, v]) => {
+              if (k in totals) totals[k] += v * rounds;
+            });
+          }
+        });
+      }
+      function totalsCalc(sess) {
+        const t = {
+          quads: 0,
+          post: 0,
+          chest: 0,
+          back: 0,
+          delts: 0,
+          arms: 0,
+          core: 0,
+          z2: 0,
+          vig: 0,
+          strength: 0,
+        };
+        (sess || []).forEach((s) => {
+          if (s.main && s.main.pattern && s.main.sets) {
+            const add = s.main.sets;
+            if (s.main.pattern === "Squat") t.quads += add;
+            if (s.main.pattern === "Hinge") t.post += add;
+            if (s.main.pattern === "Oly") {
+              t.quads += Math.ceil(add / 2);
+              t.post += Math.floor(add / 2);
+            }
+          }
+          if (s.endurance) {
+            t.z2 += s.endurance.z2 || 0;
+            t.vig += s.endurance.vig || 0;
+          }
+          if (s.wod) {
+            const rounds = Math.max(1, Number(s.wod.rounds) || 1);
+            if (s.wod.cap) t.vig += Number(s.wod.cap) || 0;
+            (s.wod.moves || []).forEach((m) =>
+              creditWodMovement(m?.name || "", rounds, t),
+            );
+          }
+          (s.acc || []).forEach((a) => {
+            if (a.target === "Quads") t.quads += a.sets;
+            if (a.target === "Posterior") t.post += a.sets;
+            if (a.target === "Chest") t.chest += a.sets;
+            if (a.target === "Back") t.back += a.sets;
+            if (a.target === "Delts") t.delts += a.sets;
+            if (a.target === "Arms") t.arms += a.sets;
+            if (a.target === "Core") t.core += a.sets;
+          });
+          if (s.kind === "Strength") t.strength++;
+        });
+        return t;
+      }
+      function runTotalsTests() {
+        const baseSession = [
+          {
+            kind: "Strength",
+            main: { pattern: "Squat", sets: 3 },
+            wod: {
+              cap: 12,
+              rounds: 2,
+              moves: [{ name: "Wall Ball" }, { name: "Pull-Up" }],
+            },
+            acc: [],
+          },
+        ];
+        const t1 = totalsCalc(baseSession);
+        console.assert(t1.quads === 5, "WOD quads credit mismatch", t1);
+        console.assert(t1.back === 2, "WOD back credit mismatch", t1);
+        console.assert(t1.delts === 2, "WOD delts credit mismatch", t1);
+        console.assert(
+          t1.vig === 12,
+          "WOD minutes should credit vigorous time",
+          t1,
+        );
 
-  const gppSession = [{
-    kind:"GPP Good",
-    wod:{cap:15, rounds:3, moves:[{name:"Sit-Up"},{name:"Sandbag Carry"}]},
-    acc:[]
-  }];
-  const t2 = totalsCalc(gppSession);
-  console.assert(t2.core===6 && t2.post===3, "GPP WOD accessory credits mismatch", t2);
-  console.assert(t2.vig===15, "GPP WOD should add vigorous minutes", t2);
+        const gppSession = [
+          {
+            kind: "GPP Good",
+            wod: {
+              cap: 15,
+              rounds: 3,
+              moves: [{ name: "Sit-Up" }, { name: "Sandbag Carry" }],
+            },
+            acc: [],
+          },
+        ];
+        const t2 = totalsCalc(gppSession);
+        console.assert(
+          t2.core === 6 && t2.post === 3,
+          "GPP WOD accessory credits mismatch",
+          t2,
+        );
+        console.assert(
+          t2.vig === 15,
+          "GPP WOD should add vigorous minutes",
+          t2,
+        );
 
-  const enduSession = [{
-    kind:"Endurance",
-    endurance:{z2:40, vig:0},
-    wod:{cap:20, rounds:1, moves:[]},
-    acc:[]
-  }];
-  const t3 = totalsCalc(enduSession);
-  console.assert(t3.z2===40, "Endurance Z2 minutes mismatch", t3);
-  console.assert(t3.vig===20, "Endurance WOD minutes should not double count", t3);
-}
-function renderDashboard(){
-  const t = totalsCalc(week().sessions);
-  $("#z2Min").textContent = t.z2+"′"; $("#vigMin").textContent = t.vig+"′";
-  $("#qSets").textContent = t.quads; $("#pSets").textContent = t.post;
-  $("#cSets").textContent = t.chest||0; $("#bSets").textContent = t.back||0;
-  $("#dSets").textContent = t.delts||0; $("#aSets").textContent = t.arms||0; $("#coreSets").textContent = t.core||0;
-  badge($("#qStatus"), t.quads>=TARGETS.Quads); badge($("#pStatus"), t.post>=TARGETS.Posterior);
-  badge($("#coreStatus"), t.core>=TARGETS.Core);
-  const endOK = (t.z2>=150) || (t.vig>=75) || ((t.z2*0.5 + t.vig)>=75);
-  badge($("#endStatus"), endOK, "On track", "Low this week");
-  $("#hist").innerHTML = week().sessions.map(s=>{
-    const d=new Date(s.date).toLocaleDateString();
-    const tag = s.kind==="Strength" ? (s.main?.movement || s.main?.pattern) : (s.wod?.name || s.endurance?.modality || "");
-    return `<div class="space flex"><span>${d} · ${s.kind}</span><span class="muted small">${tag||""}</span></div>`;
-  }).join("") || '<div class="muted">No sessions yet.</div>';
-}
+        const enduSession = [
+          {
+            kind: "Endurance",
+            endurance: { z2: 40, vig: 0 },
+            wod: { cap: 20, rounds: 1, moves: [] },
+            acc: [],
+          },
+        ];
+        const t3 = totalsCalc(enduSession);
+        console.assert(t3.z2 === 40, "Endurance Z2 minutes mismatch", t3);
+        console.assert(
+          t3.vig === 20,
+          "Endurance WOD minutes should not double count",
+          t3,
+        );
+      }
+      function renderDashboard() {
+        const t = totalsCalc(week().sessions);
+        $("#z2Min").textContent = t.z2 + "′";
+        $("#vigMin").textContent = t.vig + "′";
+        $("#qSets").textContent = t.quads;
+        $("#pSets").textContent = t.post;
+        $("#cSets").textContent = t.chest || 0;
+        $("#bSets").textContent = t.back || 0;
+        $("#dSets").textContent = t.delts || 0;
+        $("#aSets").textContent = t.arms || 0;
+        $("#coreSets").textContent = t.core || 0;
+        badge($("#qStatus"), t.quads >= TARGETS.Quads);
+        badge($("#pStatus"), t.post >= TARGETS.Posterior);
+        badge($("#coreStatus"), t.core >= TARGETS.Core);
+        const endOK = t.z2 >= 150 || t.vig >= 75 || t.z2 * 0.5 + t.vig >= 75;
+        badge($("#endStatus"), endOK, "On track", "Low this week");
+        $("#hist").innerHTML =
+          week()
+            .sessions.map((s) => {
+              const d = new Date(s.date).toLocaleDateString();
+              const tag =
+                s.kind === "Strength"
+                  ? s.main?.movement || s.main?.pattern
+                  : s.wod?.name || s.endurance?.modality || "";
+              return `<div class="space flex"><span>${d} · ${s.kind}</span><span class="muted small">${tag || ""}</span></div>`;
+            })
+            .join("") || '<div class="muted">No sessions yet.</div>';
+      }
 
-function saveSession(){
-  const {session: s, hasWarn} = runQA({silent:true});
-  week().sessions.push(s);
-  week().recovery.push({ date: todayISO(), bw: (bw.value?Number(bw.value):null), sleepHrs: (sleepHrs.value?Number(sleepHrs.value):null) });
-  saveStore();
-  // reset builder
-  setsBody.innerHTML=""; accessories=[]; $("#accList").innerHTML="";
-  if(dayKind.value==="Strength") addSetRow();
-  renderDashboard();
-  dayKind.__manualPick = false;
-  updateReco();
-  markQAStale();
-  toast(hasWarn ? "Saved with QA warnings — check the QA list." : "Session saved.");
-}
+      function saveSession() {
+        const { session: s, hasWarn } = runQA({ silent: true });
+        week().sessions.push(s);
+        week().recovery.push({
+          date: todayISO(),
+          bw: bw.value ? Number(bw.value) : null,
+          sleepHrs: sleepHrs.value ? Number(sleepHrs.value) : null,
+        });
+        saveStore();
+        // reset builder
+        setsBody.innerHTML = "";
+        accessories = [];
+        $("#accList").innerHTML = "";
+        if (dayKind.value === "Strength") addSetRow();
+        renderDashboard();
+        dayKind.__manualPick = false;
+        updateReco();
+        markQAStale();
+        toast(
+          hasWarn
+            ? "Saved with QA warnings — check the QA list."
+            : "Session saved.",
+        );
+      }
 
-/* ================= Export / Import / Reset ================= */
-$("#exportBtn").addEventListener("click", ()=>{
-  const blob = new Blob([JSON.stringify(store,null,2)], {type:'application/json'});
-  const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`hybrid_store_${weekKey}.json`; a.click();
-});
-$("#importFile").addEventListener("change", (e)=>{
-  const f = e.target.files && e.target.files[0]; if(!f) return;
-  const r = new FileReader();
-  r.onload = ()=>{ try{ const data = JSON.parse(r.result); if(data && data.weeks){ store = data; saveStore(); renderDashboard(); dayKind.__manualPick=false; updateReco(); toast("Import success."); } else toast("Invalid file."); }catch{ toast("Failed to parse JSON."); } };
-  r.readAsText(f);
-});
-$("#resetWeek").addEventListener("click", ()=>{ if(confirm("Reset this week's data?")){ store.weeks[weekKey]={sessions:[],recovery:[],version:APP_VERSION}; saveStore(); renderDashboard(); dayKind.__manualPick=false; updateReco(); } });
-$("#saveBtn").addEventListener("click", saveSession);
+      /* ================= Export / Import / Reset ================= */
+      $("#exportBtn").addEventListener("click", () => {
+        const blob = new Blob([JSON.stringify(store, null, 2)], {
+          type: "application/json",
+        });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `hybrid_store_${weekKey}.json`;
+        a.click();
+      });
+      $("#importFile").addEventListener("change", (e) => {
+        const f = e.target.files && e.target.files[0];
+        if (!f) return;
+        const r = new FileReader();
+        r.onload = () => {
+          try {
+            const data = JSON.parse(r.result);
+            if (data && data.weeks) {
+              store = data;
+              saveStore();
+              renderDashboard();
+              dayKind.__manualPick = false;
+              updateReco();
+              toast("Import success.");
+            } else toast("Invalid file.");
+          } catch {
+            toast("Failed to parse JSON.");
+          }
+        };
+        r.readAsText(f);
+      });
+      $("#resetWeek").addEventListener("click", () => {
+        if (confirm("Reset this week's data?")) {
+          store.weeks[weekKey] = {
+            sessions: [],
+            recovery: [],
+            version: APP_VERSION,
+          };
+          saveStore();
+          renderDashboard();
+          dayKind.__manualPick = false;
+          updateReco();
+        }
+      });
+      $("#saveBtn").addEventListener("click", saveSession);
 
-/* ================= Builder + Views ================= */
-function adaptBuilder(){
-  const k = dayKind.value;
-  $("#modWrap").style.display = (k==="Endurance") ? "" : "none";
-  $("#buildTitle").textContent = {
-    Strength:"Build Today’s Strength Session",
-    Endurance:"Build Today’s Endurance Session",
-    "GPP Good":"Build Today’s GPP (Good) Session",
-    "GPP Bad":"Build Today’s GPP (Bad) Session",
-    Recovery:"Plan Today’s Recovery"
-  }[k] || "Build Today’s Session";
-  strengthView.style.display = (k==="Strength")?"":"none";
-  enduranceView.style.display = (k==="Endurance")?"":"none";
-  gppGoodView.style.display = (k==="GPP Good")?"":"none";
-  gppBadView.style.display = (k==="GPP Bad")?"":"none";
-  recoveryView.style.display = (k==="Recovery")?"":"none";
-  if(k==="GPP Good" && !wodUI3){ wodUI3 = buildWodUI(wodWrap3, "good"); }
-  if(k==="GPP Bad" && !wodUI4){ wodUI4 = buildWodUI(wodWrap4, "bad"); }
-  if(k==="Strength"){ if(!movement.options.length) renderTop3(); if(!setsBody.children.length) addSetRow(); }
-  if(k==="Endurance"){ $("#ruckWrap").style.display = ($("#modality").value==="Ruck") ? "" : "none"; }
-}
-$("#modality").addEventListener("change", ()=>{ $("#ruckWrap").style.display = ($("#modality").value==="Ruck") ? "" : "none"; });
+      /* ================= Builder + Views ================= */
+      function adaptBuilder() {
+        const k = dayKind.value;
+        $("#modWrap").style.display = k === "Endurance" ? "" : "none";
+        $("#buildTitle").textContent =
+          {
+            Strength: "Build Today’s Strength Session",
+            Endurance: "Build Today’s Endurance Session",
+            "GPP Good": "Build Today’s GPP (Good) Session",
+            "GPP Bad": "Build Today’s GPP (Bad) Session",
+            Recovery: "Plan Today’s Recovery",
+          }[k] || "Build Today’s Session";
+        strengthView.style.display = k === "Strength" ? "" : "none";
+        enduranceView.style.display = k === "Endurance" ? "" : "none";
+        gppGoodView.style.display = k === "GPP Good" ? "" : "none";
+        gppBadView.style.display = k === "GPP Bad" ? "" : "none";
+        recoveryView.style.display = k === "Recovery" ? "" : "none";
+        if (k === "GPP Good" && !wodUI3) {
+          wodUI3 = buildWodUI(wodWrap3, "good");
+        }
+        if (k === "GPP Bad" && !wodUI4) {
+          wodUI4 = buildWodUI(wodWrap4, "bad");
+        }
+        if (k === "Strength") {
+          if (!movement.options.length) renderTop3();
+          if (!setsBody.children.length) addSetRow();
+        }
+        if (k === "Endurance") {
+          $("#ruckWrap").style.display =
+            $("#modality").value === "Ruck" ? "" : "none";
+        }
+      }
+      $("#modality").addEventListener("change", () => {
+        $("#ruckWrap").style.display =
+          $("#modality").value === "Ruck" ? "" : "none";
+      });
 
-/* ================= Init ================= */
-document.addEventListener("DOMContentLoaded", ()=>{
-  ["sleep","food","sore","mood"].forEach(id=>{ const el=$("#"+id); if(!el.value) el.value = 1; });
-  updateReco();
-  adaptBuilder();
-  renderDashboard();
-  runTotalsTests();
-});
-</script>
-</body>
+      /* ================= Init ================= */
+      document.addEventListener("DOMContentLoaded", () => {
+        ["sleep", "food", "sore", "mood"].forEach((id) => {
+          const el = $("#" + id);
+          if (!el.value) el.value = 1;
+        });
+        updateReco();
+        adaptBuilder();
+        renderDashboard();
+        runTotalsTests();
+      });
+    </script>
+  </body>
 </html>
