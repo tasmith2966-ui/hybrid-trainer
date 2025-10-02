@@ -365,9 +365,11 @@
               <option>Quads</option><option>Posterior</option><option>Calves</option><option>Tib</option>
               <option>Core</option>
             </select>
-            <input id="newAccName" type="text" placeholder="Accessory name">
+            <input id="newAccName" type="text" placeholder="Accessory name" list="accOptions">
+            <datalist id="accOptions"></datalist>
             <input id="newAccLoad" type="number" inputmode="numeric" pattern="[0-9]*" min="0" step="1" placeholder="Weight or plate">
             <button class="btn" id="addManualAcc">+ Add</button>
+            <button class="btn" id="autoAcc">AUTO</button>
           </div>
         </div>
         <div class="muted small" id="accHelp" style="margin-top:6px">
@@ -461,6 +463,34 @@ function saveStore(){ save(STORE_KEY, store); }
 /* ================= Targets ================= */
 const TARGETS = { Quads:10, Posterior:10, Chest:10, Back:12, Delts:10, Arms:8, Core:8 };
 
+const ACCESSORY_LIBRARY = [
+  {target:"Back", name:"Chest-Supported Row", sets:3, reps:10},
+  {target:"Back", name:"Lat Pulldown", sets:3, reps:10},
+  {target:"Back", name:"Single-Arm Dumbbell Row", sets:3, reps:12},
+  {target:"Chest", name:"DB Bench Press", sets:3, reps:10},
+  {target:"Chest", name:"Push-Up on Rings", sets:3, reps:12},
+  {target:"Chest", name:"Cable Fly", sets:3, reps:15},
+  {target:"Delts", name:"Seated DB Shoulder Press", sets:3, reps:10},
+  {target:"Delts", name:"Dumbbell Lateral Raise", sets:3, reps:15},
+  {target:"Delts", name:"Face Pull", sets:3, reps:15},
+  {target:"Arms", name:"EZ-Bar Curl", sets:3, reps:12},
+  {target:"Arms", name:"Rope Triceps Pushdown", sets:3, reps:12},
+  {target:"Arms", name:"Hammer Curl", sets:3, reps:12},
+  {target:"Quads", name:"Leg Press", sets:3, reps:12},
+  {target:"Quads", name:"Bulgarian Split Squat", sets:3, reps:10},
+  {target:"Quads", name:"Leg Extension", sets:3, reps:15},
+  {target:"Posterior", name:"Romanian Deadlift", sets:3, reps:10},
+  {target:"Posterior", name:"Hip Thrust", sets:3, reps:10},
+  {target:"Posterior", name:"Back Extension", sets:3, reps:15},
+  {target:"Calves", name:"Seated Calf Raise", sets:3, reps:15},
+  {target:"Calves", name:"Standing Calf Raise", sets:3, reps:15},
+  {target:"Tib", name:"Tibialis Raise", sets:3, reps:15},
+  {target:"Tib", name:"Toe Walk", sets:3, reps:20},
+  {target:"Core", name:"Hanging Knee Raise", sets:3, reps:12},
+  {target:"Core", name:"Cable Pallof Press", sets:3, reps:12},
+  {target:"Core", name:"Weighted Plank", sets:3, reps:45}
+];
+
 /* ================= UI Refs ================= */
 const sleep = $("#sleep"), food=$("#food"), sore=$("#sore"), mood=$("#mood");
 const bw=$("#bw"), sleepHrs=$("#sleepHrs");
@@ -493,7 +523,9 @@ const toggleWod  = $("#toggleWod"),
 const accList       = $("#accList"),
       newAccTarget  = $("#newAccTarget"),
       newAccName    = $("#newAccName"),
+      accOptionsList= $("#accOptions"),
       newAccLoad    = $("#newAccLoad"),
+      autoAccBtn    = $("#autoAcc"),
       qaBtn         = $("#qaBtn"),
       qaList        = $("#qaList"),
       builderCard   = $("#builderCard");
@@ -653,6 +685,29 @@ $("#toggleWod2").addEventListener("click", ()=>{
 });
 
 /* ================= Accessories ================= */
+function targetAccDefaults(target){
+  if(target==="Arms") return {sets:3,reps:12};
+  if(target==="Calves" || target==="Core" || target==="Tib") return {sets:3,reps:15};
+  return {sets:3,reps:10};
+}
+function findAccessoryByName(name){
+  if(!name) return null;
+  const lookup = name.trim().toLowerCase();
+  return ACCESSORY_LIBRARY.find(acc=> acc.name.toLowerCase()===lookup) || null;
+}
+function updateAccOptions(){
+  if(!accOptionsList) return;
+  const target = newAccTarget?.value || "";
+  const list = ACCESSORY_LIBRARY.filter(acc=> !target || acc.target===target);
+  accOptionsList.innerHTML = list.map(acc=>`<option value="${acc.name}" label="${acc.target}"></option>`).join("");
+}
+function applyAccessoryMatch(){
+  const match = findAccessoryByName(newAccName?.value || "");
+  if(match){
+    if(newAccTarget) newAccTarget.value = match.target;
+    if(newAccLoad && !newAccLoad.value && match.load) newAccLoad.value = match.load;
+  }
+}
 let accessories=[];
 function addAccessory(target,name,sets,reps,load=""){
   const id = uid();
@@ -672,13 +727,73 @@ function addAccessory(target,name,sets,reps,load=""){
   markQAStale();
 }
 $("#addManualAcc").addEventListener("click", ()=>{
-  const t = newAccTarget.value || "Back";
-  const name = newAccName.value.trim() || "Accessory";
-  const load = newAccLoad.value || "";
-  const defaults = (t==="Calves"||t==="Core")?{sets:3,reps:15} : (t==="Arms"?{sets:3,reps:12}:{sets:3,reps:10});
-  addAccessory(t, name, defaults.sets, defaults.reps, load);
+  applyAccessoryMatch();
+  const typed = newAccName.value.trim();
+  const match = findAccessoryByName(typed);
+  const target = match?.target || newAccTarget.value || "Back";
+  const defaults = match ? {sets:match.sets ?? targetAccDefaults(target).sets, reps:match.reps ?? targetAccDefaults(target).reps} : targetAccDefaults(target);
+  const name = match?.name || typed || "Accessory";
+  const load = newAccLoad.value || match?.load || "";
+  if(newAccTarget) newAccTarget.value = target;
+  addAccessory(target, name, defaults.sets, defaults.reps, load);
   newAccName.value=""; newAccLoad.value="";
+  updateAccOptions();
+  if(newAccName.focus) newAccName.focus();
 });
+
+if(newAccTarget){
+  newAccTarget.addEventListener("change", ()=>{
+    updateAccOptions();
+  });
+}
+if(newAccName){
+  ["change","blur"].forEach(evt=> newAccName.addEventListener(evt, applyAccessoryMatch));
+  newAccName.addEventListener("input", ()=>{
+    if(findAccessoryByName(newAccName.value)) applyAccessoryMatch();
+  });
+}
+updateAccOptions();
+
+if(autoAccBtn){
+  autoAccBtn.addEventListener("click", ()=>{
+    const preview = draftSession();
+    const sessions = week().sessions.slice();
+    if(preview) sessions.push(preview);
+    const totals = totalsCalc(sessions);
+    const totalsByTarget = {
+      Quads: totals.quads || 0,
+      Posterior: totals.post || 0,
+      Chest: totals.chest || 0,
+      Back: totals.back || 0,
+      Delts: totals.delts || 0,
+      Arms: totals.arms || 0,
+      Core: totals.core || 0
+    };
+    const ranked = Object.entries(TARGETS).map(([target, goal])=>{
+      const current = totalsByTarget[target] || 0;
+      const ratio = goal>0 ? current/goal : 1;
+      return {target, goal, current, ratio, missing: goal - current};
+    });
+    const below = ranked.filter(r=> r.missing>0).sort((a,b)=> a.ratio - b.ratio || b.goal - a.goal);
+    const fallback = ranked.slice().sort((a,b)=> a.ratio - b.ratio || b.goal - a.goal);
+    const targetPick = (below[0] || fallback[0] || {target:"Back"}).target;
+    let options = ACCESSORY_LIBRARY.filter(acc=> acc.target===targetPick);
+    if(!options.length) options = ACCESSORY_LIBRARY.slice();
+    const existing = new Set(accessories.map(a=> a.name.toLowerCase()));
+    const available = options.filter(acc=> !existing.has(acc.name.toLowerCase()));
+    const pool = available.length ? available : options;
+    if(!pool.length){ toast("Add accessories manually — library empty."); return; }
+    const pick = pool[Math.floor(Math.random()*pool.length)];
+    const defaults = { ...targetAccDefaults(pick.target), ...(pick.sets?{sets:pick.sets}:{}), ...(pick.reps?{reps:pick.reps}:{}) };
+    const load = pick.load || "";
+    addAccessory(pick.target, pick.name, defaults.sets, defaults.reps, load);
+    if(newAccTarget) newAccTarget.value = pick.target;
+    if(newAccName) newAccName.value = "";
+    if(newAccLoad) newAccLoad.value = "";
+    updateAccOptions();
+    toast(`Added ${pick.target}: ${pick.name}`);
+  });
+}
 
 /* ================= QA Checks ================= */
 function renderQAList(issues){
