@@ -858,14 +858,20 @@
           </div>
         </div>
         <div class="row" style="margin-top: 12px">
-          <div class="card">
-            <div>Endurance Minutes</div>
-            <div class="g2 grid" style="margin-top: 6px">
-              <div>Z2 <b id="z2Min">0′</b></div>
-              <div>Vig <b id="vigMin">0′</b></div>
+            <div class="card">
+              <div>Endurance Minutes</div>
+              <div class="g2 grid" style="margin-top: 6px">
+                <div>Z2 <b id="z2Min">0′</b></div>
+                <div>Vig <b id="vigMin">0′</b></div>
+              </div>
+              <div style="margin-top: 6px">Distance <b id="endDist">0 mi</b></div>
+              <div
+                id="endDistBreakdown"
+                class="muted small"
+                style="margin-top: 2px"
+              ></div>
+              <div id="endStatus" class="pill" style="margin-top: 6px"></div>
             </div>
-            <div id="endStatus" class="pill" style="margin-top: 6px"></div>
-          </div>
           <div class="card">
             <div>History (This Week)</div>
             <div id="hist" class="list"></div>
@@ -1773,53 +1779,74 @@
           }
         });
       }
-      function totalsCalc(sess) {
-        const t = {
-          quads: 0,
-          post: 0,
-          chest: 0,
-          back: 0,
-          delts: 0,
-          arms: 0,
-          core: 0,
-          z2: 0,
-          vig: 0,
-          strength: 0,
-        };
-        (sess || []).forEach((s) => {
-          if (s.main && s.main.pattern && s.main.sets) {
-            const add = s.main.sets;
-            if (s.main.pattern === "Squat") t.quads += add;
-            if (s.main.pattern === "Hinge") t.post += add;
-            if (s.main.pattern === "Oly") {
-              t.quads += Math.ceil(add / 2);
-              t.post += Math.floor(add / 2);
+        const MILES_PER_KM = 0.621371;
+        const KM_PER_MILE = 1 / MILES_PER_KM;
+
+        function formatDistanceValue(val) {
+          if (!Number.isFinite(val) || Math.abs(val) < 1e-6) return "0";
+          const abs = Math.abs(val);
+          const decimals = abs >= 100 ? 0 : abs >= 10 ? 1 : 2;
+          const fixed = val.toFixed(decimals);
+          return fixed.replace(/\.0+$|0+$/g, "").replace(/\.$/, "");
+        }
+
+        function totalsCalc(sess) {
+          const t = {
+            quads: 0,
+            post: 0,
+            chest: 0,
+            back: 0,
+            delts: 0,
+            arms: 0,
+            core: 0,
+            z2: 0,
+            vig: 0,
+            strength: 0,
+            enduranceMi: 0,
+            enduranceRaw: {},
+          };
+          (sess || []).forEach((s) => {
+            if (s.main && s.main.pattern && s.main.sets) {
+              const add = s.main.sets;
+              if (s.main.pattern === "Squat") t.quads += add;
+              if (s.main.pattern === "Hinge") t.post += add;
+              if (s.main.pattern === "Oly") {
+                t.quads += Math.ceil(add / 2);
+                t.post += Math.floor(add / 2);
+              }
             }
-          }
-          if (s.endurance) {
-            t.z2 += s.endurance.z2 || 0;
-            t.vig += s.endurance.vig || 0;
-          }
-          if (s.wod) {
-            const rounds = Math.max(1, Number(s.wod.rounds) || 1);
-            if (s.wod.cap) t.vig += Number(s.wod.cap) || 0;
-            (s.wod.moves || []).forEach((m) =>
-              creditWodMovement(m?.name || "", rounds, t),
-            );
-          }
-          (s.acc || []).forEach((a) => {
-            if (a.target === "Quads") t.quads += a.sets;
-            if (a.target === "Posterior") t.post += a.sets;
-            if (a.target === "Chest") t.chest += a.sets;
-            if (a.target === "Back") t.back += a.sets;
-            if (a.target === "Delts") t.delts += a.sets;
-            if (a.target === "Arms") t.arms += a.sets;
-            if (a.target === "Core") t.core += a.sets;
+            if (s.endurance) {
+              t.z2 += s.endurance.z2 || 0;
+              t.vig += s.endurance.vig || 0;
+              const dist = Number(s.endurance.distance);
+              if (Number.isFinite(dist) && dist > 0) {
+                const unit = (s.endurance.distUnit || "mi").toLowerCase();
+                if (!t.enduranceRaw[unit]) t.enduranceRaw[unit] = 0;
+                t.enduranceRaw[unit] += dist;
+                const milesFactor = unit === "km" ? MILES_PER_KM : 1;
+                t.enduranceMi += dist * milesFactor;
+              }
+            }
+            if (s.wod) {
+              const rounds = Math.max(1, Number(s.wod.rounds) || 1);
+              if (s.wod.cap) t.vig += Number(s.wod.cap) || 0;
+              (s.wod.moves || []).forEach((m) =>
+                creditWodMovement(m?.name || "", rounds, t),
+              );
+            }
+            (s.acc || []).forEach((a) => {
+              if (a.target === "Quads") t.quads += a.sets;
+              if (a.target === "Posterior") t.post += a.sets;
+              if (a.target === "Chest") t.chest += a.sets;
+              if (a.target === "Back") t.back += a.sets;
+              if (a.target === "Delts") t.delts += a.sets;
+              if (a.target === "Arms") t.arms += a.sets;
+              if (a.target === "Core") t.core += a.sets;
+            });
+            if (s.kind === "Strength") t.strength++;
           });
-          if (s.kind === "Strength") t.strength++;
-        });
-        return t;
-      }
+          return t;
+        }
       function runTotalsTests() {
         const baseSession = [
           {
@@ -1866,50 +1893,115 @@
           t2,
         );
 
-        const enduSession = [
-          {
-            kind: "Endurance",
-            endurance: { z2: 40, vig: 0 },
-            wod: { cap: 20, rounds: 1, moves: [] },
-            acc: [],
-          },
-        ];
-        const t3 = totalsCalc(enduSession);
-        console.assert(t3.z2 === 40, "Endurance Z2 minutes mismatch", t3);
-        console.assert(
-          t3.vig === 20,
-          "Endurance WOD minutes should not double count",
-          t3,
-        );
-      }
-      function renderDashboard() {
-        const t = totalsCalc(week().sessions);
-        $("#z2Min").textContent = t.z2 + "′";
-        $("#vigMin").textContent = t.vig + "′";
-        $("#qSets").textContent = t.quads;
-        $("#pSets").textContent = t.post;
-        $("#cSets").textContent = t.chest || 0;
-        $("#bSets").textContent = t.back || 0;
-        $("#dSets").textContent = t.delts || 0;
-        $("#aSets").textContent = t.arms || 0;
-        $("#coreSets").textContent = t.core || 0;
-        badge($("#qStatus"), t.quads >= TARGETS.Quads);
-        badge($("#pStatus"), t.post >= TARGETS.Posterior);
-        badge($("#coreStatus"), t.core >= TARGETS.Core);
-        const endOK = t.z2 >= 150 || t.vig >= 75 || t.z2 * 0.5 + t.vig >= 75;
-        badge($("#endStatus"), endOK, "On track", "Low this week");
-        $("#hist").innerHTML =
-          week()
-            .sessions.map((s) => {
-              const d = new Date(s.date).toLocaleDateString();
-              const tag =
-                s.kind === "Strength"
-                  ? s.main?.movement || s.main?.pattern
-                  : s.wod?.name || s.endurance?.modality || "";
-              return `<div class="space flex"><span>${d} · ${s.kind}</span><span class="muted small">${tag || ""}</span></div>`;
-            })
-            .join("") || '<div class="muted">No sessions yet.</div>';
-      }
+          const enduSession = [
+            {
+              kind: "Endurance",
+              endurance: { z2: 40, vig: 0 },
+              wod: { cap: 20, rounds: 1, moves: [] },
+              acc: [],
+            },
+          ];
+          const t3 = totalsCalc(enduSession);
+          console.assert(t3.z2 === 40, "Endurance Z2 minutes mismatch", t3);
+          console.assert(
+            t3.vig === 20,
+            "Endurance WOD minutes should not double count",
+            t3,
+          );
+
+          const mixedDistance = [
+            {
+              kind: "Endurance",
+              endurance: { distance: 10, distUnit: "mi", z2: 0, vig: 0 },
+              wod: null,
+              acc: [],
+            },
+            {
+              kind: "Endurance",
+              endurance: { distance: 5, distUnit: "km", z2: 0, vig: 0 },
+              wod: null,
+              acc: [],
+            },
+          ];
+          const t4 = totalsCalc(mixedDistance);
+          console.assert(
+            Math.abs(t4.enduranceMi - (10 + 5 * MILES_PER_KM)) < 1e-6,
+            "Endurance distance normalization mismatch",
+            t4,
+          );
+          console.assert(
+            t4.enduranceRaw.mi === 10 && t4.enduranceRaw.km === 5,
+            "Endurance distance raw breakdown mismatch",
+            t4,
+          );
+        }
+        function renderDashboard() {
+          const t = totalsCalc(week().sessions);
+          $("#z2Min").textContent = t.z2 + "′";
+          $("#vigMin").textContent = t.vig + "′";
+          $("#qSets").textContent = t.quads;
+          $("#pSets").textContent = t.post;
+          $("#cSets").textContent = t.chest || 0;
+          $("#bSets").textContent = t.back || 0;
+          $("#dSets").textContent = t.delts || 0;
+          $("#aSets").textContent = t.arms || 0;
+          $("#coreSets").textContent = t.core || 0;
+          const totalMiles = t.enduranceMi || 0;
+          const endDistEl = $("#endDist");
+          if (endDistEl) {
+            if (totalMiles > 0) {
+              const totalKm = totalMiles * KM_PER_MILE;
+              endDistEl.textContent =
+                formatDistanceValue(totalMiles) +
+                " mi (" +
+                formatDistanceValue(totalKm) +
+                " km)";
+            } else {
+              endDistEl.textContent = "0 mi";
+            }
+          }
+          const breakdownEl = $("#endDistBreakdown");
+          if (breakdownEl) {
+            const breakdownEntries = Object.entries(t.enduranceRaw || {}).filter(
+              ([, val]) => Number.isFinite(val) && val > 0,
+            );
+            if (breakdownEntries.length > 1) {
+              breakdownEl.textContent = breakdownEntries
+                .map(([unit, val]) => `${formatDistanceValue(val)} ${unit}`)
+                .join(" · ");
+              breakdownEl.style.display = "";
+            } else {
+              breakdownEl.textContent = "";
+              breakdownEl.style.display = "none";
+            }
+          }
+          badge($("#qStatus"), t.quads >= TARGETS.Quads);
+          badge($("#pStatus"), t.post >= TARGETS.Posterior);
+          badge($("#coreStatus"), t.core >= TARGETS.Core);
+          const endOK = t.z2 >= 150 || t.vig >= 75 || t.z2 * 0.5 + t.vig >= 75;
+          badge($("#endStatus"), endOK, "On track", "Low this week");
+          $("#hist").innerHTML =
+            week()
+              .sessions.map((s) => {
+                const d = new Date(s.date).toLocaleDateString();
+                const tag =
+                  s.kind === "Strength"
+                    ? s.main?.movement || s.main?.pattern
+                    : s.wod?.name || s.endurance?.modality || "";
+                const distanceVal = Number(s.endurance?.distance);
+                const hasDistance =
+                  s.endurance && Number.isFinite(distanceVal) && distanceVal > 0;
+                const distanceText = hasDistance
+                  ? `${formatDistanceValue(distanceVal)} ${
+                      s.endurance?.distUnit || "mi"
+                    }`
+                  : "";
+                const detailParts = [tag || "", distanceText].filter(Boolean);
+                const detail = detailParts.join(" · ");
+                return `<div class="space flex"><span>${d} · ${s.kind}</span><span class="muted small">${detail}</span></div>`;
+              })
+              .join("") || '<div class="muted">No sessions yet.</div>';
+        }
 
       function saveSession() {
         const { session: s, hasWarn } = runQA({ silent: true });
