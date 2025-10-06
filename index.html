@@ -639,6 +639,16 @@
                 value="30"
             /></label>
             <label class="small"
+              >Vigorous minutes<input
+                id="vigMinutes"
+                type="number"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                min="0"
+                step="5"
+                value="0"
+            /></label>
+            <label class="small"
               >Distance<input
                 id="dist"
                 type="number"
@@ -1567,18 +1577,33 @@
         }
 
         if (session.kind === "Endurance") {
-          const z2 = Number($("#z2").value || 0);
-          const cap = session.wod?.cap || 0;
-          if (z2 < 20 && cap < 15)
+          const z2Val = Number(session.endurance?.z2);
+          const z2 = Number.isFinite(z2Val) && z2Val > 0 ? z2Val : 0;
+          const vigVal = Number(session.endurance?.vig);
+          const sessionVig =
+            Number.isFinite(vigVal) && vigVal > 0 ? vigVal : 0;
+          const wodCapVal = Number(session.wod?.cap);
+          const wodCap =
+            Number.isFinite(wodCapVal) && wodCapVal > 0 ? wodCapVal : 0;
+          const totalVig = sessionVig + wodCap;
+          if (z2 < 20 && totalVig < 15)
             warn(
               "Aim for ≥20′ of Zone 2 or structured intervals on endurance days.",
             );
+          const projectedTotals = totalsCalc([...week().sessions, session]);
+          const endOK =
+            projectedTotals.z2 >= 150 ||
+            projectedTotals.vig >= 75 ||
+            projectedTotals.z2 * 0.5 + projectedTotals.vig >= 75;
+          if (!endOK)
+            warn(
+              "Weekly endurance mix is light — reach 150′ Z2, 75′ vigorous, or a blend (vigorous minutes count double).",
+            );
           if (session.wod && (!session.wod.moves || !session.wod.moves.length))
             warn("Add movements to the optional endurance WOD.");
-          if (
-            $("#modality").value === "Ruck" &&
-            !Number($("#ruckWeight").value || 0)
-          )
+          const modalityVal = session.endurance?.modality || "";
+          const ruckWeightVal = Number(session.endurance?.ruckWeight);
+          if (modalityVal === "Ruck" && (!Number.isFinite(ruckWeightVal) || ruckWeightVal <= 0))
             info("Log the ruck weight to track the load.");
         }
 
@@ -1675,7 +1700,12 @@
         if (kind === "Strength") {
           if (wodUI) wod = wodUI.read();
         } else if (kind === "Endurance") {
-          const z2 = Number($("#z2").value || 0);
+          const toMinutes = (val) => {
+            const n = Number(val);
+            return Number.isFinite(n) && n > 0 ? n : 0;
+          };
+          const z2 = toMinutes($("#z2").value);
+          const vigorous = toMinutes($("#vigMinutes").value);
           const distanceVal = Number($("#dist").value);
           const distance =
             Number.isFinite(distanceVal) && distanceVal > 0
@@ -1685,7 +1715,7 @@
           const modalityVal = $("#modality")?.value || "";
           endurance = {
             z2,
-            vig: 0,
+            vig: vigorous,
             distance,
             distUnit: $("#distUnit")?.value || "mi",
             modality: modalityVal,
@@ -1880,6 +1910,34 @@
           t3.vig === 20,
           "Endurance WOD minutes should not double count",
           t3,
+        );
+        const enduFieldSession = [
+          {
+            kind: "Endurance",
+            endurance: { z2: 30, vig: 25 },
+            wod: null,
+            acc: [],
+          },
+        ];
+        const t4 = totalsCalc(enduFieldSession);
+        console.assert(
+          t4.vig === 25,
+          "Endurance vigorous field should add to totals",
+          t4,
+        );
+        const enduComboSession = [
+          {
+            kind: "Endurance",
+            endurance: { z2: 30, vig: 25 },
+            wod: { cap: 20, rounds: 1, moves: [] },
+            acc: [],
+          },
+        ];
+        const t5 = totalsCalc(enduComboSession);
+        console.assert(
+          t5.vig === 45,
+          "Vigorous minutes should combine field + WOD without double counting",
+          t5,
         );
       }
       function renderDashboard() {
