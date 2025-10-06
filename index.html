@@ -213,6 +213,14 @@
         color: #00ffa2;
         text-shadow: 0 0 6px #00ffa2;
       }
+      .pill.info {
+        border-color: var(--muted);
+        color: var(--muted);
+      }
+      .pill.info::before {
+        color: var(--muted);
+        text-shadow: 0 0 6px var(--muted);
+      }
       .pill.warn {
         border-color: var(--warn);
         color: var(--warn);
@@ -220,6 +228,13 @@
       .pill.warn::before {
         color: var(--warn);
         text-shadow: 0 0 6px var(--warn);
+      }
+      .qa-status-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 12px;
+        flex-wrap: wrap;
       }
       .grid {
         display: grid;
@@ -809,8 +824,14 @@
             </div>
             <button class="btn" id="qaBtn">Run QA</button>
           </div>
+          <div class="qa-status-row">
+            <span id="qaState" class="pill info">Not Run</span>
+            <div id="qaStatusMsg" class="muted small">
+              Run QA to check the plan.
+            </div>
+          </div>
           <div id="qaList" class="grid" style="margin-top: 8px; gap: 6px">
-            <div class="qa-empty muted small">Run QA to check the plan.</div>
+            <div class="qa-empty muted small">QA results will appear here.</div>
           </div>
         </div>
 
@@ -1028,11 +1049,31 @@
         autoAccBtn = $("#autoAcc"),
         qaBtn = $("#qaBtn"),
         qaList = $("#qaList"),
+        qaStatePill = $("#qaState"),
+        qaStatusMsg = $("#qaStatusMsg"),
         builderCard = $("#builderCard");
+
+      function setQAState({ tone = "", label = "", message = "" }) {
+        if (qaStatePill) {
+          const cls = tone ? `pill ${tone}` : "pill";
+          qaStatePill.className = cls;
+          qaStatePill.textContent = label;
+        }
+        if (qaStatusMsg) {
+          qaStatusMsg.textContent = message;
+        }
+      }
+
+      setQAState({
+        tone: "info",
+        label: "Not Run",
+        message: "Run QA to check the plan.",
+      });
 
       function markQAStale(msg = "Session changed — run QA again.") {
         if (!qaList) return;
         qaList.innerHTML = `<div class="qa-empty muted small">${msg}</div>`;
+        setQAState({ tone: "warn", label: "Needs QA", message: msg });
       }
 
       function handleBuilderAdjust(e) {
@@ -1493,13 +1534,44 @@
       function renderQAList(issues) {
         if (!qaList) return;
         qaList.innerHTML = "";
+        const now = new Date();
+        const stamp = now.toLocaleTimeString([], {
+          hour: "numeric",
+          minute: "2-digit",
+        });
+        const warnCount = issues.filter((i) => i.level === "warn").length;
+        const infoCount = issues.filter((i) => i.level === "info").length;
+        const okCount = issues.length - warnCount - infoCount;
         if (!issues.length) {
+          setQAState({
+            tone: "ok",
+            label: "Ready",
+            message: `No issues (checked ${stamp}).`,
+          });
           const row = document.createElement("div");
           row.className = "qa-item";
-          row.innerHTML = `<span class="pill ok">Ready</span><div>Session looks good — go run it.</div>`;
+          row.innerHTML = `<span class="pill ok">Ready</span><div>QA passed — session looks good to go.</div>`;
           qaList.appendChild(row);
           return;
         }
+        const parts = [];
+        if (warnCount)
+          parts.push(`${warnCount} warning${warnCount === 1 ? "" : "s"}`);
+        if (infoCount)
+          parts.push(`${infoCount} info note${infoCount === 1 ? "" : "s"}`);
+        if (okCount > 0)
+          parts.push(`${okCount} check${okCount === 1 ? "" : "s"}`);
+        const tone = warnCount ? "warn" : infoCount ? "info" : "ok";
+        const label = warnCount
+          ? `${warnCount} Warning${warnCount === 1 ? "" : "s"}`
+          : infoCount
+            ? infoCount === 1
+              ? "Info"
+              : `${infoCount} Info Notes`
+            : "Ready";
+        const summary = parts.length ? parts.join(" · ") : "QA check complete";
+        const message = `${summary} (checked ${stamp}).`;
+        setQAState({ tone, label, message });
         issues.forEach((issue) => {
           const row = document.createElement("div");
           row.className = "qa-item";
@@ -1508,7 +1580,7 @@
             issue.level === "warn"
               ? "pill warn"
               : issue.level === "info"
-                ? "pill"
+                ? "pill info"
                 : "pill ok";
           pill.textContent =
             issue.level === "warn"
@@ -1893,48 +1965,48 @@
           t2,
         );
 
-          const enduSession = [
-            {
-              kind: "Endurance",
-              endurance: { z2: 40, vig: 0 },
-              wod: { cap: 20, rounds: 1, moves: [] },
-              acc: [],
-            },
-          ];
-          const t3 = totalsCalc(enduSession);
-          console.assert(t3.z2 === 40, "Endurance Z2 minutes mismatch", t3);
-          console.assert(
-            t3.vig === 20,
-            "Endurance WOD minutes should not double count",
-            t3,
-          );
+        const enduSession = [
+          {
+            kind: "Endurance",
+            endurance: { z2: 40, vig: 0 },
+            wod: { cap: 20, rounds: 1, moves: [] },
+            acc: [],
+          },
+        ];
+        const t3 = totalsCalc(enduSession);
+        console.assert(t3.z2 === 40, "Endurance Z2 minutes mismatch", t3);
+        console.assert(
+          t3.vig === 20,
+          "Endurance WOD minutes should not double count",
+          t3,
+        );
 
-          const mixedDistance = [
-            {
-              kind: "Endurance",
-              endurance: { distance: 10, distUnit: "mi", z2: 0, vig: 0 },
-              wod: null,
-              acc: [],
-            },
-            {
-              kind: "Endurance",
-              endurance: { distance: 5, distUnit: "km", z2: 0, vig: 0 },
-              wod: null,
-              acc: [],
-            },
-          ];
-          const t4 = totalsCalc(mixedDistance);
-          console.assert(
-            Math.abs(t4.enduranceMi - (10 + 5 * MILES_PER_KM)) < 1e-6,
-            "Endurance distance normalization mismatch",
-            t4,
-          );
-          console.assert(
-            t4.enduranceRaw.mi === 10 && t4.enduranceRaw.km === 5,
-            "Endurance distance raw breakdown mismatch",
-            t4,
-          );
-        }
+        const mixedDistance = [
+          {
+            kind: "Endurance",
+            endurance: { distance: 10, distUnit: "mi", z2: 0, vig: 0 },
+            wod: null,
+            acc: [],
+          },
+          {
+            kind: "Endurance",
+            endurance: { distance: 5, distUnit: "km", z2: 0, vig: 0 },
+            wod: null,
+            acc: [],
+          },
+        ];
+        const t4 = totalsCalc(mixedDistance);
+        console.assert(
+          Math.abs(t4.enduranceMi - (10 + 5 * MILES_PER_KM)) < 1e-6,
+          "Endurance distance normalization mismatch",
+          t4,
+        );
+        console.assert(
+          t4.enduranceRaw.mi === 10 && t4.enduranceRaw.km === 5,
+          "Endurance distance raw breakdown mismatch",
+          t4,
+        );
+      }
         function renderDashboard() {
           const t = totalsCalc(week().sessions);
           $("#z2Min").textContent = t.z2 + "′";
