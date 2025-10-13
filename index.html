@@ -275,6 +275,9 @@
         width: 100%;
         accent-color: var(--accent);
       }
+      .input-compact {
+        min-width: 0;
+      }
       .list {
         max-height: 180px;
         overflow: auto;
@@ -416,6 +419,14 @@
         td {
           padding: 8px 10px;
         }
+        .input-compact {
+          width: min(100%, 12ch);
+          align-self: flex-start;
+          text-align: center;
+        }
+        td input.input-compact {
+          width: min(100%, 8ch);
+        }
       }
     </style>
   </head>
@@ -495,6 +506,7 @@
               <label class="small"
                 >Morning BW
                 <input
+                  class="input-compact"
                   type="number"
                   inputmode="numeric"
                   pattern="[0-9]*"
@@ -506,6 +518,7 @@
               <label class="small"
                 >Sleep (hrs)
                 <input
+                  class="input-compact"
                   type="number"
                   inputmode="numeric"
                   pattern="[0-9]*"
@@ -578,6 +591,7 @@
             </label>
             <label class="small"
               >Rest (min)<input
+                class="input-compact"
                 type="number"
                 inputmode="numeric"
                 pattern="[0-9]*"
@@ -589,6 +603,7 @@
             /></label>
             <label class="small"
               >Target RPE<input
+                class="input-compact"
                 type="number"
                 inputmode="numeric"
                 pattern="[0-9]*"
@@ -645,6 +660,7 @@
           <div class="g3 grid">
             <label class="small"
               >Duration (min)<input
+                class="input-compact"
                 id="z2"
                 type="number"
                 inputmode="numeric"
@@ -655,6 +671,7 @@
             /></label>
             <label class="small"
               >Distance<input
+                class="input-compact"
                 id="dist"
                 type="number"
                 inputmode="decimal"
@@ -673,6 +690,7 @@
           <div class="g3 grid" style="margin-top: 6px">
             <label class="small" id="ruckWrap" style="display: none"
               >Ruck weight<input
+                class="input-compact"
                 id="ruckWeight"
                 type="number"
                 inputmode="numeric"
@@ -730,6 +748,7 @@
           <div class="g3 grid">
             <label class="small"
               >Walk (min)<input
+                class="input-compact"
                 id="walkMin"
                 type="number"
                 inputmode="numeric"
@@ -740,6 +759,7 @@
             /></label>
             <label class="small"
               >Mobility (min)<input
+                class="input-compact"
                 id="mobMin"
                 type="number"
                 inputmode="numeric"
@@ -750,6 +770,7 @@
             /></label>
             <label class="small"
               >Yoga/Breath (min)<input
+                class="input-compact"
                 id="yogaMin"
                 type="number"
                 inputmode="numeric"
@@ -1185,9 +1206,9 @@
         tr.innerHTML = `
     <td><span class="tag">Set ${idx}</span></td>
     <td>${movement.value || pattern.value}</td>
-    <td><input type="number" min="1" step="1" value="${vals.reps}"></td>
-    <td><input type="number" min="0" step="1" value="${vals.load}"></td>
-    <td><input type="number" min="5" max="10" step="0.5" value="${vals.rpe}"></td>
+    <td><input class="input-compact" type="number" min="1" step="1" value="${vals.reps}"></td>
+    <td><input class="input-compact" type="number" min="0" step="1" value="${vals.load}"></td>
+    <td><input class="input-compact" type="number" min="5" max="10" step="0.5" value="${vals.rpe}"></td>
     <td style="text-align:center"><input type="checkbox" ${vals.fail ? "checked" : ""}></td>
     <td><button class="btn bad">X</button></td>`;
         const [_, __, reps, load, rpe, fail, del] = tr.children;
@@ -1267,8 +1288,8 @@
         <select class="w-style"><option>AMRAP</option><option>For Time</option><option>EMOM</option><option>Intervals</option><option>Chipper</option></select>
       </label>
       <label class="small">Name (optional)<input class="w-name" type="text" placeholder="e.g., 4RFT Row/Wall Ball/Sit-Up"></label>
-      <label class="small">Time (min)<input class="w-cap" type="number" min="0" step="1" value="20"></label>
-      <label class="small">Rounds<input class="w-rounds" type="number" min="1" step="1" value="${preset === "bad" ? 1 : 3}"></label>
+      <label class="small">Time (min)<input class="w-cap input-compact" type="number" min="0" step="1" value="20"></label>
+      <label class="small">Rounds<input class="w-rounds input-compact" type="number" min="1" step="1" value="${preset === "bad" ? 1 : 3}"></label>
     </div>
     <div class="line"></div>
     <div class="space flex"><div><b>Movements</b></div><button class="btn w-add">+ Add Movement</button></div>
@@ -1414,9 +1435,9 @@
         row.style.gridTemplateColumns = "2fr 1fr 1fr 1fr auto";
         row.dataset.id = id;
         row.innerHTML = `<div><b>${name}</b><div class="muted small">${target}</div></div>
-    <label class="small">Sets<input type="number" min="2" max="5" value="${sets}"></label>
-    <label class="small">Reps<input type="number" min="6" max="25" value="${reps}"></label>
-    <label class="small">Weight<input type="number" min="0" step="1" placeholder="Weight" value="${load}"></label>
+    <label class="small">Sets<input class="input-compact" type="number" min="2" max="5" value="${sets}"></label>
+    <label class="small">Reps<input class="input-compact" type="number" min="6" max="25" value="${reps}"></label>
+    <label class="small">Weight<input class="input-compact" type="number" min="0" step="1" placeholder="Weight" value="${load}"></label>
     <button class="btn bad">X</button>`;
         $("#accList").appendChild(row);
         const delBtn = row.querySelector("button");
