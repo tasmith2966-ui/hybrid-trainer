@@ -981,6 +981,7 @@
 
     <div id="toast" class="toast"></div>
 
+    <script src="movement-data.js"></script>
     <script>
       /* ================= Versions & Storage ================= */
       const APP_VERSION = 11;
@@ -1517,19 +1518,28 @@
           (acc) => !target || acc.target === target,
         );
         accOptionsList.innerHTML = list
-          .map(
-            (acc) =>
-              `<option value="${acc.name}" label="${acc.target}"></option>`,
-          )
+          .map((acc) => {
+            const label = acc.target
+              ? `${acc.name} — ${acc.target}`
+              : acc.name;
+            return `<option value="${acc.name}" label="${label}">${label}</option>`;
+          })
           .join("");
       }
       function updateWodMoveOptions() {
         if (!wodMovesList) return;
+        const accessoryTargets = new Map(
+          accessoryLibrary.map((acc) => [acc.name, acc.target]),
+        );
         const sorted = [...new Set(wodMoveLibrary)].sort((a, b) =>
           a.localeCompare(b),
         );
         wodMovesList.innerHTML = sorted
-          .map((name) => `<option value="${name}"></option>`)
+          .map((name) => {
+            const target = accessoryTargets.get(name);
+            const label = target ? `${name} — ${target}` : name;
+            return `<option value="${name}" label="${label}">${label}</option>`;
+          })
           .join("");
       }
       const MOVEMENT_SHEET_URL =
@@ -1543,22 +1553,10 @@
           const html = await res.text();
           const parser = new DOMParser();
           const doc = parser.parseFromString(html, "text/html");
-          const rows = [...doc.querySelectorAll("table tr")];
+          const rows = MovementData.extractMovementRows(doc);
           if (!rows.length) return;
-          const accessoryMap = new Map();
-          const nextMoves = new Set();
-          rows.forEach((row) => {
-            const cells = [...row.querySelectorAll("td, th")].map((cell) =>
-              cell.textContent.replace(/\s+/g, " ").trim(),
-            );
-            if (cells.length < 2) return;
-            const [nameRaw = "", targetRaw = ""] = cells;
-            const name = nameRaw.trim();
-            const target = targetRaw.trim();
-            if (!name || /name/i.test(name) || /muscle/i.test(target)) return;
-            if (target) accessoryMap.set(name, target);
-            nextMoves.add(name);
-          });
+          const { accessoryMap, nextMoves } =
+            MovementData.buildMovementData(rows);
           if (accessoryMap.size) {
             const nextAccessories = [...accessoryMap.entries()].map(
               ([name, target]) => {
