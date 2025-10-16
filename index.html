@@ -278,6 +278,39 @@
       .input-compact {
         min-width: 0;
       }
+      .chart-wrap {
+        margin-top: 10px;
+        position: relative;
+      }
+      #weightChart {
+        width: 100%;
+        height: 180px;
+        background: rgba(6, 17, 43, 0.6);
+        border: 2px solid var(--line);
+        box-shadow: inset 0 0 0 2px #000;
+      }
+      #weightPath {
+        fill: none;
+        stroke: var(--accent);
+        stroke-width: 2;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+      }
+      #weightDots circle {
+        fill: var(--accent);
+        stroke: #020b1c;
+        stroke-width: 2;
+      }
+      #weightChartEmpty {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 12px;
+        background: rgba(3, 2, 18, 0.85);
+      }
       .list {
         max-height: 180px;
         overflow: auto;
@@ -419,13 +452,25 @@
         td {
           padding: 8px 10px;
         }
-        .input-compact {
-          width: min(100%, 12ch);
-          align-self: flex-start;
-          text-align: center;
-        }
+      .input-compact {
+        width: min(100%, 12ch);
+        align-self: flex-start;
+        text-align: center;
+      }
+      .input-3ch {
+        width: min(100%, 6ch);
+      }
         td input.input-compact {
           width: min(100%, 8ch);
+        }
+      }
+      @media (max-width: 600px) {
+        .btn.bad {
+          padding: 6px;
+          width: 40px;
+          min-width: 40px;
+          height: 40px;
+          justify-content: center;
         }
       }
     </style>
@@ -498,25 +543,12 @@
               <label class="small"
                 >Morning BW
                 <input
-                  class="input-compact"
+                  class="input-compact input-3ch"
                   type="number"
                   inputmode="numeric"
                   pattern="[0-9]*"
                   id="bw"
                   placeholder="lbs/kg"
-              /></label>
-            </div>
-            <div>
-              <label class="small"
-                >Sleep (hrs)
-                <input
-                  class="input-compact"
-                  type="number"
-                  inputmode="numeric"
-                  pattern="[0-9]*"
-                  id="sleepHrs"
-                  min="0"
-                  step="0.5"
               /></label>
             </div>
           </div>
@@ -564,10 +596,12 @@
           failed. Otherwise it counts.
         </div>
 
+        <datalist id="wodMoves"></datalist>
+
         <!-- Strength -->
         <div id="strengthView" style="display: none">
           <div class="line"></div>
-          <div class="g4 grid">
+          <div class="g2 grid">
             <label class="small"
               >Pattern
               <select id="pattern">
@@ -581,30 +615,6 @@
               >Movement (top 3)
               <select id="movement"></select>
             </label>
-            <label class="small"
-              >Rest (min)<input
-                class="input-compact"
-                type="number"
-                inputmode="numeric"
-                pattern="[0-9]*"
-                id="restMin"
-                min="2"
-                max="5"
-                step="0.5"
-                value="3"
-            /></label>
-            <label class="small"
-              >Target RPE<input
-                class="input-compact"
-                type="number"
-                inputmode="numeric"
-                pattern="[0-9]*"
-                id="rpe"
-                min="5"
-                max="10"
-                step="0.5"
-                value="8"
-            /></label>
           </div>
           <div class="small muted" id="progGhost" style="margin-top: 6px"></div>
 
@@ -728,24 +738,24 @@
             <div class="space flex" style="align-items: center; gap: 10px">
               <div><b>Build a WOD</b></div>
               <div class="flex" style="flex-wrap: wrap; gap: 8px">
-                <button class="btn green" id="linchpinWodBtn">
-                  Pull Linchpin WOD
-                </button>
-                <button class="btn green" id="wodwellWodBtn">
-                  Pull WODwell WOD
-                </button>
+                <a
+                  class="btn green"
+                  href="https://crossfitlinchpin.com/pages/workout-of-the-day"
+                  target="_blank"
+                  rel="noopener"
+                >
+                  View Linchpin WOD
+                </a>
+                <a
+                  class="btn green"
+                  href="https://wodwell.com/workout-of-the-day/"
+                  target="_blank"
+                  rel="noopener"
+                >
+                  View WODwell WOD
+                </a>
               </div>
             </div>
-            <div
-              id="linchpinStatus"
-              class="muted small"
-              style="margin-top: 6px"
-            ></div>
-            <div
-              id="wodwellStatus"
-              class="muted small"
-              style="margin-top: 4px"
-            ></div>
             <div id="wodWrap3" style="margin-top: 8px"></div>
           </div>
         </div>
@@ -941,6 +951,28 @@
             <div id="hist" class="list"></div>
           </div>
         </div>
+        <div class="card" id="weightCard" style="margin-top: 12px">
+          <div class="space flex" style="align-items: flex-end">
+            <div>
+              <b>Weight Trend</b>
+              <div class="muted small">Morning BW entries</div>
+            </div>
+            <div class="muted small" id="weightSummary"></div>
+          </div>
+          <div class="chart-wrap">
+            <svg
+              id="weightChart"
+              viewBox="0 0 320 160"
+              preserveAspectRatio="none"
+            >
+              <path id="weightPath"></path>
+              <g id="weightDots"></g>
+            </svg>
+            <div class="muted small" id="weightChartEmpty">
+              Enter Morning BW values to see your weekly trend.
+            </div>
+          </div>
+        </div>
         <div class="muted small" style="margin-top: 8px; text-align: center">
           Clean build v11 — no PWA cache.
         </div>
@@ -1015,7 +1047,19 @@
         Core: 8,
       };
 
-      const ACCESSORY_LIBRARY = [
+      const DEFAULT_TOP3 = {
+        Hinge: [
+          "Conventional Deadlift",
+          "Trap Bar Deadlift",
+          "Romanian Deadlift",
+        ],
+        Squat: ["Back Squat", "Front Squat", "Pause Back Squat"],
+        Oly: ["Clean & Jerk", "Clean", "Snatch"],
+        None: ["—"],
+      };
+      let top3Movements = JSON.parse(JSON.stringify(DEFAULT_TOP3));
+
+      const DEFAULT_ACCESSORIES = [
         { target: "Back", name: "Chest-Supported Row", sets: 3, reps: 10 },
         { target: "Back", name: "Lat Pulldown", sets: 3, reps: 10 },
         { target: "Back", name: "Single-Arm Dumbbell Row", sets: 3, reps: 12 },
@@ -1047,14 +1091,20 @@
         { target: "Core", name: "Cable Pallof Press", sets: 3, reps: 12 },
         { target: "Core", name: "Weighted Plank", sets: 3, reps: 45 },
       ];
+      let accessoryLibrary = DEFAULT_ACCESSORIES.map((acc) => ({ ...acc }));
+      let wodMoveLibrary = [
+        ...new Set([
+          ...Object.values(DEFAULT_TOP3).flat(),
+          ...DEFAULT_ACCESSORIES.map((acc) => acc.name),
+        ]),
+      ];
 
       /* ================= UI Refs ================= */
       const sleep = $("#sleep"),
         food = $("#food"),
         sore = $("#sore"),
         mood = $("#mood");
-      const bw = $("#bw"),
-        sleepHrs = $("#sleepHrs");
+      const bw = $("#bw");
       const recoPill = $("#recoPill"),
         recoHint = $("#recoHint");
       const dayKind = $("#dayKind"),
@@ -1069,8 +1119,7 @@
 
       const pattern = $("#pattern"),
         movement = $("#movement"),
-        restMin = $("#restMin"),
-        rpe = $("#rpe");
+        wodMovesList = $("#wodMoves");
 
       const setsBody = $("#setsBody"),
         addSetBtn = $("#addSet"),
@@ -1082,11 +1131,7 @@
         toggleWod2 = $("#toggleWod2"),
         wodWrap2 = $("#wodWrap2"),
         wodWrap3 = $("#wodWrap3"),
-        wodWrap4 = $("#wodWrap4"),
-        linchpinBtn = $("#linchpinWodBtn"),
-        linchpinStatus = $("#linchpinStatus"),
-        wodwellBtn = $("#wodwellWodBtn"),
-        wodwellStatus = $("#wodwellStatus");
+        wodWrap4 = $("#wodWrap4");
 
       const accList = $("#accList"),
         newAccTarget = $("#newAccTarget"),
@@ -1098,6 +1143,10 @@
         qaList = $("#qaList"),
         qaStatePill = $("#qaState"),
         qaStatusMsg = $("#qaStatusMsg"),
+        weightSummary = $("#weightSummary"),
+        weightPath = $("#weightPath"),
+        weightDots = $("#weightDots"),
+        weightChartEmpty = $("#weightChartEmpty");
         builderCard = $("#builderCard");
 
       function setQAState({ tone = "", label = "", message = "" }) {
@@ -1209,18 +1258,8 @@
       });
 
       /* ================= Strength Main Lifts ================= */
-      const TOP3 = {
-        Hinge: [
-          "Conventional Deadlift",
-          "Trap Bar Deadlift",
-          "Romanian Deadlift",
-        ],
-        Squat: ["Back Squat", "Front Squat", "Pause Back Squat"],
-        Oly: ["Clean & Jerk", "Clean", "Snatch"],
-        None: ["—"],
-      };
       function renderTop3() {
-        const list = TOP3[pattern.value] || ["—"];
+        const list = top3Movements[pattern.value] || ["—"];
         movement.innerHTML = list.map((x) => `<option>${x}</option>`).join("");
         progGhost.textContent = "";
       }
@@ -1333,7 +1372,7 @@
           const row = document.createElement("div");
           row.className = "grid g4";
           row.innerHTML = `
-      <input placeholder="Movement (e.g., KB Swing)" value="${nameV}">
+      <input list="wodMoves" placeholder="Movement (e.g., KB Swing)" value="${nameV}">
       <input placeholder="Reps/Time (e.g., 15 or 30s)" value="${repsV}">
       <input placeholder="Load (e.g., 24kg or light)" value="${loadV}">
       <div class="flex" style="justify-content:space-between">
@@ -1438,384 +1477,6 @@
         markQAStale();
       });
 
-      const PROXY_PREFIX = "https://r.jina.ai/";
-      const LINCHPIN_SOURCE =
-          "https://www.crossfitlinchpin.com/workout-of-the-day",
-        LINCHPIN_PROXY = `${PROXY_PREFIX}${LINCHPIN_SOURCE}`,
-        WODWELL_SOURCE = "https://wodwell.com/workout-of-the-day/",
-        WODWELL_PROXY = `${PROXY_PREFIX}${WODWELL_SOURCE}`;
-
-      function toProxyUrl(url, base = WODWELL_SOURCE) {
-        if (!url) return "";
-        try {
-          const absolute = new URL(url, base).href;
-          return `${PROXY_PREFIX}${absolute}`;
-        } catch (err) {
-          console.error("Failed to build proxy URL", url, err);
-          return "";
-        }
-      }
-
-      function parseLinchpinWod(html) {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, "text/html");
-        const article =
-          doc.querySelector("article") ||
-          doc.querySelector("main article") ||
-          doc.querySelector("[data-rte-preserve-html]") ||
-          doc.querySelector("main") ||
-          doc.body;
-        const headingEl =
-          article.querySelector("h1") ||
-          doc.querySelector("h1") ||
-          doc.querySelector("title");
-        const name = headingEl?.textContent.trim() || "Linchpin WOD";
-        const timeEl = article.querySelector("time");
-        const dateText =
-          timeEl?.getAttribute("datetime")?.slice(0, 10) ||
-          timeEl?.textContent?.trim() ||
-          "";
-        const sections = [];
-        article.querySelectorAll("h2, h3, h4, p, li").forEach((el) => {
-          if (el.closest("blockquote")) return;
-          const text = el.textContent.replace(/\s+/g, " ").trim();
-          if (!text) return;
-          if (/^strength/i.test(text)) return;
-          if (/^compare to/i.test(text)) return;
-          if (/^post (?:time|load|score)/i.test(text)) return;
-          if (/^notes?/i.test(text)) return;
-          if (/^cool ?down/i.test(text)) return;
-          if (/^warm[- ]?up/i.test(text)) return;
-          if (/^mobility/i.test(text)) return;
-          if (/^accessory/i.test(text)) return;
-          sections.push(text);
-        });
-        if (!sections.length) return { name, moves: [] };
-        let startIndex = sections.findIndex((line) =>
-          /(for time|amrap|emom|every \d|interval|complete as many|metcon|conditioning)/i.test(
-            line,
-          ),
-        );
-        if (startIndex === -1) startIndex = 0;
-        const trimmed = [];
-        for (let i = startIndex; i < sections.length; i++) {
-          const line = sections[i];
-          if (/^cool ?down/i.test(line)) break;
-          if (/^notes?/i.test(line)) break;
-          trimmed.push(line);
-        }
-        if (!trimmed.length) return { name, moves: [] };
-        const style = trimmed.some((line) => /amrap/i.test(line))
-          ? "AMRAP"
-          : trimmed.some((line) => /emom|every \d/i.test(line))
-          ? "EMOM"
-          : trimmed.some((line) => /interval/i.test(line))
-          ? "Intervals"
-          : trimmed.some((line) => /chip/i.test(line))
-          ? "Chipper"
-          : "For Time";
-        let cap = 20;
-        for (const line of trimmed) {
-          const match = line.match(
-            /(\d+)\s*(?:minute|min|')\s*(?:amrap|cap|time cap|time)/i,
-          );
-          if (match) {
-            cap = Number(match[1]);
-            break;
-          }
-        }
-        if (!Number.isFinite(cap) || cap <= 0) cap = 20;
-        let rounds = 3;
-        for (const line of trimmed) {
-          const match = line.match(/(\d+)\s*(?:rft|rounds?)/i);
-          if (match) {
-            rounds = Number(match[1]);
-            break;
-          }
-        }
-        if (!Number.isFinite(rounds) || rounds <= 0) rounds = style === "AMRAP" ? 1 : 3;
-        if (style === "AMRAP") rounds = 1;
-        const moves = trimmed
-          .filter(
-            (line) =>
-              !/(?:minute|min).*?(?:amrap|cap)/i.test(line) &&
-              !/(?:rft|rounds?)/i.test(line) &&
-              !/(for time|amrap|emom|interval|score|rest \d)/i.test(line),
-          )
-          .map((line) => ({
-            name: line.replace(/^[-•\d.)\s]+/, ""),
-            reps: "",
-            load: "",
-            bw: /bodyweight|air squat|push-up|burpee|sit-up|pull-up|lunge/i.test(line),
-          }))
-          .slice(0, 6);
-        if (!moves.length) {
-          moves.push({
-            name: trimmed[0].replace(/^[-•\d.)\s]+/, ""),
-            reps: "",
-            load: "",
-            bw: false,
-          });
-        }
-        return { style, cap, rounds, name, moves, dateText };
-      }
-
-      function parseWodwellListing(html) {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, "text/html");
-        const main = doc.querySelector("main") || doc.body;
-        const timeEl =
-          doc.querySelector('meta[property="article:published_time"]') ||
-          doc.querySelector('meta[property="article:modified_time"]') ||
-          main.querySelector("time");
-        const dateText =
-          timeEl?.getAttribute("datetime")?.slice(0, 10) ||
-          timeEl?.textContent?.trim() ||
-          "";
-        const anchors = [...main.querySelectorAll("a[href]")];
-        const seen = new Set();
-        for (const anchor of anchors) {
-          if (anchor.closest("header, footer, nav, aside")) continue;
-          const href = anchor.getAttribute("href");
-          if (!href || href.startsWith("#")) continue;
-          let absolute = "";
-          try {
-            absolute = new URL(href, WODWELL_SOURCE).href;
-          } catch (err) {
-            continue;
-          }
-          if (seen.has(absolute)) continue;
-          seen.add(absolute);
-          if (!/wodwell\.com\/workouts?\//i.test(absolute)) continue;
-          if (/\/category\//i.test(absolute)) continue;
-          if (/\/tag\//i.test(absolute)) continue;
-          if (/\/author\//i.test(absolute)) continue;
-          const text = anchor.textContent.replace(/\s+/g, " ").trim();
-          if (!text) continue;
-          if (/comment|share|facebook|twitter|pinterest|instagram|email/i.test(text))
-            continue;
-          return { url: absolute, dateText };
-        }
-        return { url: "", dateText };
-      }
-
-      function parseWodwellWod(html) {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, "text/html");
-        const article =
-          doc.querySelector("article") ||
-          doc.querySelector("main article") ||
-          doc.querySelector(".single-workout") ||
-          doc.querySelector("[itemprop='articleBody']")?.closest("article") ||
-          doc.querySelector("main") ||
-          doc.body;
-        const content =
-          article.querySelector(".entry-content") ||
-          article.querySelector(".post-content") ||
-          article.querySelector("[itemprop='articleBody']") ||
-          article;
-        const headingEl =
-          article.querySelector("h1") ||
-          doc.querySelector("h1") ||
-          doc.querySelector("title");
-        const name = headingEl?.textContent.replace(/\s+/g, " ").trim() || "WODwell WOD";
-        const metaDate =
-          doc.querySelector('meta[property="article:published_time"]')?.getAttribute(
-            "content",
-          ) ||
-          doc.querySelector('meta[property="article:modified_time"]')?.getAttribute(
-            "content",
-          );
-        const timeEl = article.querySelector("time");
-        const dateText =
-          metaDate?.slice(0, 10) ||
-          timeEl?.getAttribute("datetime")?.slice(0, 10) ||
-          timeEl?.textContent?.trim() ||
-          "";
-        const collected = [];
-        content.querySelectorAll("h2, h3, h4, p, li").forEach((el) => {
-          if (el.closest("blockquote, figure, footer, aside")) return;
-          let text = el.textContent.replace(/\s+/g, " ").trim();
-          if (!text) return;
-          if (
-            /^(?:equipment|gear|tips?|strategy|coach'?s tip|scaling|warm[- ]?up|cool[- ]?down|mobility|faq|more workouts|related)/i.test(
-              text,
-            )
-          ) {
-            if (!collected.includes("__STOP__")) collected.push("__STOP__");
-            return;
-          }
-          collected.push(text);
-        });
-        const trimmed = [];
-        for (const line of collected) {
-          if (line === "__STOP__") break;
-          if (!line) continue;
-          if (trimmed.length && trimmed[trimmed.length - 1] === line) continue;
-          trimmed.push(line);
-        }
-        if (!trimmed.length) return { name, moves: [], dateText };
-        const startIndex = trimmed.findIndex((line) =>
-          /(workout|for time|amrap|emom|interval|complete|rounds|metcon|conditioning)/i.test(
-            line,
-          ),
-        );
-        const focus = startIndex > -1 ? trimmed.slice(startIndex) : trimmed;
-        const style = focus.some((line) => /amrap/i.test(line))
-          ? "AMRAP"
-          : focus.some((line) => /emom|every \d/i.test(line))
-          ? "EMOM"
-          : focus.some((line) => /interval|on the minute|tabata/i.test(line))
-          ? "Intervals"
-          : "For Time";
-        let cap = null;
-        for (const line of focus) {
-          const match = line.match(/(\d+)\s*(?:minute|min|')\s*(?:cap|time cap|amrap|emom|workout)/i);
-          if (match) {
-            cap = Number(match[1]);
-            break;
-          }
-        }
-        if (!Number.isFinite(cap) || cap <= 0) cap = style === "EMOM" ? 0 : 20;
-        let rounds = null;
-        for (const line of focus) {
-          const match = line.match(/(\d+)\s*(?:rft|rounds?)/i);
-          if (match) {
-            rounds = Number(match[1]);
-            break;
-          }
-          const emomMatch = line.match(/(\d+)\s*(?:minute|min)\s*emom/i);
-          if (emomMatch) {
-            rounds = Number(emomMatch[1]);
-            break;
-          }
-        }
-        if (!Number.isFinite(rounds) || rounds <= 0) rounds = style === "AMRAP" ? 1 : 3;
-        if (style === "AMRAP") rounds = 1;
-        const moves = focus
-          .filter(
-            (line) =>
-              !/(?:minute|min).*?(?:cap|amrap|emom|interval)/i.test(line) &&
-              !/(?:rft|rounds?)/i.test(line) &&
-              !/(for time|amrap|emom|every \d|interval|score|rest \d)/i.test(line),
-          )
-          .map((line) => ({
-            name: line.replace(/^[-•\d.)\s]+/, ""),
-            reps: "",
-            load: "",
-            bw: /air squat|push-up|sit-up|burpee|lunge|pull-up|bodyweight|run|row|bike/i.test(
-              line,
-            ),
-          }))
-          .slice(0, 6);
-        if (!moves.length) {
-          moves.push({
-            name: focus[0].replace(/^[-•\d.)\s]+/, ""),
-            reps: "",
-            load: "",
-            bw: false,
-          });
-        }
-        return { style, cap, rounds, name, moves, dateText };
-      }
-
-      async function loadLinchpinWod() {
-        if (!linchpinBtn) return;
-        if (!wodUI3) wodUI3 = buildWodUI(wodWrap3, "good");
-        const btn = linchpinBtn;
-        const originalText = btn.textContent;
-        btn.disabled = true;
-        btn.textContent = "Loading…";
-        if (linchpinStatus)
-          linchpinStatus.textContent = "Fetching latest Linchpin workout…";
-        try {
-          const res = await fetch(LINCHPIN_PROXY, {
-            headers: { Accept: "text/html" },
-          });
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const html = await res.text();
-          const parsed = parseLinchpinWod(html);
-          if (!parsed.moves?.length) throw new Error("Workout details not found");
-          wodUI3.write(parsed);
-          if (linchpinStatus) {
-            const dateLabel = parsed.dateText ? ` — ${parsed.dateText}` : "";
-            linchpinStatus.innerHTML = `Loaded from <a href="${LINCHPIN_SOURCE}" target="_blank" rel="noopener">Linchpin WOD</a>${dateLabel}.`;
-          }
-          toast("Loaded Linchpin WOD.");
-        } catch (err) {
-          console.error(err);
-          if (linchpinStatus) {
-            linchpinStatus.textContent = `Could not load Linchpin WOD (${err.message || err}).`;
-          }
-          toast("Failed to load Linchpin WOD.");
-        } finally {
-          btn.disabled = false;
-          btn.textContent = originalText;
-        }
-      }
-      linchpinBtn?.addEventListener("click", () => {
-        if (dayKind.value !== "GPP Good") {
-          dayKind.value = "GPP Good";
-          adaptBuilder();
-        }
-        loadLinchpinWod();
-      });
-
-      async function loadWodwellWod() {
-        if (!wodwellBtn) return;
-        if (!wodUI3) wodUI3 = buildWodUI(wodWrap3, "good");
-        const btn = wodwellBtn;
-        const originalText = btn.textContent;
-        btn.disabled = true;
-        btn.textContent = "Loading…";
-        if (wodwellStatus)
-          wodwellStatus.textContent = "Fetching latest WODwell workout…";
-        try {
-          const res = await fetch(WODWELL_PROXY, { headers: { Accept: "text/html" } });
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const listingHtml = await res.text();
-          const listing = parseWodwellListing(listingHtml);
-          if (!listing?.url) throw new Error("Workout link not found");
-          const proxyDetail = toProxyUrl(listing.url);
-          if (!proxyDetail) throw new Error("Could not resolve workout URL");
-          if (wodwellStatus) {
-            const dateLabel = listing.dateText ? ` — ${listing.dateText}` : "";
-            wodwellStatus.innerHTML = `Fetching <a href="${listing.url}" target="_blank" rel="noopener">WODwell WOD</a>${dateLabel}…`;
-          }
-          const detailRes = await fetch(proxyDetail, { headers: { Accept: "text/html" } });
-          if (!detailRes.ok) throw new Error(`Detail HTTP ${detailRes.status}`);
-          const detailHtml = await detailRes.text();
-          const parsed = parseWodwellWod(detailHtml);
-          if (!parsed.moves?.length) throw new Error("Workout details not found");
-          wodUI3.write(parsed);
-          if (wodwellStatus) {
-            const dateLabel =
-              parsed.dateText
-                ? ` — ${parsed.dateText}`
-                : listing.dateText
-                ? ` — ${listing.dateText}`
-                : "";
-            wodwellStatus.innerHTML = `Loaded from <a href="${listing.url}" target="_blank" rel="noopener">WODwell</a>${dateLabel}.`;
-          }
-          toast("Loaded WODwell WOD.");
-        } catch (err) {
-          console.error(err);
-          if (wodwellStatus) {
-            wodwellStatus.textContent = `Could not load WODwell WOD (${err.message || err}).`;
-          }
-          toast("Failed to load WODwell WOD.");
-        } finally {
-          btn.disabled = false;
-          btn.textContent = originalText;
-        }
-      }
-      wodwellBtn?.addEventListener("click", () => {
-        if (dayKind.value !== "GPP Good") {
-          dayKind.value = "GPP Good";
-          adaptBuilder();
-        }
-        loadWodwellWod();
-      });
 
       /* ================= Accessories ================= */
       function targetAccDefaults(target) {
@@ -1828,14 +1489,14 @@
         if (!name) return null;
         const lookup = name.trim().toLowerCase();
         return (
-          ACCESSORY_LIBRARY.find((acc) => acc.name.toLowerCase() === lookup) ||
+          accessoryLibrary.find((acc) => acc.name.toLowerCase() === lookup) ||
           null
         );
       }
       function updateAccOptions() {
         if (!accOptionsList) return;
         const target = newAccTarget?.value || "";
-        const list = ACCESSORY_LIBRARY.filter(
+        const list = accessoryLibrary.filter(
           (acc) => !target || acc.target === target,
         );
         accOptionsList.innerHTML = list
@@ -1844,6 +1505,86 @@
               `<option value="${acc.name}" label="${acc.target}"></option>`,
           )
           .join("");
+      }
+      function updateWodMoveOptions() {
+        if (!wodMovesList) return;
+        const sorted = [...new Set(wodMoveLibrary)].sort((a, b) =>
+          a.localeCompare(b),
+        );
+        wodMovesList.innerHTML = sorted
+          .map((name) => `<option value="${name}"></option>`)
+          .join("");
+      }
+      const MOVEMENT_SHEET_URL =
+        "https://docs.google.com/spreadsheets/d/e/2PACX-1vQhIbt9Dj69Bo1VyEU6VUX--Y4D8lVBfS4qmixtfSrDnJXRBON6ob5-XjUg0ZnDtJvndTMLSfeGMbVB/pubhtml?widget=true&headers=false";
+      async function loadMovementData() {
+        try {
+          const res = await fetch(MOVEMENT_SHEET_URL, {
+            headers: { Accept: "text/html" },
+          });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const html = await res.text();
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, "text/html");
+          const rows = [...doc.querySelectorAll("table tr")];
+          if (!rows.length) return;
+          const nextTop3 = {};
+          const nextAccessories = [];
+          const nextMoves = new Set();
+          rows.forEach((row) => {
+            const cells = [...row.querySelectorAll("td")].map((td) =>
+              td.textContent.replace(/\s+/g, " ").trim(),
+            );
+            if (!cells.length) return;
+            const [typeRaw = "", groupRaw = "", nameRaw = "", setsRaw = "", repsRaw = ""] =
+              cells;
+            const type = typeRaw.toLowerCase();
+            const group = groupRaw.trim();
+            const name = (nameRaw || group).trim();
+            if (!type && !name) return;
+            if (name) nextMoves.add(name);
+            if (type.includes("strength")) {
+              const key = group || "None";
+              if (!nextTop3[key]) nextTop3[key] = [];
+              nextTop3[key].push(name || group);
+            } else if (type.includes("access")) {
+              const target = group || "Other";
+              const sets = Number(setsRaw);
+              const reps = Number(repsRaw);
+              nextAccessories.push({
+                target,
+                name,
+                sets: Number.isFinite(sets) && sets > 0 ? sets : undefined,
+                reps: Number.isFinite(reps) && reps > 0 ? reps : undefined,
+              });
+            }
+          });
+          if (Object.keys(nextTop3).length) {
+            const merged = { ...DEFAULT_TOP3 };
+            Object.entries(nextTop3).forEach(([key, list]) => {
+              if (list?.length) merged[key] = [...new Set(list)];
+            });
+            top3Movements = merged;
+            renderTop3();
+          }
+          if (nextAccessories.length) {
+            accessoryLibrary = nextAccessories.map((acc) => ({
+              target: acc.target,
+              name: acc.name,
+              sets: acc.sets ?? targetAccDefaults(acc.target).sets,
+              reps: acc.reps ?? targetAccDefaults(acc.target).reps,
+            }));
+            updateAccOptions();
+          }
+          if (nextMoves.size) {
+            wodMoveLibrary = [
+              ...new Set([...wodMoveLibrary, ...nextMoves.values()]),
+            ];
+            updateWodMoveOptions();
+          }
+        } catch (err) {
+          console.error("Failed to load movement data", err);
+        }
       }
       function applyAccessoryMatch() {
         const match = findAccessoryByName(newAccName?.value || "");
@@ -1911,6 +1652,7 @@
         });
       }
       updateAccOptions();
+      updateWodMoveOptions();
 
       if (autoAccBtn) {
         autoAccBtn.addEventListener("click", () => {
@@ -1940,10 +1682,10 @@
             .sort((a, b) => a.ratio - b.ratio || b.goal - a.goal);
           const targetPick = (below[0] || fallback[0] || { target: "Back" })
             .target;
-          let options = ACCESSORY_LIBRARY.filter(
+          let options = accessoryLibrary.filter(
             (acc) => acc.target === targetPick,
           );
-          if (!options.length) options = ACCESSORY_LIBRARY.slice();
+          if (!options.length) options = accessoryLibrary.slice();
           const existing = new Set(
             accessories.map((a) => a.name.toLowerCase()),
           );
@@ -2080,10 +1822,6 @@
             );
           if (quality.some((s) => !s.rpe || s.rpe < 6))
             info("Fill in RPE 6–9 for every quality set to guide programming.");
-          if ((session.main?.rest || 0) < 2)
-            info(
-              "Rest ≥2 minutes between main sets so they count as hard work.",
-            );
           const fails = detail.filter((s) => s.fail).length;
           if (fails)
             info(
@@ -2181,8 +1919,7 @@
             ? {
                 pattern: pattern.value,
                 movement: movement.value || pattern.value,
-                rpe: Number(rpe.value) || 8,
-                rest: Number(restMin.value) || 3,
+                rpe: 8,
                 sets: [...setsBody.querySelectorAll("tr")].filter((tr) => {
                   const reps = Number(
                     tr.children[2].querySelector("input").value || 0,
@@ -2540,22 +2277,77 @@
                 return `<div class="space flex"><span>${d} · ${s.kind}</span><span class="muted small">${detail}</span></div>`;
               })
               .join("") || '<div class="muted">No sessions yet.</div>';
+          renderWeightTrend();
         }
+
+      function renderWeightTrend() {
+        if (!weightPath || !weightDots || !weightChartEmpty) return;
+        const entries = week()
+          .recovery.filter((entry) => Number.isFinite(entry?.bw))
+          .slice(-10);
+        if (!entries.length) {
+          weightPath.setAttribute("d", "");
+          weightDots.innerHTML = "";
+          weightChartEmpty.style.display = "flex";
+          if (weightSummary) weightSummary.textContent = "";
+          return;
+        }
+        const width = 320;
+        const height = 160;
+        const padX = 20;
+        const padY = 20;
+        const values = entries.map((entry) => entry.bw);
+        const min = Math.min(...values);
+        const max = Math.max(...values);
+        const range = max - min || 1;
+        const steps = Math.max(1, entries.length - 1);
+        const xStep = (width - padX * 2) / steps;
+        const yRange = height - padY * 2;
+        const points = entries.map((entry, idx) => {
+          const x = padX + idx * xStep;
+          const y =
+            height - padY - ((entry.bw - min) / range) * yRange;
+          return { x, y, value: entry.bw };
+        });
+        const pathD = points
+          .map((p, idx) => `${idx ? "L" : "M"}${p.x.toFixed(1)} ${p.y.toFixed(1)}`)
+          .join(" ");
+        weightPath.setAttribute("d", pathD);
+        weightDots.innerHTML = points
+          .map(
+            (p) =>
+              `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4"></circle>`,
+          )
+          .join("");
+        weightChartEmpty.style.display = "none";
+        if (weightSummary) {
+          const first = entries[0].bw;
+          const last = entries[entries.length - 1].bw;
+          const delta = last - first;
+          const deltaText =
+            Math.abs(delta) < 0.05
+              ? "±0.0"
+              : `${delta > 0 ? "+" : ""}${delta.toFixed(1)}`;
+          weightSummary.textContent = `${first.toFixed(1)} → ${last.toFixed(
+            1,
+          )} (${deltaText})`;
+        }
+      }
 
       function saveSession() {
         const { session: s, hasWarn } = runQA({ silent: true });
         week().sessions.push(s);
-        week().recovery.push({
-          date: todayISO(),
-          bw: bw.value ? Number(bw.value) : null,
-          sleepHrs: sleepHrs.value ? Number(sleepHrs.value) : null,
-        });
+        if (bw && bw.value) {
+          week().recovery.push({
+            date: todayISO(),
+            bw: Number(bw.value),
+          });
+        }
         saveStore();
         // reset builder
         setsBody.innerHTML = "";
         accessories = [];
         $("#accList").innerHTML = "";
-        if (dayKind.value === "Strength") addSetRow();
         renderDashboard();
         dayKind.__manualPick = false;
         updateReco();
@@ -2621,7 +2413,6 @@
         }
         if (k === "Strength") {
           if (!movement.options.length) renderTop3();
-          if (!setsBody.children.length) addSetRow();
         }
         if (k === "Endurance") {
           $("#ruckWrap").style.display =
@@ -2643,6 +2434,7 @@
         adaptBuilder();
         renderDashboard();
         runTotalsTests();
+        loadMovementData();
       });
     </script>
   </body>
