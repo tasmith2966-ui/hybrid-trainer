@@ -213,6 +213,14 @@
         color: #00ffa2;
         text-shadow: 0 0 6px #00ffa2;
       }
+      .pill.info {
+        border-color: var(--muted);
+        color: var(--muted);
+      }
+      .pill.info::before {
+        color: var(--muted);
+        text-shadow: 0 0 6px var(--muted);
+      }
       .pill.warn {
         border-color: var(--warn);
         color: var(--warn);
@@ -220,6 +228,13 @@
       .pill.warn::before {
         color: var(--warn);
         text-shadow: 0 0 6px var(--warn);
+      }
+      .qa-status-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 12px;
+        flex-wrap: wrap;
       }
       .grid {
         display: grid;
@@ -259,6 +274,9 @@
       input[type="range"] {
         width: 100%;
         accent-color: var(--accent);
+      }
+      .input-compact {
+        min-width: 0;
       }
       .list {
         max-height: 180px;
@@ -401,6 +419,14 @@
         td {
           padding: 8px 10px;
         }
+        .input-compact {
+          width: min(100%, 12ch);
+          align-self: flex-start;
+          text-align: center;
+        }
+        td input.input-compact {
+          width: min(100%, 8ch);
+        }
       }
     </style>
   </head>
@@ -410,19 +436,11 @@
         <div>
           <h1>Hybrid Trainer — v11</h1>
           <div class="muted small">
-            Single HTML. Local save + export/import. No service worker.
+            Single HTML. Local save + export. No service worker.
           </div>
         </div>
         <div class="flex">
           <button id="exportBtn" class="btn">Export</button>
-          <label class="btn"
-            ><input
-              id="importFile"
-              type="file"
-              accept="application/json"
-              style="display: none"
-            />Import</label
-          >
           <button id="resetWeek" class="btn">Reset Week</button>
         </div>
       </div>
@@ -480,6 +498,7 @@
               <label class="small"
                 >Morning BW
                 <input
+                  class="input-compact"
                   type="number"
                   inputmode="numeric"
                   pattern="[0-9]*"
@@ -491,6 +510,7 @@
               <label class="small"
                 >Sleep (hrs)
                 <input
+                  class="input-compact"
                   type="number"
                   inputmode="numeric"
                   pattern="[0-9]*"
@@ -563,6 +583,7 @@
             </label>
             <label class="small"
               >Rest (min)<input
+                class="input-compact"
                 type="number"
                 inputmode="numeric"
                 pattern="[0-9]*"
@@ -574,6 +595,7 @@
             /></label>
             <label class="small"
               >Target RPE<input
+                class="input-compact"
                 type="number"
                 inputmode="numeric"
                 pattern="[0-9]*"
@@ -630,6 +652,7 @@
           <div class="g3 grid">
             <label class="small"
               >Duration (min)<input
+                class="input-compact"
                 id="z2"
                 type="number"
                 inputmode="numeric"
@@ -650,10 +673,10 @@
             /></label>
             <label class="small"
               >Distance<input
+                class="input-compact"
                 id="dist"
                 type="number"
-                inputmode="numeric"
-                pattern="[0-9]*"
+                inputmode="decimal"
                 min="0"
                 step="0.1"
                 placeholder="5"
@@ -662,12 +685,14 @@
               >Unit<select id="distUnit">
                 <option>mi</option>
                 <option>km</option>
+                <option>m</option>
               </select></label
             >
           </div>
           <div class="g3 grid" style="margin-top: 6px">
             <label class="small" id="ruckWrap" style="display: none"
               >Ruck weight<input
+                class="input-compact"
                 id="ruckWeight"
                 type="number"
                 inputmode="numeric"
@@ -700,7 +725,27 @@
         <div id="gppGoodView" style="display: none">
           <div class="line"></div>
           <div class="card">
-            <div><b>Build a WOD</b></div>
+            <div class="space flex" style="align-items: center; gap: 10px">
+              <div><b>Build a WOD</b></div>
+              <div class="flex" style="flex-wrap: wrap; gap: 8px">
+                <button class="btn green" id="linchpinWodBtn">
+                  Pull Linchpin WOD
+                </button>
+                <button class="btn green" id="wodwellWodBtn">
+                  Pull WODwell WOD
+                </button>
+              </div>
+            </div>
+            <div
+              id="linchpinStatus"
+              class="muted small"
+              style="margin-top: 6px"
+            ></div>
+            <div
+              id="wodwellStatus"
+              class="muted small"
+              style="margin-top: 4px"
+            ></div>
             <div id="wodWrap3" style="margin-top: 8px"></div>
           </div>
         </div>
@@ -725,6 +770,7 @@
           <div class="g3 grid">
             <label class="small"
               >Walk (min)<input
+                class="input-compact"
                 id="walkMin"
                 type="number"
                 inputmode="numeric"
@@ -735,6 +781,7 @@
             /></label>
             <label class="small"
               >Mobility (min)<input
+                class="input-compact"
                 id="mobMin"
                 type="number"
                 inputmode="numeric"
@@ -745,6 +792,7 @@
             /></label>
             <label class="small"
               >Yoga/Breath (min)<input
+                class="input-compact"
                 id="yogaMin"
                 type="number"
                 inputmode="numeric"
@@ -819,8 +867,14 @@
             </div>
             <button class="btn" id="qaBtn">Run QA</button>
           </div>
+          <div class="qa-status-row">
+            <span id="qaState" class="pill info">Not Run</span>
+            <div id="qaStatusMsg" class="muted small">
+              Run QA to check the plan.
+            </div>
+          </div>
           <div id="qaList" class="grid" style="margin-top: 8px; gap: 6px">
-            <div class="qa-empty muted small">Run QA to check the plan.</div>
+            <div class="qa-empty muted small">QA results will appear here.</div>
           </div>
         </div>
 
@@ -868,14 +922,20 @@
           </div>
         </div>
         <div class="row" style="margin-top: 12px">
-          <div class="card">
-            <div>Endurance Minutes</div>
-            <div class="g2 grid" style="margin-top: 6px">
-              <div>Z2 <b id="z2Min">0′</b></div>
-              <div>Vig <b id="vigMin">0′</b></div>
+            <div class="card">
+              <div>Endurance Minutes</div>
+              <div class="g2 grid" style="margin-top: 6px">
+                <div>Z2 <b id="z2Min">0′</b></div>
+                <div>Vig <b id="vigMin">0′</b></div>
+              </div>
+              <div style="margin-top: 6px">Distance <b id="endDist">0 mi</b></div>
+              <div
+                id="endDistBreakdown"
+                class="muted small"
+                style="margin-top: 2px"
+              ></div>
+              <div id="endStatus" class="pill" style="margin-top: 6px"></div>
             </div>
-            <div id="endStatus" class="pill" style="margin-top: 6px"></div>
-          </div>
           <div class="card">
             <div>History (This Week)</div>
             <div id="hist" class="list"></div>
@@ -1022,7 +1082,11 @@
         toggleWod2 = $("#toggleWod2"),
         wodWrap2 = $("#wodWrap2"),
         wodWrap3 = $("#wodWrap3"),
-        wodWrap4 = $("#wodWrap4");
+        wodWrap4 = $("#wodWrap4"),
+        linchpinBtn = $("#linchpinWodBtn"),
+        linchpinStatus = $("#linchpinStatus"),
+        wodwellBtn = $("#wodwellWodBtn"),
+        wodwellStatus = $("#wodwellStatus");
 
       const accList = $("#accList"),
         newAccTarget = $("#newAccTarget"),
@@ -1032,11 +1096,31 @@
         autoAccBtn = $("#autoAcc"),
         qaBtn = $("#qaBtn"),
         qaList = $("#qaList"),
+        qaStatePill = $("#qaState"),
+        qaStatusMsg = $("#qaStatusMsg"),
         builderCard = $("#builderCard");
+
+      function setQAState({ tone = "", label = "", message = "" }) {
+        if (qaStatePill) {
+          const cls = tone ? `pill ${tone}` : "pill";
+          qaStatePill.className = cls;
+          qaStatePill.textContent = label;
+        }
+        if (qaStatusMsg) {
+          qaStatusMsg.textContent = message;
+        }
+      }
+
+      setQAState({
+        tone: "info",
+        label: "Not Run",
+        message: "Run QA to check the plan.",
+      });
 
       function markQAStale(msg = "Session changed — run QA again.") {
         if (!qaList) return;
         qaList.innerHTML = `<div class="qa-empty muted small">${msg}</div>`;
+        setQAState({ tone: "warn", label: "Needs QA", message: msg });
       }
 
       function handleBuilderAdjust(e) {
@@ -1148,9 +1232,9 @@
         tr.innerHTML = `
     <td><span class="tag">Set ${idx}</span></td>
     <td>${movement.value || pattern.value}</td>
-    <td><input type="number" min="1" step="1" value="${vals.reps}"></td>
-    <td><input type="number" min="0" step="1" value="${vals.load}"></td>
-    <td><input type="number" min="5" max="10" step="0.5" value="${vals.rpe}"></td>
+    <td><input class="input-compact" type="number" min="1" step="1" value="${vals.reps}"></td>
+    <td><input class="input-compact" type="number" min="0" step="1" value="${vals.load}"></td>
+    <td><input class="input-compact" type="number" min="5" max="10" step="0.5" value="${vals.rpe}"></td>
     <td style="text-align:center"><input type="checkbox" ${vals.fail ? "checked" : ""}></td>
     <td><button class="btn bad">X</button></td>`;
         const [_, __, reps, load, rpe, fail, del] = tr.children;
@@ -1230,8 +1314,8 @@
         <select class="w-style"><option>AMRAP</option><option>For Time</option><option>EMOM</option><option>Intervals</option><option>Chipper</option></select>
       </label>
       <label class="small">Name (optional)<input class="w-name" type="text" placeholder="e.g., 4RFT Row/Wall Ball/Sit-Up"></label>
-      <label class="small">Time (min)<input class="w-cap" type="number" min="0" step="1" value="20"></label>
-      <label class="small">Rounds<input class="w-rounds" type="number" min="1" step="1" value="${preset === "bad" ? 1 : 3}"></label>
+      <label class="small">Time (min)<input class="w-cap input-compact" type="number" min="0" step="1" value="20"></label>
+      <label class="small">Rounds<input class="w-rounds input-compact" type="number" min="1" step="1" value="${preset === "bad" ? 1 : 3}"></label>
     </div>
     <div class="line"></div>
     <div class="space flex"><div><b>Movements</b></div><button class="btn w-add">+ Add Movement</button></div>
@@ -1299,6 +1383,27 @@
               .filter((m) => m.name);
             return { style, name, cap, rounds, moves };
           },
+          write({ style, name, cap, rounds, moves } = {}) {
+            const styleEl = container.querySelector(".w-style");
+            if (style) {
+              const match = [...styleEl.options].some((o) => o.value === style);
+              if (match) styleEl.value = style;
+            }
+            container.querySelector(".w-name").value = name || "";
+            const capInput = container.querySelector(".w-cap");
+            capInput.value = Number.isFinite(cap) && cap >= 0 ? cap : "";
+            const roundsInput = container.querySelector(".w-rounds");
+            roundsInput.value = Number.isFinite(rounds) && rounds > 0 ? rounds : 1;
+            list.innerHTML = "";
+            if (Array.isArray(moves) && moves.length) {
+              moves.forEach((m) =>
+                addMove(m?.name || "", m?.reps || "", m?.load || "", !!m?.bw, true),
+              );
+            } else {
+              addMove("", "", "", false, true);
+            }
+            markQAStale("Imported WOD — review and run QA.");
+          },
         };
       }
       let wodUI = null,
@@ -1331,6 +1436,385 @@
           wodUI2 = null;
         }
         markQAStale();
+      });
+
+      const PROXY_PREFIX = "https://r.jina.ai/";
+      const LINCHPIN_SOURCE =
+          "https://www.crossfitlinchpin.com/workout-of-the-day",
+        LINCHPIN_PROXY = `${PROXY_PREFIX}${LINCHPIN_SOURCE}`,
+        WODWELL_SOURCE = "https://wodwell.com/workout-of-the-day/",
+        WODWELL_PROXY = `${PROXY_PREFIX}${WODWELL_SOURCE}`;
+
+      function toProxyUrl(url, base = WODWELL_SOURCE) {
+        if (!url) return "";
+        try {
+          const absolute = new URL(url, base).href;
+          return `${PROXY_PREFIX}${absolute}`;
+        } catch (err) {
+          console.error("Failed to build proxy URL", url, err);
+          return "";
+        }
+      }
+
+      function parseLinchpinWod(html) {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, "text/html");
+        const article =
+          doc.querySelector("article") ||
+          doc.querySelector("main article") ||
+          doc.querySelector("[data-rte-preserve-html]") ||
+          doc.querySelector("main") ||
+          doc.body;
+        const headingEl =
+          article.querySelector("h1") ||
+          doc.querySelector("h1") ||
+          doc.querySelector("title");
+        const name = headingEl?.textContent.trim() || "Linchpin WOD";
+        const timeEl = article.querySelector("time");
+        const dateText =
+          timeEl?.getAttribute("datetime")?.slice(0, 10) ||
+          timeEl?.textContent?.trim() ||
+          "";
+        const sections = [];
+        article.querySelectorAll("h2, h3, h4, p, li").forEach((el) => {
+          if (el.closest("blockquote")) return;
+          const text = el.textContent.replace(/\s+/g, " ").trim();
+          if (!text) return;
+          if (/^strength/i.test(text)) return;
+          if (/^compare to/i.test(text)) return;
+          if (/^post (?:time|load|score)/i.test(text)) return;
+          if (/^notes?/i.test(text)) return;
+          if (/^cool ?down/i.test(text)) return;
+          if (/^warm[- ]?up/i.test(text)) return;
+          if (/^mobility/i.test(text)) return;
+          if (/^accessory/i.test(text)) return;
+          sections.push(text);
+        });
+        if (!sections.length) return { name, moves: [] };
+        let startIndex = sections.findIndex((line) =>
+          /(for time|amrap|emom|every \d|interval|complete as many|metcon|conditioning)/i.test(
+            line,
+          ),
+        );
+        if (startIndex === -1) startIndex = 0;
+        const trimmed = [];
+        for (let i = startIndex; i < sections.length; i++) {
+          const line = sections[i];
+          if (/^cool ?down/i.test(line)) break;
+          if (/^notes?/i.test(line)) break;
+          trimmed.push(line);
+        }
+        if (!trimmed.length) return { name, moves: [] };
+        const style = trimmed.some((line) => /amrap/i.test(line))
+          ? "AMRAP"
+          : trimmed.some((line) => /emom|every \d/i.test(line))
+          ? "EMOM"
+          : trimmed.some((line) => /interval/i.test(line))
+          ? "Intervals"
+          : trimmed.some((line) => /chip/i.test(line))
+          ? "Chipper"
+          : "For Time";
+        let cap = 20;
+        for (const line of trimmed) {
+          const match = line.match(
+            /(\d+)\s*(?:minute|min|')\s*(?:amrap|cap|time cap|time)/i,
+          );
+          if (match) {
+            cap = Number(match[1]);
+            break;
+          }
+        }
+        if (!Number.isFinite(cap) || cap <= 0) cap = 20;
+        let rounds = 3;
+        for (const line of trimmed) {
+          const match = line.match(/(\d+)\s*(?:rft|rounds?)/i);
+          if (match) {
+            rounds = Number(match[1]);
+            break;
+          }
+        }
+        if (!Number.isFinite(rounds) || rounds <= 0) rounds = style === "AMRAP" ? 1 : 3;
+        if (style === "AMRAP") rounds = 1;
+        const moves = trimmed
+          .filter(
+            (line) =>
+              !/(?:minute|min).*?(?:amrap|cap)/i.test(line) &&
+              !/(?:rft|rounds?)/i.test(line) &&
+              !/(for time|amrap|emom|interval|score|rest \d)/i.test(line),
+          )
+          .map((line) => ({
+            name: line.replace(/^[-•\d.)\s]+/, ""),
+            reps: "",
+            load: "",
+            bw: /bodyweight|air squat|push-up|burpee|sit-up|pull-up|lunge/i.test(line),
+          }))
+          .slice(0, 6);
+        if (!moves.length) {
+          moves.push({
+            name: trimmed[0].replace(/^[-•\d.)\s]+/, ""),
+            reps: "",
+            load: "",
+            bw: false,
+          });
+        }
+        return { style, cap, rounds, name, moves, dateText };
+      }
+
+      function parseWodwellListing(html) {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, "text/html");
+        const main = doc.querySelector("main") || doc.body;
+        const timeEl =
+          doc.querySelector('meta[property="article:published_time"]') ||
+          doc.querySelector('meta[property="article:modified_time"]') ||
+          main.querySelector("time");
+        const dateText =
+          timeEl?.getAttribute("datetime")?.slice(0, 10) ||
+          timeEl?.textContent?.trim() ||
+          "";
+        const anchors = [...main.querySelectorAll("a[href]")];
+        const seen = new Set();
+        for (const anchor of anchors) {
+          if (anchor.closest("header, footer, nav, aside")) continue;
+          const href = anchor.getAttribute("href");
+          if (!href || href.startsWith("#")) continue;
+          let absolute = "";
+          try {
+            absolute = new URL(href, WODWELL_SOURCE).href;
+          } catch (err) {
+            continue;
+          }
+          if (seen.has(absolute)) continue;
+          seen.add(absolute);
+          if (!/wodwell\.com\/workouts?\//i.test(absolute)) continue;
+          if (/\/category\//i.test(absolute)) continue;
+          if (/\/tag\//i.test(absolute)) continue;
+          if (/\/author\//i.test(absolute)) continue;
+          const text = anchor.textContent.replace(/\s+/g, " ").trim();
+          if (!text) continue;
+          if (/comment|share|facebook|twitter|pinterest|instagram|email/i.test(text))
+            continue;
+          return { url: absolute, dateText };
+        }
+        return { url: "", dateText };
+      }
+
+      function parseWodwellWod(html) {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, "text/html");
+        const article =
+          doc.querySelector("article") ||
+          doc.querySelector("main article") ||
+          doc.querySelector(".single-workout") ||
+          doc.querySelector("[itemprop='articleBody']")?.closest("article") ||
+          doc.querySelector("main") ||
+          doc.body;
+        const content =
+          article.querySelector(".entry-content") ||
+          article.querySelector(".post-content") ||
+          article.querySelector("[itemprop='articleBody']") ||
+          article;
+        const headingEl =
+          article.querySelector("h1") ||
+          doc.querySelector("h1") ||
+          doc.querySelector("title");
+        const name = headingEl?.textContent.replace(/\s+/g, " ").trim() || "WODwell WOD";
+        const metaDate =
+          doc.querySelector('meta[property="article:published_time"]')?.getAttribute(
+            "content",
+          ) ||
+          doc.querySelector('meta[property="article:modified_time"]')?.getAttribute(
+            "content",
+          );
+        const timeEl = article.querySelector("time");
+        const dateText =
+          metaDate?.slice(0, 10) ||
+          timeEl?.getAttribute("datetime")?.slice(0, 10) ||
+          timeEl?.textContent?.trim() ||
+          "";
+        const collected = [];
+        content.querySelectorAll("h2, h3, h4, p, li").forEach((el) => {
+          if (el.closest("blockquote, figure, footer, aside")) return;
+          let text = el.textContent.replace(/\s+/g, " ").trim();
+          if (!text) return;
+          if (
+            /^(?:equipment|gear|tips?|strategy|coach'?s tip|scaling|warm[- ]?up|cool[- ]?down|mobility|faq|more workouts|related)/i.test(
+              text,
+            )
+          ) {
+            if (!collected.includes("__STOP__")) collected.push("__STOP__");
+            return;
+          }
+          collected.push(text);
+        });
+        const trimmed = [];
+        for (const line of collected) {
+          if (line === "__STOP__") break;
+          if (!line) continue;
+          if (trimmed.length && trimmed[trimmed.length - 1] === line) continue;
+          trimmed.push(line);
+        }
+        if (!trimmed.length) return { name, moves: [], dateText };
+        const startIndex = trimmed.findIndex((line) =>
+          /(workout|for time|amrap|emom|interval|complete|rounds|metcon|conditioning)/i.test(
+            line,
+          ),
+        );
+        const focus = startIndex > -1 ? trimmed.slice(startIndex) : trimmed;
+        const style = focus.some((line) => /amrap/i.test(line))
+          ? "AMRAP"
+          : focus.some((line) => /emom|every \d/i.test(line))
+          ? "EMOM"
+          : focus.some((line) => /interval|on the minute|tabata/i.test(line))
+          ? "Intervals"
+          : "For Time";
+        let cap = null;
+        for (const line of focus) {
+          const match = line.match(/(\d+)\s*(?:minute|min|')\s*(?:cap|time cap|amrap|emom|workout)/i);
+          if (match) {
+            cap = Number(match[1]);
+            break;
+          }
+        }
+        if (!Number.isFinite(cap) || cap <= 0) cap = style === "EMOM" ? 0 : 20;
+        let rounds = null;
+        for (const line of focus) {
+          const match = line.match(/(\d+)\s*(?:rft|rounds?)/i);
+          if (match) {
+            rounds = Number(match[1]);
+            break;
+          }
+          const emomMatch = line.match(/(\d+)\s*(?:minute|min)\s*emom/i);
+          if (emomMatch) {
+            rounds = Number(emomMatch[1]);
+            break;
+          }
+        }
+        if (!Number.isFinite(rounds) || rounds <= 0) rounds = style === "AMRAP" ? 1 : 3;
+        if (style === "AMRAP") rounds = 1;
+        const moves = focus
+          .filter(
+            (line) =>
+              !/(?:minute|min).*?(?:cap|amrap|emom|interval)/i.test(line) &&
+              !/(?:rft|rounds?)/i.test(line) &&
+              !/(for time|amrap|emom|every \d|interval|score|rest \d)/i.test(line),
+          )
+          .map((line) => ({
+            name: line.replace(/^[-•\d.)\s]+/, ""),
+            reps: "",
+            load: "",
+            bw: /air squat|push-up|sit-up|burpee|lunge|pull-up|bodyweight|run|row|bike/i.test(
+              line,
+            ),
+          }))
+          .slice(0, 6);
+        if (!moves.length) {
+          moves.push({
+            name: focus[0].replace(/^[-•\d.)\s]+/, ""),
+            reps: "",
+            load: "",
+            bw: false,
+          });
+        }
+        return { style, cap, rounds, name, moves, dateText };
+      }
+
+      async function loadLinchpinWod() {
+        if (!linchpinBtn) return;
+        if (!wodUI3) wodUI3 = buildWodUI(wodWrap3, "good");
+        const btn = linchpinBtn;
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = "Loading…";
+        if (linchpinStatus)
+          linchpinStatus.textContent = "Fetching latest Linchpin workout…";
+        try {
+          const res = await fetch(LINCHPIN_PROXY, {
+            headers: { Accept: "text/html" },
+          });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const html = await res.text();
+          const parsed = parseLinchpinWod(html);
+          if (!parsed.moves?.length) throw new Error("Workout details not found");
+          wodUI3.write(parsed);
+          if (linchpinStatus) {
+            const dateLabel = parsed.dateText ? ` — ${parsed.dateText}` : "";
+            linchpinStatus.innerHTML = `Loaded from <a href="${LINCHPIN_SOURCE}" target="_blank" rel="noopener">Linchpin WOD</a>${dateLabel}.`;
+          }
+          toast("Loaded Linchpin WOD.");
+        } catch (err) {
+          console.error(err);
+          if (linchpinStatus) {
+            linchpinStatus.textContent = `Could not load Linchpin WOD (${err.message || err}).`;
+          }
+          toast("Failed to load Linchpin WOD.");
+        } finally {
+          btn.disabled = false;
+          btn.textContent = originalText;
+        }
+      }
+      linchpinBtn?.addEventListener("click", () => {
+        if (dayKind.value !== "GPP Good") {
+          dayKind.value = "GPP Good";
+          adaptBuilder();
+        }
+        loadLinchpinWod();
+      });
+
+      async function loadWodwellWod() {
+        if (!wodwellBtn) return;
+        if (!wodUI3) wodUI3 = buildWodUI(wodWrap3, "good");
+        const btn = wodwellBtn;
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = "Loading…";
+        if (wodwellStatus)
+          wodwellStatus.textContent = "Fetching latest WODwell workout…";
+        try {
+          const res = await fetch(WODWELL_PROXY, { headers: { Accept: "text/html" } });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const listingHtml = await res.text();
+          const listing = parseWodwellListing(listingHtml);
+          if (!listing?.url) throw new Error("Workout link not found");
+          const proxyDetail = toProxyUrl(listing.url);
+          if (!proxyDetail) throw new Error("Could not resolve workout URL");
+          if (wodwellStatus) {
+            const dateLabel = listing.dateText ? ` — ${listing.dateText}` : "";
+            wodwellStatus.innerHTML = `Fetching <a href="${listing.url}" target="_blank" rel="noopener">WODwell WOD</a>${dateLabel}…`;
+          }
+          const detailRes = await fetch(proxyDetail, { headers: { Accept: "text/html" } });
+          if (!detailRes.ok) throw new Error(`Detail HTTP ${detailRes.status}`);
+          const detailHtml = await detailRes.text();
+          const parsed = parseWodwellWod(detailHtml);
+          if (!parsed.moves?.length) throw new Error("Workout details not found");
+          wodUI3.write(parsed);
+          if (wodwellStatus) {
+            const dateLabel =
+              parsed.dateText
+                ? ` — ${parsed.dateText}`
+                : listing.dateText
+                ? ` — ${listing.dateText}`
+                : "";
+            wodwellStatus.innerHTML = `Loaded from <a href="${listing.url}" target="_blank" rel="noopener">WODwell</a>${dateLabel}.`;
+          }
+          toast("Loaded WODwell WOD.");
+        } catch (err) {
+          console.error(err);
+          if (wodwellStatus) {
+            wodwellStatus.textContent = `Could not load WODwell WOD (${err.message || err}).`;
+          }
+          toast("Failed to load WODwell WOD.");
+        } finally {
+          btn.disabled = false;
+          btn.textContent = originalText;
+        }
+      }
+      wodwellBtn?.addEventListener("click", () => {
+        if (dayKind.value !== "GPP Good") {
+          dayKind.value = "GPP Good";
+          adaptBuilder();
+        }
+        loadWodwellWod();
       });
 
       /* ================= Accessories ================= */
@@ -1377,9 +1861,9 @@
         row.style.gridTemplateColumns = "2fr 1fr 1fr 1fr auto";
         row.dataset.id = id;
         row.innerHTML = `<div><b>${name}</b><div class="muted small">${target}</div></div>
-    <label class="small">Sets<input type="number" min="2" max="5" value="${sets}"></label>
-    <label class="small">Reps<input type="number" min="6" max="25" value="${reps}"></label>
-    <label class="small">Weight<input type="number" min="0" step="1" placeholder="Weight" value="${load}"></label>
+    <label class="small">Sets<input class="input-compact" type="number" min="2" max="5" value="${sets}"></label>
+    <label class="small">Reps<input class="input-compact" type="number" min="6" max="25" value="${reps}"></label>
+    <label class="small">Weight<input class="input-compact" type="number" min="0" step="1" placeholder="Weight" value="${load}"></label>
     <button class="btn bad">X</button>`;
         $("#accList").appendChild(row);
         const delBtn = row.querySelector("button");
@@ -1497,13 +1981,44 @@
       function renderQAList(issues) {
         if (!qaList) return;
         qaList.innerHTML = "";
+        const now = new Date();
+        const stamp = now.toLocaleTimeString([], {
+          hour: "numeric",
+          minute: "2-digit",
+        });
+        const warnCount = issues.filter((i) => i.level === "warn").length;
+        const infoCount = issues.filter((i) => i.level === "info").length;
+        const okCount = issues.length - warnCount - infoCount;
         if (!issues.length) {
+          setQAState({
+            tone: "ok",
+            label: "Ready",
+            message: `No issues (checked ${stamp}).`,
+          });
           const row = document.createElement("div");
           row.className = "qa-item";
-          row.innerHTML = `<span class="pill ok">Ready</span><div>Session looks good — go run it.</div>`;
+          row.innerHTML = `<span class="pill ok">Ready</span><div>QA passed — session looks good to go.</div>`;
           qaList.appendChild(row);
           return;
         }
+        const parts = [];
+        if (warnCount)
+          parts.push(`${warnCount} warning${warnCount === 1 ? "" : "s"}`);
+        if (infoCount)
+          parts.push(`${infoCount} info note${infoCount === 1 ? "" : "s"}`);
+        if (okCount > 0)
+          parts.push(`${okCount} check${okCount === 1 ? "" : "s"}`);
+        const tone = warnCount ? "warn" : infoCount ? "info" : "ok";
+        const label = warnCount
+          ? `${warnCount} Warning${warnCount === 1 ? "" : "s"}`
+          : infoCount
+            ? infoCount === 1
+              ? "Info"
+              : `${infoCount} Info Notes`
+            : "Ready";
+        const summary = parts.length ? parts.join(" · ") : "QA check complete";
+        const message = `${summary} (checked ${stamp}).`;
+        setQAState({ tone, label, message });
         issues.forEach((issue) => {
           const row = document.createElement("div");
           row.className = "qa-item";
@@ -1512,7 +2027,7 @@
             issue.level === "warn"
               ? "pill warn"
               : issue.level === "info"
-                ? "pill"
+                ? "pill info"
                 : "pill ok";
           pill.textContent =
             issue.level === "warn"
@@ -1803,56 +2318,74 @@
           }
         });
       }
-      function totalsCalc(sess) {
-        const t = {
-          quads: 0,
-          post: 0,
-          chest: 0,
-          back: 0,
-          delts: 0,
-          arms: 0,
-          core: 0,
-          z2: 0,
-          vig: 0,
-          strength: 0,
-        };
-        (sess || []).forEach((s) => {
-          if (s.main && s.main.pattern && s.main.sets) {
-            const add = s.main.sets;
-            if (s.main.pattern === "Squat") t.quads += add;
-            if (s.main.pattern === "Hinge") t.post += add;
-            if (s.main.pattern === "Oly") {
-              t.quads += Math.ceil(add / 2);
-              t.post += Math.floor(add / 2);
+        const MILES_PER_KM = 0.621371;
+        const KM_PER_MILE = 1 / MILES_PER_KM;
+
+        function formatDistanceValue(val) {
+          if (!Number.isFinite(val) || Math.abs(val) < 1e-6) return "0";
+          const abs = Math.abs(val);
+          const decimals = abs >= 100 ? 0 : abs >= 10 ? 1 : 2;
+          const fixed = val.toFixed(decimals);
+          return fixed.replace(/\.0+$|0+$/g, "").replace(/\.$/, "");
+        }
+
+        function totalsCalc(sess) {
+          const t = {
+            quads: 0,
+            post: 0,
+            chest: 0,
+            back: 0,
+            delts: 0,
+            arms: 0,
+            core: 0,
+            z2: 0,
+            vig: 0,
+            strength: 0,
+            enduranceMi: 0,
+            enduranceRaw: {},
+          };
+          (sess || []).forEach((s) => {
+            if (s.main && s.main.pattern && s.main.sets) {
+              const add = s.main.sets;
+              if (s.main.pattern === "Squat") t.quads += add;
+              if (s.main.pattern === "Hinge") t.post += add;
+              if (s.main.pattern === "Oly") {
+                t.quads += Math.ceil(add / 2);
+                t.post += Math.floor(add / 2);
+              }
             }
-          }
-          if (s.endurance) {
-            const z2Val = Number(s.endurance.z2);
-            if (Number.isFinite(z2Val) && z2Val > 0) t.z2 += z2Val;
-            const vigVal = Number(s.endurance.vig);
-            if (Number.isFinite(vigVal) && vigVal > 0) t.vig += vigVal;
-          }
-          if (s.wod) {
-            const rounds = Math.max(1, Number(s.wod.rounds) || 1);
-            const capVal = Number(s.wod.cap);
-            if (Number.isFinite(capVal) && capVal > 0) t.vig += capVal;
-            (s.wod.moves || []).forEach((m) =>
-              creditWodMovement(m?.name || "", rounds, t),
-            );
-          }
-          (s.acc || []).forEach((a) => {
-            if (a.target === "Quads") t.quads += a.sets;
-            if (a.target === "Posterior") t.post += a.sets;
-            if (a.target === "Chest") t.chest += a.sets;
-            if (a.target === "Back") t.back += a.sets;
-            if (a.target === "Delts") t.delts += a.sets;
-            if (a.target === "Arms") t.arms += a.sets;
-            if (a.target === "Core") t.core += a.sets;
+            if (s.endurance) {
+              t.z2 += s.endurance.z2 || 0;
+              t.vig += s.endurance.vig || 0;
+              const dist = Number(s.endurance.distance);
+              if (Number.isFinite(dist) && dist > 0) {
+                const unit = (s.endurance.distUnit || "mi").toLowerCase();
+                if (!t.enduranceRaw[unit]) t.enduranceRaw[unit] = 0;
+                t.enduranceRaw[unit] += dist;
+                const milesFactor = unit === "km" ? MILES_PER_KM : 1;
+                t.enduranceMi += dist * milesFactor;
+              }
+            }
+            if (s.wod) {
+              const rounds = Math.max(1, Number(s.wod.rounds) || 1);
+              if (s.wod.cap) t.vig += Number(s.wod.cap) || 0;
+              (s.wod.moves || []).forEach((m) =>
+                creditWodMovement(m?.name || "", rounds, t),
+              );
+            }
+            (s.acc || []).forEach((a) => {
+              if (a.target === "Quads") t.quads += a.sets;
+              if (a.target === "Posterior") t.post += a.sets;
+              if (a.target === "Chest") t.chest += a.sets;
+              if (a.target === "Back") t.back += a.sets;
+              if (a.target === "Delts") t.delts += a.sets;
+              if (a.target === "Arms") t.arms += a.sets;
+              if (a.target === "Core") t.core += a.sets;
+            });
+            if (s.kind === "Strength") t.strength++;
           });
-          if (s.kind === "Strength") t.strength++;
-        });
-        return t;
-      }
+          return t;
+        }
       function runTotalsTests() {
         const baseSession = [
           {
@@ -1914,78 +2447,100 @@
           "Endurance WOD minutes should not double count",
           t3,
         );
-        const enduFieldSession = [
+
+        const mixedDistance = [
           {
             kind: "Endurance",
-            endurance: { z2: 30, vig: 25 },
+            endurance: { distance: 10, distUnit: "mi", z2: 0, vig: 0 },
+            wod: null,
+            acc: [],
+          },
+          {
+            kind: "Endurance",
+            endurance: { distance: 5, distUnit: "km", z2: 0, vig: 0 },
             wod: null,
             acc: [],
           },
         ];
-        const t4 = totalsCalc(enduFieldSession);
+        const t4 = totalsCalc(mixedDistance);
         console.assert(
-          t4.vig === 25,
-          "Endurance vigorous field should add to totals",
+          Math.abs(t4.enduranceMi - (10 + 5 * MILES_PER_KM)) < 1e-6,
+          "Endurance distance normalization mismatch",
           t4,
         );
-        const enduComboSession = [
-          {
-            kind: "Endurance",
-            endurance: { z2: 30, vig: 25 },
-            wod: { cap: 20, rounds: 1, moves: [] },
-            acc: [],
-          },
-        ];
-        const t5 = totalsCalc(enduComboSession);
         console.assert(
-          t5.vig === 45,
-          "Vigorous minutes should combine field + WOD without double counting",
-          t5,
-        );
-
-        const importedSession = [
-          {
-            kind: "Endurance",
-            endurance: { z2: "35", vig: "20" },
-            wod: { cap: "15", rounds: "2", moves: [] },
-            acc: [],
-          },
-        ];
-        const t6 = totalsCalc(importedSession);
-        console.assert(
-          t6.z2 === 35 && t6.vig === 35,
-          "Imported string minutes should coerce to numbers",
-          t6,
+          t4.enduranceRaw.mi === 10 && t4.enduranceRaw.km === 5,
+          "Endurance distance raw breakdown mismatch",
+          t4,
         );
       }
-      function renderDashboard() {
-        const t = totalsCalc(week().sessions);
-        $("#z2Min").textContent = t.z2 + "′";
-        $("#vigMin").textContent = t.vig + "′";
-        $("#qSets").textContent = t.quads;
-        $("#pSets").textContent = t.post;
-        $("#cSets").textContent = t.chest || 0;
-        $("#bSets").textContent = t.back || 0;
-        $("#dSets").textContent = t.delts || 0;
-        $("#aSets").textContent = t.arms || 0;
-        $("#coreSets").textContent = t.core || 0;
-        badge($("#qStatus"), t.quads >= TARGETS.Quads);
-        badge($("#pStatus"), t.post >= TARGETS.Posterior);
-        badge($("#coreStatus"), t.core >= TARGETS.Core);
-        const endOK = t.z2 >= 150 || t.vig >= 75 || t.z2 * 0.5 + t.vig >= 75;
-        badge($("#endStatus"), endOK, "On track", "Low this week");
-        $("#hist").innerHTML =
-          week()
-            .sessions.map((s) => {
-              const d = new Date(s.date).toLocaleDateString();
-              const tag =
-                s.kind === "Strength"
-                  ? s.main?.movement || s.main?.pattern
-                  : s.wod?.name || s.endurance?.modality || "";
-              return `<div class="space flex"><span>${d} · ${s.kind}</span><span class="muted small">${tag || ""}</span></div>`;
-            })
-            .join("") || '<div class="muted">No sessions yet.</div>';
-      }
+        function renderDashboard() {
+          const t = totalsCalc(week().sessions);
+          $("#z2Min").textContent = t.z2 + "′";
+          $("#vigMin").textContent = t.vig + "′";
+          $("#qSets").textContent = t.quads;
+          $("#pSets").textContent = t.post;
+          $("#cSets").textContent = t.chest || 0;
+          $("#bSets").textContent = t.back || 0;
+          $("#dSets").textContent = t.delts || 0;
+          $("#aSets").textContent = t.arms || 0;
+          $("#coreSets").textContent = t.core || 0;
+          const totalMiles = t.enduranceMi || 0;
+          const endDistEl = $("#endDist");
+          if (endDistEl) {
+            if (totalMiles > 0) {
+              const totalKm = totalMiles * KM_PER_MILE;
+              endDistEl.textContent =
+                formatDistanceValue(totalMiles) +
+                " mi (" +
+                formatDistanceValue(totalKm) +
+                " km)";
+            } else {
+              endDistEl.textContent = "0 mi";
+            }
+          }
+          const breakdownEl = $("#endDistBreakdown");
+          if (breakdownEl) {
+            const breakdownEntries = Object.entries(t.enduranceRaw || {}).filter(
+              ([, val]) => Number.isFinite(val) && val > 0,
+            );
+            if (breakdownEntries.length > 1) {
+              breakdownEl.textContent = breakdownEntries
+                .map(([unit, val]) => `${formatDistanceValue(val)} ${unit}`)
+                .join(" · ");
+              breakdownEl.style.display = "";
+            } else {
+              breakdownEl.textContent = "";
+              breakdownEl.style.display = "none";
+            }
+          }
+          badge($("#qStatus"), t.quads >= TARGETS.Quads);
+          badge($("#pStatus"), t.post >= TARGETS.Posterior);
+          badge($("#coreStatus"), t.core >= TARGETS.Core);
+          const endOK = t.z2 >= 150 || t.vig >= 75 || t.z2 * 0.5 + t.vig >= 75;
+          badge($("#endStatus"), endOK, "On track", "Low this week");
+          $("#hist").innerHTML =
+            week()
+              .sessions.map((s) => {
+                const d = new Date(s.date).toLocaleDateString();
+                const tag =
+                  s.kind === "Strength"
+                    ? s.main?.movement || s.main?.pattern
+                    : s.wod?.name || s.endurance?.modality || "";
+                const distanceVal = Number(s.endurance?.distance);
+                const hasDistance =
+                  s.endurance && Number.isFinite(distanceVal) && distanceVal > 0;
+                const distanceText = hasDistance
+                  ? `${formatDistanceValue(distanceVal)} ${
+                      s.endurance?.distUnit || "mi"
+                    }`
+                  : "";
+                const detailParts = [tag || "", distanceText].filter(Boolean);
+                const detail = detailParts.join(" · ");
+                return `<div class="space flex"><span>${d} · ${s.kind}</span><span class="muted small">${detail}</span></div>`;
+              })
+              .join("") || '<div class="muted">No sessions yet.</div>';
+        }
 
       function saveSession() {
         const { session: s, hasWarn } = runQA({ silent: true });
@@ -2012,36 +2567,19 @@
         );
       }
 
-      /* ================= Export / Import / Reset ================= */
+      /* ================= Export / Reset ================= */
       $("#exportBtn").addEventListener("click", () => {
         const blob = new Blob([JSON.stringify(store, null, 2)], {
           type: "application/json",
         });
+        const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
+        a.href = url;
         a.download = `hybrid_store_${weekKey}.json`;
+        document.body.appendChild(a);
         a.click();
-      });
-      $("#importFile").addEventListener("change", (e) => {
-        const f = e.target.files && e.target.files[0];
-        if (!f) return;
-        const r = new FileReader();
-        r.onload = () => {
-          try {
-            const data = JSON.parse(r.result);
-            if (data && data.weeks) {
-              store = data;
-              saveStore();
-              renderDashboard();
-              dayKind.__manualPick = false;
-              updateReco();
-              toast("Import success.");
-            } else toast("Invalid file.");
-          } catch {
-            toast("Failed to parse JSON.");
-          }
-        };
-        r.readAsText(f);
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
       });
       $("#resetWeek").addEventListener("click", () => {
         if (confirm("Reset this week's data?")) {
