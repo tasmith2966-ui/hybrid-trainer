@@ -1480,8 +1480,9 @@
 
       /* ================= Accessories ================= */
       function targetAccDefaults(target) {
-        if (target === "Arms") return { sets: 3, reps: 12 };
-        if (target === "Calves" || target === "Core" || target === "Tib")
+        const normalized = String(target || "").toLowerCase();
+        if (/arm|bicep|tricep/.test(normalized)) return { sets: 3, reps: 12 };
+        if (/calf|core|ab|midline|tib/.test(normalized))
           return { sets: 3, reps: 15 };
         return { sets: 3, reps: 10 };
       }
@@ -1494,6 +1495,22 @@
         );
       }
       function updateAccOptions() {
+        if (newAccTarget && accessoryLibrary.length) {
+          const previous = newAccTarget.value;
+          const targets = [...new Set(
+            accessoryLibrary
+              .map((acc) => acc.target)
+              .filter((target) => target),
+          )].sort((a, b) => a.localeCompare(b));
+          if (targets.length) {
+            newAccTarget.innerHTML = targets
+              .map((target) => `<option value="${target}">${target}</option>`)
+              .join("");
+            if (targets.includes(previous)) newAccTarget.value = previous;
+            if (!newAccTarget.value && targets.length)
+              newAccTarget.value = targets[0];
+          }
+        }
         if (!accOptionsList) return;
         const target = newAccTarget?.value || "";
         const list = accessoryLibrary.filter(
@@ -1516,7 +1533,7 @@
           .join("");
       }
       const MOVEMENT_SHEET_URL =
-        "https://docs.google.com/spreadsheets/d/e/2PACX-1vQhIbt9Dj69Bo1VyEU6VUX--Y4D8lVBfS4qmixtfSrDnJXRBON6ob5-XjUg0ZnDtJvndTMLSfeGMbVB/pubhtml?widget=true&headers=false";
+        "https://docs.google.com/spreadsheets/d/1ojoeQfxFpSjzj2HA6qbeqkDXRnqzulbiatXN3h4c8w0/gviz/tq?tqx=out:html&gid=2027036950";
       async function loadMovementData() {
         try {
           const res = await fetch(MOVEMENT_SHEET_URL, {
@@ -1528,58 +1545,42 @@
           const doc = parser.parseFromString(html, "text/html");
           const rows = [...doc.querySelectorAll("table tr")];
           if (!rows.length) return;
-          const nextTop3 = {};
-          const nextAccessories = [];
+          const accessoryMap = new Map();
           const nextMoves = new Set();
           rows.forEach((row) => {
-            const cells = [...row.querySelectorAll("td")].map((td) =>
-              td.textContent.replace(/\s+/g, " ").trim(),
+            const cells = [...row.querySelectorAll("td, th")].map((cell) =>
+              cell.textContent.replace(/\s+/g, " ").trim(),
             );
-            if (!cells.length) return;
-            const [typeRaw = "", groupRaw = "", nameRaw = "", setsRaw = "", repsRaw = ""] =
-              cells;
-            const type = typeRaw.toLowerCase();
-            const group = groupRaw.trim();
-            const name = (nameRaw || group).trim();
-            if (!type && !name) return;
-            if (name) nextMoves.add(name);
-            if (type.includes("strength")) {
-              const key = group || "None";
-              if (!nextTop3[key]) nextTop3[key] = [];
-              nextTop3[key].push(name || group);
-            } else if (type.includes("access")) {
-              const target = group || "Other";
-              const sets = Number(setsRaw);
-              const reps = Number(repsRaw);
-              nextAccessories.push({
-                target,
-                name,
-                sets: Number.isFinite(sets) && sets > 0 ? sets : undefined,
-                reps: Number.isFinite(reps) && reps > 0 ? reps : undefined,
-              });
-            }
+            if (cells.length < 2) return;
+            const [nameRaw = "", targetRaw = ""] = cells;
+            const name = nameRaw.trim();
+            const target = targetRaw.trim();
+            if (!name || /name/i.test(name) || /muscle/i.test(target)) return;
+            if (target) accessoryMap.set(name, target);
+            nextMoves.add(name);
           });
-          if (Object.keys(nextTop3).length) {
-            const merged = { ...DEFAULT_TOP3 };
-            Object.entries(nextTop3).forEach(([key, list]) => {
-              if (list?.length) merged[key] = [...new Set(list)];
+          if (accessoryMap.size) {
+            const nextAccessories = [...accessoryMap.entries()].map(
+              ([name, target]) => {
+                const defaults = targetAccDefaults(target);
+                return {
+                  target,
+                  name,
+                  sets: defaults.sets,
+                  reps: defaults.reps,
+                };
+              },
+            );
+            nextAccessories.sort((a, b) => {
+              const byTarget = a.target.localeCompare(b.target);
+              if (byTarget !== 0) return byTarget;
+              return a.name.localeCompare(b.name);
             });
-            top3Movements = merged;
-            renderTop3();
-          }
-          if (nextAccessories.length) {
-            accessoryLibrary = nextAccessories.map((acc) => ({
-              target: acc.target,
-              name: acc.name,
-              sets: acc.sets ?? targetAccDefaults(acc.target).sets,
-              reps: acc.reps ?? targetAccDefaults(acc.target).reps,
-            }));
+            accessoryLibrary = nextAccessories;
             updateAccOptions();
           }
           if (nextMoves.size) {
-            wodMoveLibrary = [
-              ...new Set([...wodMoveLibrary, ...nextMoves.values()]),
-            ];
+            wodMoveLibrary = [...new Set([...wodMoveLibrary, ...nextMoves.values()])];
             updateWodMoveOptions();
           }
         } catch (err) {
