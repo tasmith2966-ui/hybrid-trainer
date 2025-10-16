@@ -1100,6 +1100,40 @@
         ]),
       ];
 
+      const MOVEMENT_TARGET_RULES = [
+        { match: /quad|anterior/i, key: "quads" },
+        { match: /posterior|hamstring|glute|hinge/i, key: "post" },
+        { match: /chest|pec/i, key: "chest" },
+        { match: /back|lat/i, key: "back" },
+        { match: /delt|shoulder/i, key: "delts" },
+        { match: /arm|bicep|tricep|curl/i, key: "arms" },
+        { match: /core|ab|midline|oblique|trunk/i, key: "core" },
+      ];
+      let movementCreditMap = new Map();
+      function targetsToTotals(target) {
+        if (!target) return [];
+        const normalized = String(target || "")
+          .split(/[,&/]+/)
+          .map((part) => part.trim())
+          .filter(Boolean);
+        const credits = new Set();
+        normalized.forEach((part) => {
+          const lower = part.toLowerCase();
+          MOVEMENT_TARGET_RULES.forEach((rule) => {
+            if (rule.match.test(lower)) credits.add(rule.key);
+          });
+        });
+        return [...credits];
+      }
+      function rebuildMovementCredits() {
+        movementCreditMap = new Map();
+        accessoryLibrary.forEach((acc) => {
+          const credits = targetsToTotals(acc.target);
+          if (credits.length) movementCreditMap.set(acc.name.toLowerCase(), credits);
+        });
+      }
+      rebuildMovementCredits();
+
       /* ================= UI Refs ================= */
       const sleep = $("#sleep"),
         food = $("#food"),
@@ -1575,6 +1609,7 @@
               return a.name.localeCompare(b.name);
             });
             accessoryLibrary = nextAccessories;
+            rebuildMovementCredits();
             updateAccOptions();
           }
           if (nextMoves.size) {
@@ -2046,6 +2081,13 @@
       function creditWodMovement(name, rounds, totals) {
         if (!name) return;
         const lower = name.toLowerCase();
+        const direct = movementCreditMap.get(lower);
+        if (direct && direct.length) {
+          direct.forEach((key) => {
+            if (key in totals) totals[key] += rounds;
+          });
+          return;
+        }
         WOD_CREDIT_RULES.forEach((rule) => {
           if (rule.match.test(lower)) {
             Object.entries(rule.add).forEach(([k, v]) => {
