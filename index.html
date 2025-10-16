@@ -1827,12 +1827,15 @@
             }
           }
           if (s.endurance) {
-            t.z2 += s.endurance.z2 || 0;
-            t.vig += s.endurance.vig || 0;
+            const z2Val = Number(s.endurance.z2);
+            if (Number.isFinite(z2Val) && z2Val > 0) t.z2 += z2Val;
+            const vigVal = Number(s.endurance.vig);
+            if (Number.isFinite(vigVal) && vigVal > 0) t.vig += vigVal;
           }
           if (s.wod) {
             const rounds = Math.max(1, Number(s.wod.rounds) || 1);
-            if (s.wod.cap) t.vig += Number(s.wod.cap) || 0;
+            const capVal = Number(s.wod.cap);
+            if (Number.isFinite(capVal) && capVal > 0) t.vig += capVal;
             (s.wod.moves || []).forEach((m) =>
               creditWodMovement(m?.name || "", rounds, t),
             );
@@ -1938,6 +1941,21 @@
           t5.vig === 45,
           "Vigorous minutes should combine field + WOD without double counting",
           t5,
+        );
+
+        const importedSession = [
+          {
+            kind: "Endurance",
+            endurance: { z2: "35", vig: "20" },
+            wod: { cap: "15", rounds: "2", moves: [] },
+            acc: [],
+          },
+        ];
+        const t6 = totalsCalc(importedSession);
+        console.assert(
+          t6.z2 === 35 && t6.vig === 35,
+          "Imported string minutes should coerce to numbers",
+          t6,
         );
       }
       function renderDashboard() {
