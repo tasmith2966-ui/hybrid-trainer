@@ -275,10 +275,6 @@
           inset 0 0 0 2px #000,
           0 0 10px rgba(255, 207, 0, 0.6);
       }
-      input[type="range"] {
-        width: 100%;
-        accent-color: var(--accent);
-      }
       .input-compact {
         min-width: 0;
       }
@@ -496,66 +492,21 @@
 
       <div class="row" style="margin-top: 12px">
         <div class="card">
-          <h2>Readiness</h2>
+          <h2>Daily Check-in</h2>
           <div class="muted small" style="margin-bottom: 8px">
-            0=Bad, 1=Fine, 2=Good. Worst days → <b>GPP Bad</b>.
+            Note how you feel today, then pick the session that matches.
           </div>
-          <div class="grid">
-            <div class="g3 grid">
-              <label class="small"
-                >Sleep
-                <input
-                  type="range"
-                  min="0"
-                  max="2"
-                  step="1"
-                  id="sleep"
-                  value="1"
-              /></label>
-              <label class="small"
-                >Nutrition
-                <input
-                  type="range"
-                  min="0"
-                  max="2"
-                  step="1"
-                  id="food"
-                  value="1"
-              /></label>
-              <label class="small"
-                >Soreness
-                <input
-                  type="range"
-                  min="0"
-                  max="2"
-                  step="1"
-                  id="sore"
-                  value="1"
-              /></label>
-            </div>
-            <div class="g2 grid">
-              <label class="small"
-                >Mood
-                <input
-                  type="range"
-                  min="0"
-                  max="2"
-                  step="1"
-                  id="mood"
-                  value="1"
-              /></label>
-              <label class="small"
-                >Morning BW
-                <input
-                  class="input-compact input-3ch"
-                  type="number"
-                  inputmode="numeric"
-                  pattern="[0-9]*"
-                  id="bw"
-                  placeholder="lbs/kg"
-              /></label>
-            </div>
-          </div>
+          <label class="small">
+            Morning BW
+            <input
+              class="input-compact input-3ch"
+              type="number"
+              inputmode="numeric"
+              pattern="[0-9]*"
+              id="bw"
+              placeholder="lbs/kg"
+            />
+          </label>
         </div>
 
         <div class="card">
@@ -1144,10 +1095,6 @@
       rebuildMovementCredits();
 
       /* ================= UI Refs ================= */
-      const sleep = $("#sleep"),
-        food = $("#food"),
-        sore = $("#sore"),
-        mood = $("#mood");
       const bw = $("#bw");
       const recoPill = $("#recoPill"),
         recoHint = $("#recoHint");
@@ -1243,12 +1190,9 @@
         return counts;
       }
 
-      function readinessScore(s, f, so, m) {
-        return (s + f + so + m) / 8;
-      }
+      const DEFAULT_READINESS_SCORE = 0.65;
 
-      function recommend(s, f, so, m) {
-        const score = readinessScore(s, f, so, m);
+      function recommend(score = DEFAULT_READINESS_SCORE) {
         const counts = weeklyCounts();
         const needed = WEEKLY_PRIORITY.find((kind) => counts[kind] === 0);
         if (needed) {
@@ -1262,10 +1206,6 @@
         return "Recovery";
       }
 
-      const numVal = (el) => {
-        const n = Number(el?.value);
-        return Number.isFinite(n) ? n : 1;
-      };
       const RECO_HINTS = {
         Strength: "Long rests · 3–6 reps · RPE 7–9",
         Endurance: "30–40′ Z2 preferred",
@@ -1275,30 +1215,15 @@
       };
 
       function updateReco() {
-        const r = recommend(
-          numVal(sleep),
-          numVal(food),
-          numVal(sore),
-          numVal(mood),
-        );
+        const r = recommend();
         if (!dayKind.__manualPick) dayKind.value = r;
         recoPill.textContent = r;
         recoHint.textContent = RECO_HINTS[r] || "";
         adaptBuilder();
       }
-      ["input", "change"].forEach((evt) => {
-        [sleep, food, sore, mood].forEach((el) =>
-          el.addEventListener(evt, updateReco),
-        );
-      });
       dayKind.addEventListener("change", () => {
         dayKind.__manualPick = true;
         adaptBuilder();
-      });
-      ["input", "change"].forEach((evt) => {
-        [sleep, food, sore, mood].forEach((el) =>
-          el.addEventListener(evt, () => (dayKind.__manualPick = false)),
-        );
       });
 
       /* ================= Strength Main Lifts ================= */
@@ -1904,12 +1829,7 @@
         const issues = [];
         const warn = (msg) => issues.push({ level: "warn", message: msg });
         const info = (msg) => issues.push({ level: "info", message: msg });
-        const readiness = recommend(
-          numVal(sleep),
-          numVal(food),
-          numVal(sore),
-          numVal(mood),
-        );
+        const readiness = recommend();
 
         if (
           session.kind === "Strength" &&
@@ -2551,10 +2471,6 @@
 
       /* ================= Init ================= */
       document.addEventListener("DOMContentLoaded", () => {
-        ["sleep", "food", "sore", "mood"].forEach((id) => {
-          const el = $("#" + id);
-          if (!el.value) el.value = 1;
-        });
         updateReco();
         adaptBuilder();
         renderDashboard();
