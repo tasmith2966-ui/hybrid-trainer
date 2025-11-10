@@ -1509,16 +1509,30 @@
         const trimmed = String(name || "").trim();
         if (!trimmed) return null;
         const lookup = trimmed.toLowerCase();
+        let exact = null;
         let bestMatch = null;
         let bestScore = Infinity;
         for (const acc of accessoryLibrary) {
-          const score = levenshteinDistance(lookup, acc.name.toLowerCase());
+          const accName = acc.name.toLowerCase();
+          if (accName === lookup) {
+            exact = acc;
+            break;
+          }
+          const score = levenshteinDistance(lookup, accName);
           if (score < bestScore) {
             bestScore = score;
             bestMatch = acc;
           }
         }
-        return bestMatch;
+        if (exact) return exact;
+        if (!bestMatch) return null;
+        const basis = Math.max(lookup.length, bestMatch.name.length);
+        const ratio = basis > 0 ? bestScore / basis : 1;
+        const allow =
+          bestScore <= 2 ||
+          (lookup.length >= 4 && ratio <= 0.3) ||
+          (lookup.length >= 6 && bestScore <= 3);
+        return allow ? bestMatch : null;
       }
       function updateAccOptions() {
         if (newAccTarget && accessoryLibrary.length) {
@@ -2148,13 +2162,23 @@
       ];
       function creditWodMovement(name, rounds, totals) {
         if (!name) return;
-        const lower = name.toLowerCase();
+        const lower = name.toLowerCase().trim();
         const direct = movementCreditMap.get(lower);
         if (direct && direct.length) {
           direct.forEach((key) => {
             if (key in totals) totals[key] += rounds;
           });
           return;
+        }
+        const match = findAccessoryByName(name);
+        if (match) {
+          const credits = targetsToTotals(match.target);
+          if (credits.length) {
+            credits.forEach((key) => {
+              if (key in totals) totals[key] += rounds;
+            });
+            return;
+          }
         }
         WOD_CREDIT_RULES.forEach((rule) => {
           if (rule.match.test(lower)) {
