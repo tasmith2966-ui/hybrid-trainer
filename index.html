@@ -848,9 +848,7 @@
                 id="newAccName"
                 type="text"
                 placeholder="Accessory name"
-                list="accOptions"
               />
-              <datalist id="accOptions"></datalist>
               <input
                 id="newAccLoad"
                 type="text"
@@ -1530,13 +1528,43 @@
           return { sets: 3, reps: 15 };
         return { sets: 3, reps: 10 };
       }
+      function levenshteinDistance(a, b) {
+        if (a === b) return 0;
+        const lenA = a.length;
+        const lenB = b.length;
+        if (lenA === 0) return lenB;
+        if (lenB === 0) return lenA;
+        const prev = new Array(lenB + 1);
+        const curr = new Array(lenB + 1);
+        for (let j = 0; j <= lenB; j++) prev[j] = j;
+        for (let i = 0; i < lenA; i++) {
+          curr[0] = i + 1;
+          const codeA = a.charCodeAt(i);
+          for (let j = 0; j < lenB; j++) {
+            const cost = codeA === b.charCodeAt(j) ? 0 : 1;
+            const insertCost = curr[j] + 1;
+            const deleteCost = prev[j + 1] + 1;
+            const replaceCost = prev[j] + cost;
+            curr[j + 1] = Math.min(insertCost, deleteCost, replaceCost);
+          }
+          for (let j = 0; j <= lenB; j++) prev[j] = curr[j];
+        }
+        return prev[lenB];
+      }
       function findAccessoryByName(name) {
-        if (!name) return null;
-        const lookup = name.trim().toLowerCase();
-        return (
-          accessoryLibrary.find((acc) => acc.name.toLowerCase() === lookup) ||
-          null
-        );
+        const trimmed = String(name || "").trim();
+        if (!trimmed) return null;
+        const lookup = trimmed.toLowerCase();
+        let bestMatch = null;
+        let bestScore = Infinity;
+        for (const acc of accessoryLibrary) {
+          const score = levenshteinDistance(lookup, acc.name.toLowerCase());
+          if (score < bestScore) {
+            bestScore = score;
+            bestMatch = acc;
+          }
+        }
+        return bestMatch;
       }
       function updateAccOptions() {
         if (newAccTarget && accessoryLibrary.length) {
@@ -1639,6 +1667,7 @@
       function applyAccessoryMatch() {
         const match = findAccessoryByName(newAccName?.value || "");
         if (match) {
+          if (newAccName) newAccName.value = match.name;
           if (newAccTarget) newAccTarget.value = match.target;
           if (newAccLoad && !newAccLoad.value && match.load)
             newAccLoad.value = match.load;
