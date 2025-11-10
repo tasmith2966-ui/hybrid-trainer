@@ -240,6 +240,10 @@
         display: grid;
         gap: 12px;
       }
+      #accList .acc-empty {
+        grid-column: 1 / -1;
+        padding: 8px 0;
+      }
       .g2 {
         grid-template-columns: 1fr 1fr;
       }
@@ -849,11 +853,8 @@
               <datalist id="accOptions"></datalist>
               <input
                 id="newAccLoad"
-                type="number"
-                inputmode="numeric"
-                pattern="[0-9]*"
-                min="0"
-                step="1"
+                type="text"
+                inputmode="decimal"
                 placeholder="Weight or plate"
               />
               <button class="btn" id="addManualAcc">+ Add</button>
@@ -1020,6 +1021,14 @@
         t.textContent = msg;
         t.classList.add("show");
         setTimeout(() => t.classList.remove("show"), 2000);
+      }
+      function escapeHtml(value) {
+        return String(value ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
       }
       function badge(el, ok, onTxt = "On track", offTxt = "Low") {
         el.className = "pill " + (ok ? "ok" : "warn");
@@ -1539,7 +1548,10 @@
           )].sort((a, b) => a.localeCompare(b));
           if (targets.length) {
             newAccTarget.innerHTML = targets
-              .map((target) => `<option value="${target}">${target}</option>`)
+              .map(
+                (target) =>
+                  `<option value="${escapeHtml(target)}">${escapeHtml(target)}</option>`,
+              )
               .join("");
             if (targets.includes(previous)) newAccTarget.value = previous;
             if (!newAccTarget.value && targets.length)
@@ -1556,7 +1568,9 @@
             const label = acc.target
               ? `${acc.name} — ${acc.target}`
               : acc.name;
-            return `<option value="${acc.name}" label="${label}">${label}</option>`;
+            const value = escapeHtml(acc.name);
+            const safeLabel = escapeHtml(label);
+            return `<option value="${value}" label="${safeLabel}">${safeLabel}</option>`;
           })
           .join("");
       }
@@ -1572,7 +1586,9 @@
           .map((name) => {
             const target = accessoryTargets.get(name);
             const label = target ? `${name} — ${target}` : name;
-            return `<option value="${name}" label="${label}">${label}</option>`;
+            const value = escapeHtml(name);
+            const safeLabel = escapeHtml(label);
+            return `<option value="${value}" label="${safeLabel}">${safeLabel}</option>`;
           })
           .join("");
       }
@@ -1629,31 +1645,81 @@
         }
       }
       let accessories = [];
+      function ensureAccessoriesMessage() {
+        if (!accList) return;
+        if (accessories.length === 0) {
+          if (!accList.querySelector(".acc-empty")) {
+            const msg = document.createElement("div");
+            msg.className = "muted small acc-empty";
+            msg.textContent = "No accessories yet. Use + Add or Auto to populate.";
+            accList.appendChild(msg);
+          }
+        } else {
+          const existing = accList.querySelector(".acc-empty");
+          if (existing) existing.remove();
+        }
+      }
+      ensureAccessoriesMessage();
       function addAccessory(target, name, sets, reps, load = "") {
+        if (!accList) return false;
+        const trimmedName = String(name || "").trim();
+        if (!trimmedName) return false;
+        const normalized = trimmedName.toLowerCase();
+        if (accessories.some((acc) => acc.name.toLowerCase() === normalized))
+          return false;
+        const cleanTarget = String(target || "").trim() || "—";
+        const safeName = escapeHtml(trimmedName);
+        const safeTarget = escapeHtml(cleanTarget);
+        const safeLoad = escapeHtml(String(load ?? ""));
+        const setCount = Number(sets);
+        const repCount = Number(reps);
+        const safeSets = (
+          Number.isFinite(setCount) && setCount > 0 ? setCount : 3
+        );
+        const safeReps = (
+          Number.isFinite(repCount) && repCount > 0 ? repCount : 10
+        );
         const id = uid();
         const row = document.createElement("div");
         row.className = "grid g4";
         row.style.gridTemplateColumns = "2fr 1fr 1fr 1fr auto";
         row.dataset.id = id;
-        row.innerHTML = `<div><b>${name}</b><div class="muted small">${target}</div></div>
-    <label class="small">Sets<input class="input-compact" type="number" min="2" max="5" value="${sets}"></label>
-    <label class="small">Reps<input class="input-compact" type="number" min="6" max="25" value="${reps}"></label>
-    <label class="small">Weight<input class="input-compact" type="number" min="0" step="1" placeholder="Weight" value="${load}"></label>
-    <button class="btn bad">X</button>`;
-        $("#accList").appendChild(row);
+        row.innerHTML = `<div><b>${safeName}</b><div class="muted small">${safeTarget}</div></div>
+    <label class="small">Sets<input class="input-compact" type="number" min="2" max="5" value="${safeSets}"></label>
+    <label class="small">Reps<input class="input-compact" type="number" min="6" max="25" value="${safeReps}"></label>
+    <label class="small">Weight<input class="input-compact" type="text" inputmode="decimal" placeholder="Weight" value="${safeLoad}"></label>
+    <button class="btn bad" type="button">X</button>`;
+        const emptyMsg = accList.querySelector(".acc-empty");
+        if (emptyMsg) emptyMsg.remove();
+        accList.appendChild(row);
         const delBtn = row.querySelector("button");
         const [setsEl, repsEl, loadEl] = row.querySelectorAll("input");
         delBtn.addEventListener("click", () => {
           row.remove();
           accessories = accessories.filter((a) => a.id !== id);
+          ensureAccessoriesMessage();
           markQAStale();
         });
-        accessories.push({ id, target, name, setsEl, repsEl, loadEl });
+        accessories.push({
+          id,
+          target: cleanTarget,
+          name: trimmedName,
+          setsEl,
+          repsEl,
+          loadEl,
+        });
+        ensureAccessoriesMessage();
         markQAStale();
+        return true;
       }
       $("#addManualAcc").addEventListener("click", () => {
         applyAccessoryMatch();
         const typed = newAccName.value.trim();
+        if (!typed) {
+          toast("Type an accessory name before adding.");
+          if (newAccName.focus) newAccName.focus();
+          return;
+        }
         const match = findAccessoryByName(typed);
         const target = match?.target || newAccTarget.value || "Back";
         const defaults = match
@@ -1662,16 +1728,27 @@
               reps: match.reps ?? targetAccDefaults(target).reps,
             }
           : targetAccDefaults(target);
-        const name = match?.name || typed || "Accessory";
-        const load = newAccLoad.value || match?.load || "";
+        const name = match?.name || typed;
+        const loadTyped = newAccLoad?.value?.trim?.() || "";
+        const load = loadTyped || match?.load || "";
         if (newAccTarget) newAccTarget.value = target;
-        addAccessory(target, name, defaults.sets, defaults.reps, load);
+        const added = addAccessory(
+          target,
+          name,
+          defaults.sets,
+          defaults.reps,
+          load,
+        );
+        if (!added) {
+          toast(`${name} is already on the list.`);
+          if (newAccName.focus) newAccName.focus();
+          return;
+        }
         newAccName.value = "";
-        newAccLoad.value = "";
+        if (newAccLoad) newAccLoad.value = "";
         updateAccOptions();
         if (newAccName.focus) newAccName.focus();
       });
-
       if (newAccTarget) {
         newAccTarget.addEventListener("change", () => {
           updateAccOptions();
@@ -1738,13 +1815,17 @@
             ...(pick.reps ? { reps: pick.reps } : {}),
           };
           const load = pick.load || "";
-          addAccessory(
+          const added = addAccessory(
             pick.target,
             pick.name,
             defaults.sets,
             defaults.reps,
             load,
           );
+          if (!added) {
+            toast(`${pick.name} is already on the list.`);
+            return;
+          }
           if (newAccTarget) newAccTarget.value = pick.target;
           if (newAccName) newAccName.value = "";
           if (newAccLoad) newAccLoad.value = "";
@@ -2388,7 +2469,10 @@
         // reset builder
         setsBody.innerHTML = "";
         accessories = [];
-        $("#accList").innerHTML = "";
+        if (accList) {
+          accList.innerHTML = "";
+          ensureAccessoriesMessage();
+        }
         renderDashboard();
         dayKind.__manualPick = false;
         updateReco();
