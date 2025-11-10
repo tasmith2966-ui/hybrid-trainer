@@ -1745,7 +1745,12 @@
           newAccName.addEventListener(evt, applyAccessoryMatch),
         );
         newAccName.addEventListener("input", () => {
-          if (findAccessoryByName(newAccName.value)) applyAccessoryMatch();
+          const typed = (newAccName.value || "").trim().toLowerCase();
+          if (!typed) return;
+          const exact = accessoryLibrary.find(
+            (acc) => acc.name.toLowerCase() === typed,
+          );
+          if (exact) applyAccessoryMatch();
         });
       }
       updateAccOptions();
