@@ -980,6 +980,7 @@
           .replace(/'/g, "&#39;");
       }
       function badge(el, ok, onTxt = "On track", offTxt = "Low") {
+        if (!el) return;
         el.className = "pill " + (ok ? "ok" : "warn");
         el.textContent = ok ? onTxt : offTxt;
       }
@@ -1135,8 +1136,24 @@
         weightSummary = $("#weightSummary"),
         weightPath = $("#weightPath"),
         weightDots = $("#weightDots"),
-        weightChartEmpty = $("#weightChartEmpty");
-        builderCard = $("#builderCard");
+        weightChartEmpty = $("#weightChartEmpty"),
+        builderCard = $("#builderCard"),
+        z2MinEl = $("#z2Min"),
+        vigMinEl = $("#vigMin"),
+        qSetsEl = $("#qSets"),
+        pSetsEl = $("#pSets"),
+        cSetsEl = $("#cSets"),
+        bSetsEl = $("#bSets"),
+        dSetsEl = $("#dSets"),
+        aSetsEl = $("#aSets"),
+        coreSetsEl = $("#coreSets"),
+        qStatusEl = $("#qStatus"),
+        pStatusEl = $("#pStatus"),
+        coreStatusEl = $("#coreStatus"),
+        endStatusEl = $("#endStatus"),
+        endDistEl = $("#endDist"),
+        endDistBreakdownEl = $("#endDistBreakdown"),
+        histList = $("#hist");
 
       function setQAState({ tone = "", label = "", message = "" }) {
         if (qaStatePill) {
@@ -1155,8 +1172,19 @@
         message: "Run QA to check the plan.",
       });
 
+      let qaDirty = false;
+      let qaDirtyMessage = "";
+      function clearQAStale() {
+        qaDirty = false;
+        qaDirtyMessage = "";
+        if (qaList) qaList.removeAttribute("data-state");
+      }
       function markQAStale(msg = "Session changed — run QA again.") {
         if (!qaList) return;
+        if (qaDirty && qaDirtyMessage === msg) return;
+        qaDirty = true;
+        qaDirtyMessage = msg;
+        qaList.setAttribute("data-state", "stale");
         qaList.innerHTML = `<div class="qa-empty muted small">${msg}</div>`;
         setQAState({ tone: "warn", label: "Needs QA", message: msg });
       }
@@ -1231,6 +1259,7 @@
         progGhost.textContent = "";
       }
       pattern.addEventListener("change", renderTop3);
+      renderTop3();
 
       function addSetRow(vals = { reps: "", load: "", rpe: "", fail: false }) {
         const tr = document.createElement("tr");
@@ -1654,6 +1683,9 @@
           ensureAccessoriesMessage();
           markQAStale();
         });
+        [setsEl, repsEl, loadEl].forEach((input) =>
+          input.addEventListener("input", () => markQAStale()),
+        );
         accessories.push({
           id,
           target: cleanTarget,
@@ -1791,6 +1823,7 @@
       /* ================= QA Checks ================= */
       function renderQAList(issues) {
         if (!qaList) return;
+        clearQAStale();
         qaList.innerHTML = "";
         const now = new Date();
         const stamp = now.toLocaleTimeString([], {
@@ -2284,70 +2317,68 @@
       }
         function renderDashboard() {
           const t = totalsCalc(week().sessions);
-          $("#z2Min").textContent = t.z2 + "′";
-          $("#vigMin").textContent = t.vig + "′";
-          $("#qSets").textContent = t.quads;
-          $("#pSets").textContent = t.post;
-          $("#cSets").textContent = t.chest || 0;
-          $("#bSets").textContent = t.back || 0;
-          $("#dSets").textContent = t.delts || 0;
-          $("#aSets").textContent = t.arms || 0;
-          $("#coreSets").textContent = t.core || 0;
+          if (z2MinEl) z2MinEl.textContent = `${t.z2}′`;
+          if (vigMinEl) vigMinEl.textContent = `${t.vig}′`;
+          if (qSetsEl) qSetsEl.textContent = t.quads;
+          if (pSetsEl) pSetsEl.textContent = t.post;
+          if (cSetsEl) cSetsEl.textContent = t.chest || 0;
+          if (bSetsEl) bSetsEl.textContent = t.back || 0;
+          if (dSetsEl) dSetsEl.textContent = t.delts || 0;
+          if (aSetsEl) aSetsEl.textContent = t.arms || 0;
+          if (coreSetsEl) coreSetsEl.textContent = t.core || 0;
           const totalMiles = t.enduranceMi || 0;
-          const endDistEl = $("#endDist");
           if (endDistEl) {
             if (totalMiles > 0) {
               const totalKm = totalMiles * KM_PER_MILE;
               endDistEl.textContent =
-                formatDistanceValue(totalMiles) +
-                " mi (" +
-                formatDistanceValue(totalKm) +
-                " km)";
+                `${formatDistanceValue(totalMiles)} mi (` +
+                `${formatDistanceValue(totalKm)} km)`;
             } else {
               endDistEl.textContent = "0 mi";
             }
           }
-          const breakdownEl = $("#endDistBreakdown");
-          if (breakdownEl) {
+          if (endDistBreakdownEl) {
             const breakdownEntries = Object.entries(t.enduranceRaw || {}).filter(
               ([, val]) => Number.isFinite(val) && val > 0,
             );
             if (breakdownEntries.length > 1) {
-              breakdownEl.textContent = breakdownEntries
+              endDistBreakdownEl.textContent = breakdownEntries
                 .map(([unit, val]) => `${formatDistanceValue(val)} ${unit}`)
                 .join(" · ");
-              breakdownEl.style.display = "";
+              endDistBreakdownEl.style.display = "";
             } else {
-              breakdownEl.textContent = "";
-              breakdownEl.style.display = "none";
+              endDistBreakdownEl.textContent = "";
+              endDistBreakdownEl.style.display = "none";
             }
           }
-          badge($("#qStatus"), t.quads >= TARGETS.Quads);
-          badge($("#pStatus"), t.post >= TARGETS.Posterior);
-          badge($("#coreStatus"), t.core >= TARGETS.Core);
+          badge(qStatusEl, t.quads >= TARGETS.Quads);
+          badge(pStatusEl, t.post >= TARGETS.Posterior);
+          badge(coreStatusEl, t.core >= TARGETS.Core);
           const endOK = t.z2 >= 150 || t.vig >= 75 || t.z2 * 0.5 + t.vig >= 75;
-          badge($("#endStatus"), endOK, "On track", "Low this week");
-          $("#hist").innerHTML =
-            week()
-              .sessions.map((s) => {
-                const d = new Date(s.date).toLocaleDateString();
-                const tag =
-                  s.kind === "Strength"
-                    ? s.main?.movement || s.main?.pattern
-                    : s.wod?.name || s.endurance?.modality || "";
-                const distanceVal = Number(s.endurance?.distance);
-                const hasDistance =
-                  s.endurance && Number.isFinite(distanceVal) && distanceVal > 0;
-                const distanceText = hasDistance
-                  ? `${formatDistanceValue(distanceVal)} ${
-                      s.endurance?.distUnit || "mi"
-                    }`
-                  : "";
-                const detailParts = [tag || "", distanceText].filter(Boolean);
-                const detail = detailParts.join(" · ");
-                return `<div class="space flex"><span>${d} · ${s.kind}</span><span class="muted small">${detail}</span></div>`;
-              })
-              .join("") || '<div class="muted">No sessions yet.</div>';
+          badge(endStatusEl, endOK, "On track", "Low this week");
+          if (histList) {
+            histList.innerHTML =
+              week()
+                .sessions.map((s) => {
+                  const d = new Date(s.date).toLocaleDateString();
+                  const tag =
+                    s.kind === "Strength"
+                      ? s.main?.movement || s.main?.pattern
+                      : s.wod?.name || s.endurance?.modality || "";
+                  const distanceVal = Number(s.endurance?.distance);
+                  const hasDistance =
+                    s.endurance && Number.isFinite(distanceVal) && distanceVal > 0;
+                  const distanceText = hasDistance
+                    ? `${formatDistanceValue(distanceVal)} ${
+                        s.endurance?.distUnit || "mi"
+                      }`
+                    : "";
+                  const detailParts = [tag || "", distanceText].filter(Boolean);
+                  const detail = detailParts.join(" · ");
+                  return `<div class="space flex"><span>${d} · ${s.kind}</span><span class="muted small">${detail}</span></div>`;
+                })
+                .join("") || '<div class="muted">No sessions yet.</div>';
+          }
           renderWeightTrend();
         }
 
